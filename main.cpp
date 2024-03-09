@@ -7,6 +7,11 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -21,6 +26,19 @@ void debug_request(const char *buffer, int size) {
     std::cout << request << std::endl;
 }
 
+std::string readFileToString(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return "";
+    }
+    
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+
 // TODO replace Hello, World with the website/index.html
 void handle_request(int client_fd) {
 
@@ -33,7 +51,19 @@ void handle_request(int client_fd) {
 
     debug_request(buffer, size);
 
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n"; 
+    std::string file_content = readFileToString("website/index.html");
+    // std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n"; 
+    // Content-Length: 68/r/n/r/n<html><head>Hello, World!</head><body><p>hello</p></body></html>/r/n/r/n
+    // HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: "; 
+    response += std::to_string(file_content.length());
+    response += "\r\n\r\n";
+    response += file_content;
+    response += "\r\n\r\n";
+
+    // response.append(file_content);
+    std::cout << response << std::endl;
+    // response.append("/r/n/r/n");
     send(client_fd, response.c_str(), response.size(), 0);
 }
 
@@ -44,7 +74,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Parse configuration here
-
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         perror("socket");
