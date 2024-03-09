@@ -12,6 +12,8 @@ const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
+const int PORT = 8080;
+
 /* print info to the terminal with all the request data */
 void debug_request(const char *buffer, int size) {
     std::string request(buffer, size);
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(8080); // Change port as needed
+    server_addr.sin_port = htons(PORT); // Change port as needed
 
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind");
@@ -70,6 +72,8 @@ int main(int argc, char *argv[]) {
     struct pollfd fds[MAX_EVENTS];
     fds[0].fd = server_fd;
     fds[0].events = POLLIN;
+
+    std::cout << "Server listening on http://localhost:" << PORT << std::endl;
 
     while (true) {
         int activity = poll(fds, MAX_EVENTS, -1);
