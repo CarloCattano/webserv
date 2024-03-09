@@ -6,13 +6,32 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <stdio.h>
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
+/* print info to the terminal with all the request data */
+void debug_request(const char *buffer, int size) {
+    std::string request(buffer, size);
+    std::cout << "Received request:" << std::endl;
+    std::cout << request << std::endl;
+}
+
+// TODO replace Hello, World with the website/index.html
 void handle_request(int client_fd) {
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello, World!";
+
+    char buffer[BUFFER_SIZE];
+    int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
+    if (size == -1) {
+        perror("recv");
+        return;
+    }
+
+    debug_request(buffer, size);
+
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n"; 
     send(client_fd, response.c_str(), response.size(), 0);
 }
 
@@ -22,7 +41,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Parse configuration file if needed
+    // Parse configuration here
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
