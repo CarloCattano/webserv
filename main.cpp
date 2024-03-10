@@ -7,12 +7,11 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <stdio.h>
-#include <fstream>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <string>
-#include <map> // Include this for unordered_map
+#include "utils.hpp"
+#include <map>
+
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -20,7 +19,6 @@ const int BUFFER_SIZE = 1024;
 
 int PORT = 8080;   // TODO needs to be set by config file
 
-std::map<std::string, std::string> content_types;
 
 void populateContentTypes() {
     content_types[".html"] = "text/html";
@@ -29,49 +27,6 @@ void populateContentTypes() {
     content_types[".jpeg"] = "image/jpeg";
     content_types[".png"] = "image/png";
     // Add more file extensions and corresponding content types as needed
-}
-
-std::string getContentType(const std::string& filename) {
-    size_t dotPos = filename.find_last_of('.');
-    if (dotPos != std::string::npos) {
-        std::string extension = filename.substr(dotPos);
-        if (content_types.find(extension) != content_types.end()) {
-            return content_types[extension];
-        }
-    }
-    // Default to plain text if content type not found
-    return "text/plain";
-}
-
-std::string readFileToString(const std::string& filename) {
-    std::ifstream file(filename.c_str());
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return "";
-    }
-    
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-std::string intToString(int value) {
-    std::stringstream ss;
-    ss << value;
-    return ss.str();
-}
-
-std::string extract_requested_file_path(const char *buffer) {
-    std::string request(buffer);
-    size_t start = request.find("GET") + 4;
-    size_t end = request.find("HTTP/1.1") - 1;
-    std::string path = request.substr(start, end - start);
-    
-    if (path == "/")
-        return "/index.html";
-
-    std::cout << "Requested file path: " << path << std::endl;
-    return path;
 }
 
 void handle_request(int client_fd) {
