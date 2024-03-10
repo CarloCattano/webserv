@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ccattano <ccattano@42Berlin.de>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/03/10 11:19:25 by ccattano          #+#    #+#             */
-/*   Updated: 2024/03/10 11:52:39 by ccattano         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -32,10 +20,8 @@ const int BUFFER_SIZE = 1024;
 
 int PORT = 8080;   // TODO needs to be set by config file
 
-
 std::map<std::string, std::string> content_types;
 
-// Function to populate content_types map
 void populateContentTypes() {
     content_types[".html"] = "text/html";
     content_types[".css"] = "text/css";
@@ -56,15 +42,6 @@ std::string getContentType(const std::string& filename) {
     // Default to plain text if content type not found
     return "text/plain";
 }
-
-/* print info to the terminal with all the request data */
-/* void debug_request(const char *buffer, int size) { */
-/*     std::cout << "---------------------\n"; */
-/*     std::string request(buffer, size); */
-/*     std::cout << "Received request:" << "\n"; */
-/*     std::cout << request << "\n"; */
-/*     std::cout << "---------------------" << std::endl; */
-/* } */
 
 std::string readFileToString(const std::string& filename) {
     std::ifstream file(filename.c_str());
@@ -89,10 +66,10 @@ std::string extract_requested_file_path(const char *buffer) {
     size_t start = request.find("GET") + 4;
     size_t end = request.find("HTTP/1.1") - 1;
     std::string path = request.substr(start, end - start);
-    if (path == "/") {
-        // If the path is '/', serve index.html by default
+    
+    if (path == "/")
         return "/index.html";
-    }
+
     std::cout << "Requested file path: " << path << std::endl;
     return path;
 }
@@ -122,7 +99,7 @@ void handle_request(int client_fd) {
         std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\nContent-Length: " +
                                intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
-        /* std::cout << response << std::endl; */
+        /* std::cout << response << std::endl; */ // Uncomment to see the HTTP response in the console
         send(client_fd, response.c_str(), response.size(), 0);
     }
 }
