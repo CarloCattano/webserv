@@ -14,6 +14,7 @@ $(NAME):
 	$(CXX) $(SRCS) $(CXXFLAGS) -o $(NAME)
 
 run : all
+	killall webserv
 	./$(NAME) server.conf
 
 clean:
