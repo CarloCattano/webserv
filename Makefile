@@ -1,14 +1,10 @@
-SRCS = main.cpp
-UTILS_SRCS = utils.cpp
+SRCS = src/main.cpp
+UTILS_SRCS = src/utils.cpp
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98
 OBJS = $(SRCS:.cpp=.o)
 UTILS_OBJS = $(UTILS_SRCS:.cpp=.o)
 NAME = webserv
-
-ifdef DEBUG
-    CXXFLAGS+= -DDEBUG
-endif
 
 all: $(NAME)
 
