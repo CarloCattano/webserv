@@ -14,7 +14,7 @@ $(NAME):
 	$(CXX) $(SRCS) $(CXXFLAGS) -o $(NAME)
 
 run : all
-	killall webserv
+	@if pgrep $(NAME) ; then pkill $(NAME) ; fi
 	./$(NAME) server.conf
 
 clean:
