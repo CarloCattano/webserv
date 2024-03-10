@@ -17,17 +17,19 @@ const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
-int PORT = 8080;
+int PORT = 8080;   // TODO needs to be set by config file
 
 /* print info to the terminal with all the request data */
 void debug_request(const char *buffer, int size) {
+    std::cout << "---------------------\n";
     std::string request(buffer, size);
-    std::cout << "Received request:" << std::endl;
-    std::cout << request << std::endl;
+    std::cout << "Received request:" << "\n";
+    std::cout << request << "\n";
+    std::cout << "---------------------" << std::endl;
 }
 
 std::string readFileToString(const std::string& filename) {
-    std::ifstream file(filename);
+    std::ifstream file(filename.c_str());
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return "";
@@ -38,6 +40,11 @@ std::string readFileToString(const std::string& filename) {
     return buffer.str();
 }
 
+std::string intToString(int value) {
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
+}
 
 void handle_request(int client_fd, const std::string& content_type) {
     char buffer[BUFFER_SIZE];
@@ -52,7 +59,7 @@ void handle_request(int client_fd, const std::string& content_type) {
     std::string file_content = readFileToString("website/index.html");
     
     std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\nContent-Length: " + 
-                            std::to_string(file_content.length()) + "\r\n\r\n" + file_content;
+                            intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
     std::cout << response << std::endl;
     send(client_fd, response.c_str(), response.size(), 0);
