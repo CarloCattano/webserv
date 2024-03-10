@@ -38,7 +38,8 @@ std::string readFileToString(const std::string& filename) {
     return buffer.str();
 }
 
-void handle_request(int client_fd) {
+
+void handle_request(int client_fd, const std::string& content_type) {
     char buffer[BUFFER_SIZE];
     int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
     if (size == -1) {
@@ -49,7 +50,10 @@ void handle_request(int client_fd) {
     debug_request(buffer, size);
 
     std::string file_content = readFileToString("website/index.html");
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: " + std::to_string(file_content.length()) + "\r\n\r\n" + file_content;
+    
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\nContent-Length: " + 
+                            std::to_string(file_content.length()) + "\r\n\r\n" + file_content;
+
     std::cout << response << std::endl;
     send(client_fd, response.c_str(), response.size(), 0);
 }
@@ -61,6 +65,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Parse configuration here
+
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         perror("socket");
@@ -73,7 +78,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT); // Change port as needed
+    server_addr.sin_port = htons(PORT);
 
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind");
@@ -91,7 +96,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Server listening on http://localhost:" << PORT << std::endl;
 
-    while (true) {
+    while (true) 
+    {
         int activity = poll(fds, MAX_EVENTS, -1);
         if (activity == -1) {
             perror("poll");
@@ -105,7 +111,7 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            handle_request(client_fd);
+            handle_request(client_fd, "text/html");
             close(client_fd);
         }
     }
@@ -113,4 +119,3 @@ int main(int argc, char *argv[]) {
     close(server_fd);
     return 0;
 }
-
