@@ -17,7 +17,7 @@ const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
-const int PORT = 8080;
+int PORT = 8080;
 
 /* print info to the terminal with all the request data */
 void debug_request(const char *buffer, int size) {
@@ -38,10 +38,7 @@ std::string readFileToString(const std::string& filename) {
     return buffer.str();
 }
 
-
-// TODO replace Hello, World with the website/index.html
 void handle_request(int client_fd) {
-
     char buffer[BUFFER_SIZE];
     int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
     if (size == -1) {
@@ -52,18 +49,8 @@ void handle_request(int client_fd) {
     debug_request(buffer, size);
 
     std::string file_content = readFileToString("website/index.html");
-    // std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n"; 
-    // Content-Length: 68/r/n/r/n<html><head>Hello, World!</head><body><p>hello</p></body></html>/r/n/r/n
-    // HTTP/1.1 200 OK\r\nContent-Length: 68\r\n\r\n<html><head>Hello, World!</head><body><p>hello</p></body></html>\r\n\r\n
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: "; 
-    response += std::to_string(file_content.length());
-    response += "\r\n\r\n";
-    response += file_content;
-    response += "\r\n\r\n";
-
-    // response.append(file_content);
+    std::string response = "HTTP/1.1 200 OK\r\nContent-Length: " + std::to_string(file_content.length()) + "\r\n\r\n" + file_content;
     std::cout << response << std::endl;
-    // response.append("/r/n/r/n");
     send(client_fd, response.c_str(), response.size(), 0);
 }
 
