@@ -6,7 +6,7 @@
 /*   By: ccattano <ccattano@42Berlin.de>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/10 11:19:25 by ccattano          #+#    #+#             */
-/*   Updated: 2024/03/10 11:44:10 by ccattano         ###   ########.fr       */
+/*   Updated: 2024/03/10 11:52:39 by ccattano         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,11 @@ std::string extract_requested_file_path(const char *buffer) {
     size_t start = request.find("GET") + 4;
     size_t end = request.find("HTTP/1.1") - 1;
     std::string path = request.substr(start, end - start);
+    if (path == "/") {
+        // If the path is '/', serve index.html by default
+        return "/index.html";
+    }
+    std::cout << "Requested file path: " << path << std::endl;
     return path;
 }
 
