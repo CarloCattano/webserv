@@ -1,0 +1,17 @@
+* {
+  margin: 0.22rem;
+  padding: 0.22rem;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Futura, sans-serif;
+}
+
+p {
+  color: #333;
+}
+
+strong {
+  font-weight: bold;
+}

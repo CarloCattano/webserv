@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ccattano <ccattano@42Berlin.de>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/10 11:19:25 by ccattano          #+#    #+#             */
+/*   Updated: 2024/03/10 11:44:10 by ccattano         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -12,6 +24,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <map> // Include this for unordered_map
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -19,14 +32,39 @@ const int BUFFER_SIZE = 1024;
 
 int PORT = 8080;   // TODO needs to be set by config file
 
-/* print info to the terminal with all the request data */
-void debug_request(const char *buffer, int size) {
-    std::cout << "---------------------\n";
-    std::string request(buffer, size);
-    std::cout << "Received request:" << "\n";
-    std::cout << request << "\n";
-    std::cout << "---------------------" << std::endl;
+
+std::map<std::string, std::string> content_types;
+
+// Function to populate content_types map
+void populateContentTypes() {
+    content_types[".html"] = "text/html";
+    content_types[".css"] = "text/css";
+    content_types[".jpg"] = "image/jpeg";
+    content_types[".jpeg"] = "image/jpeg";
+    content_types[".png"] = "image/png";
+    // Add more file extensions and corresponding content types as needed
 }
+
+std::string getContentType(const std::string& filename) {
+    size_t dotPos = filename.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        std::string extension = filename.substr(dotPos);
+        if (content_types.find(extension) != content_types.end()) {
+            return content_types[extension];
+        }
+    }
+    // Default to plain text if content type not found
+    return "text/plain";
+}
+
+/* print info to the terminal with all the request data */
+/* void debug_request(const char *buffer, int size) { */
+/*     std::cout << "---------------------\n"; */
+/*     std::string request(buffer, size); */
+/*     std::cout << "Received request:" << "\n"; */
+/*     std::cout << request << "\n"; */
+/*     std::cout << "---------------------" << std::endl; */
+/* } */
 
 std::string readFileToString(const std::string& filename) {
     std::ifstream file(filename.c_str());
@@ -46,7 +84,15 @@ std::string intToString(int value) {
     return ss.str();
 }
 
-void handle_request(int client_fd, const std::string& content_type) {
+std::string extract_requested_file_path(const char *buffer) {
+    std::string request(buffer);
+    size_t start = request.find("GET") + 4;
+    size_t end = request.find("HTTP/1.1") - 1;
+    std::string path = request.substr(start, end - start);
+    return path;
+}
+
+void handle_request(int client_fd) {
     char buffer[BUFFER_SIZE];
     int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
     if (size == -1) {
@@ -54,15 +100,26 @@ void handle_request(int client_fd, const std::string& content_type) {
         return;
     }
 
-    debug_request(buffer, size);
+    /* debug_request(buffer, size); */
 
-    std::string file_content = readFileToString("website/index.html");
-    
-    std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\nContent-Length: " + 
-                            intToString(file_content.length()) + "\r\n\r\n" + file_content;
+    std::string requested_file_path = extract_requested_file_path(buffer);
+    std::string file_content = readFileToString("website" + requested_file_path);
 
-    std::cout << response << std::endl;
-    send(client_fd, response.c_str(), response.size(), 0);
+    if (file_content.empty()) {
+        // File not found or error reading file
+        std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
+        send(client_fd, response.c_str(), response.size(), 0);
+    } else {
+        // Determine content type based on file extension
+        std::string content_type = getContentType(requested_file_path);
+
+        // Construct HTTP response
+        std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\nContent-Length: " +
+                               intToString(file_content.length()) + "\r\n\r\n" + file_content;
+
+        /* std::cout << response << std::endl; */
+        send(client_fd, response.c_str(), response.size(), 0);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -78,6 +135,8 @@ int main(int argc, char *argv[]) {
         perror("socket");
         return 1;
     }
+    
+    populateContentTypes();
 
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
@@ -118,7 +177,7 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            handle_request(client_fd, "text/html");
+            handle_request(client_fd); 
             close(client_fd);
         }
     }
