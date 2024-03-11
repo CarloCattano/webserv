@@ -1,14 +1,14 @@
-#include "utils.hpp"
-#include <arpa/inet.h>
-#include <fcntl.h>
 #include <iostream>
 #include <map>
+#include <string>
+#include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
-#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "utils.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -16,9 +16,10 @@ const int BUFFER_SIZE = 1024;
 
 int PORT = 8080; // TODO needs to be set by config file
 
-void populateContentTypes() {
-    content_types[".html"] = "text/html";
-    content_types[".css"] = "text/css";
+void populateContentTypes()
+{
+	content_types[".html"] = "text/html";
+	content_types[".css"] = "text/css";
 	content_types[".jpg"] = "image/jpeg";
 	content_types[".jpeg"] = "image/jpeg";
 	content_types[".png"] = "image/png";
@@ -41,14 +42,14 @@ void handle_request(int client_fd)
 		// File not found or error reading file
 		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
 		send(client_fd, response.c_str(), response.size(), 0);
-	} else {
+	}
+	else {
 		// Determine content type based on file extension
 		std::string content_type = getContentType(requested_file_path);
 
 		// Construct HTTP response
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-							   "\r\nContent-Length: " + intToString(file_content.length()) +
-							   "\r\n\r\n" + file_content;
+			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
