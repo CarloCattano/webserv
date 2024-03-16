@@ -6,7 +6,7 @@ class Cgi {
 public:
 	Cgi();
 	~Cgi();
-	void run(const std::string &path, const std::string &filename);
+	std::string run() const;
 
 private:
 	char **_env;
@@ -15,6 +15,4 @@ private:
 
 	Cgi(const Cgi &src);
 	Cgi &operator=(const Cgi &src);
-
-	void _runPython(const std::string &path, const std::string &filename, const std::string &query);
 };

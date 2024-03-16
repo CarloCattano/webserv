@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "Cgi.hpp"
 #include "utils.hpp"
 
 const int MAX_EVENTS = 10;
@@ -23,6 +24,7 @@ void populateContentTypes()
 	content_types[".jpg"] = "image/jpeg";
 	content_types[".jpeg"] = "image/jpeg";
 	content_types[".png"] = "image/png";
+	content_types[".py"] = "text/plain";
 	// Add more file extensions and corresponding content types as needed
 }
 
@@ -38,6 +40,13 @@ void handle_request(int client_fd)
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 
+	// cgi script
+	if (requested_file_path.find(".py") != std::string::npos) {
+		Cgi cgi;
+		std::string response = cgi.run();
+		send(client_fd, response.c_str(), response.size(), 0);
+	}
+
 	if (file_content.empty()) {
 		// File not found or error reading file
 		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
@@ -51,6 +60,9 @@ void handle_request(int client_fd)
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
+		if (content_type != "image/jpeg" && content_type != "image/png") {
+			std::cout << "Response:\n-----\n" << response << std::endl;
+		}
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
 }

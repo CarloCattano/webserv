@@ -1,5 +1,9 @@
 #include "Cgi.hpp"
+#include <cstdlib>
 #include <iostream>
+// imports for cgi execution
+#include <stdio.h>
+#include "utils.hpp"
 
 Cgi::Cgi()
 {
@@ -22,16 +26,34 @@ Cgi::Cgi(const Cgi &src)
 	*this = src;
 }
 
-// run function
-void Cgi::run(const std::string &path, const std::string &filename)
+// run a command on the system and return the return in a std::string
+
+void runCommand(const std::string &command, std::string &result)
 {
-	if (filename.find(".py") != std::string::npos) {
-		this->_runPython(path, filename, "");
+	FILE *pipe = popen(command.c_str(), "r");
+	if (!pipe) {
+		std::cerr << "popen failed" << std::endl;
+		exit(1);
 	}
+	char buffer[128];
+	while (!feof(pipe)) {
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
+	}
+	pclose(pipe);
 }
 
-void Cgi::_runPython(const std::string &path, const std::string &filename, const std::string &query)
+std::string Cgi::run() const
 {
-	std::string command = "python3 " + path + "/" + filename + " " + query;
-	std::cout << "command: " << command << std::endl;
+	std::string path = "/home/carlo/42/webserv/website/cgi-bin";
+	std::string command = "/sbin/python3 " + path + "/hello.py";
+	std::string content_type = "text/html";
+	std::string result = "";
+	std::string file_path = readFileToString(path + "/hello.py");
+
+	runCommand(command, result);
+	result = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type + "\r\n" +
+		"Content-Length: " + intToString(file_path.length()) + "\r\n\r\n" + result + "\r\n\r\n";
+
+	return result;
 }
