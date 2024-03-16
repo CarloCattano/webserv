@@ -1,4 +1,4 @@
-SRCS = src/main.cpp
+SRCS = src/main.cpp src/Server/Server.cpp
 UTILS_SRCS = src/utils.cpp
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98
