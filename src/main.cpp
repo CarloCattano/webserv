@@ -1,6 +1,6 @@
 
-#include <iostream>
 #include "./Server/Server.hpp"
+#include <iostream>
 
 #include "Cgi.hpp"
 #include "utils.hpp"
@@ -14,12 +14,6 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-
-const int MAX_EVENTS = 10;
-const int BACKLOG = 10;
-const int BUFFER_SIZE = 1024;
-
-int PORT = 8080;
 
 void populateContentTypes() {
 	content_types[".html"] = "text/html";
@@ -39,7 +33,6 @@ int main(int argc, char *argv[]) {
 	populateContentTypes();
 
 	// TODO Parse configuration here
-
 
 	Server server("1234", 8080);
 	server.start();

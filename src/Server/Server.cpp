@@ -1,4 +1,5 @@
 #include "./Server.hpp"
+#include "../Cgi.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -7,7 +8,7 @@ const int BUFFER_SIZE = 1024;
 int PORT = 8080; // TODO needs to be set by config file
 
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port) {
-	
+
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
@@ -54,8 +55,7 @@ void Server::start() {
 	}
 }
 
-void Server::handle_request(int client_fd)
-{
+void Server::handle_request(int client_fd) {
 	char buffer[BUFFER_SIZE];
 	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	if (size == -1) {
@@ -66,23 +66,28 @@ void Server::handle_request(int client_fd)
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 
-	if (file_content.empty()) {
-		// File not found or error reading file
+	if (requested_file_path.find(".py") != std::string::npos) {
+		try {
+			Cgi cgi;
+			std::string response = cgi.run();
+			send(client_fd, response.c_str(), response.size(), 0);
+		} catch (std::exception &e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	} else if (file_content.empty()) {
 		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
 		send(client_fd, response.c_str(), response.size(), 0);
-	}
-	else {
+	} else {
 		// Determine content type based on file extension
 		std::string content_type = getContentType(requested_file_path);
 
 		// Construct HTTP response
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
+							   "\r\nContent-Length: " + intToString(file_content.length()) +
+							   "\r\n\r\n" + file_content;
 
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
 }
 
-Server::~Server() {
-	close(_socket_fd);
-}
+Server::~Server() { close(_socket_fd); }
