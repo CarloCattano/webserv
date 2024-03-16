@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
-#include "utils.hpp"
+#include "../utils.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>

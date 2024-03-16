@@ -1,5 +1,5 @@
 #include "./Server.hpp"
-#include "../Cgi.hpp"
+#include "../Cgi/Cgi.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
