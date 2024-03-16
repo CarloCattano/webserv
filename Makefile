@@ -1,5 +1,4 @@
-SRCS = src/main.cpp src/Server/Server.cpp
-UTILS_SRCS = src/utils.cpp
+SRCS = src/main.cpp src/utils.cpp src/Cgi.cpp src/Server/Server.cpp
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98
 OBJS = $(SRCS:.cpp=.o)
