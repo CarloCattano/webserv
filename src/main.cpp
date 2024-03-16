@@ -46,8 +46,7 @@ void handle_request(int client_fd)
 		std::string response = cgi.run();
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
-
-	if (file_content.empty()) {
+	else if (file_content.empty()) {
 		// File not found or error reading file
 		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
 		send(client_fd, response.c_str(), response.size(), 0);
