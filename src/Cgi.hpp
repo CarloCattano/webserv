@@ -6,7 +6,7 @@ class Cgi {
   public:
 	Cgi();
 	~Cgi();
-	std::string run() const;
+	std::string run();
 
   private:
 	std::string _cgi;
