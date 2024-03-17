@@ -33,11 +33,16 @@ int main(int argc, char *argv[]) {
 		Server server("1234", config.port);
 		server.start();
 
+<<<<<<< HEAD
 	} catch (std::exception &e) {
 
 		Error("ERROR : " << e.what());
 		return 1;
 	}
+=======
+	Server server("1234", config.get_virtual_servers()[0].port);
+	server.start();
+>>>>>>> main
 
 	return 0;
 }
