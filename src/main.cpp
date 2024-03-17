@@ -18,6 +18,7 @@ void populateContentTypes()
 	content_types[".jpg"] = "image/jpeg";
 	content_types[".jpeg"] = "image/jpeg";
 	content_types[".png"] = "image/png";
+	content_types[".gif"] = "image/gif";
 	content_types[".py"] = "text/html";
 }
 

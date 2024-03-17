@@ -13,7 +13,7 @@ with open('/proc/loadavg', 'r') as f:
     load_avg = cpu_utilization_percent 
     load_avg = round(load_avg, 2)
 
-print("<html><head><title>Greetings</title></head><body>")
+print("<html><head><title>Greetings</title><link rel='stylesheet' href='../styles.css'></head><body>")
 print("<h1>Greetings</h1>")
 print("<hr>")
 print("<p>")
@@ -30,5 +30,6 @@ print("<h2>System load average : ")
 print(load_avg)
 print(" %")
 print("</h2>")
+print("<img src='../cpu.gif' />")
 print("<hr></body></html>")
 
