@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
 	Config config(argv[1]);
 
-	Server server("1234", config.port);
+	Server server("1234", config.get_virtual_servers()[1].port);
 	server.start();
 
 	return 0;
