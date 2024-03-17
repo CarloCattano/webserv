@@ -6,7 +6,7 @@ public:
 	Config();
 	~Config();
 
-	Config(const std::string &filename);
+	Config(const std::string filename);
 	bool getConfig();
 	std::string get(const std::string &section, const std::string &key) const;
 	std::string trimInput(const std::string &str) const;

@@ -1,11 +1,11 @@
-#include "./Server.hpp"
-#include "../Cgi/Cgi.hpp"
+#include "Server.hpp"
+#include "Cgi.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
-int PORT = 8080; // TODO needs to be set by config file
+int PORT = 8080;
 
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {

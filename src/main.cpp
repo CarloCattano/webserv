@@ -7,7 +7,8 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "./Server/Server.hpp"
+#include "Config.hpp"
+#include "Server.hpp"
 #include "utils.hpp"
 
 void populateContentTypes()
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
 	}
 	populateContentTypes();
 
-	// TODO Parse configuration here
+	Config config(argv[1]);
 
 	Server server("1234", 8080);
 	server.start();

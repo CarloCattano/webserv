@@ -1,37 +1,34 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Cgi.cpp                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ccattano <ccattano@42Berlin.de>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/03/16 19:51:33 by ccattano          #+#    #+#             */
-/*   Updated: 2024/03/16 19:57:00 by ccattano         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Cgi.hpp"
-#include "../utils.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "utils.hpp"
 
-Cgi::Cgi() {}
+Cgi::Cgi()
+{
+}
 
-Cgi::~Cgi() {}
+Cgi::~Cgi()
+{
+}
 
-Cgi &Cgi::operator=(const Cgi &src) {
+Cgi &Cgi::operator=(const Cgi &src)
+{
 	if (this != &src) {
 		this->_cgi = src._cgi;
 	}
 	return *this;
 }
 
-Cgi::Cgi(const Cgi &src) { *this = src; }
+Cgi::Cgi(const Cgi &src)
+{
+	*this = src;
+}
 
-std::string runCommand() {
+std::string runCommand()
+{
 	std::string path = "website/cgi-bin/hello.py";
 
 	if (path.empty())
@@ -60,13 +57,15 @@ std::string runCommand() {
 			exit(EXIT_FAILURE);
 		}
 
-		char *argv[] = {const_cast<char *>("/usr/bin/python3"), const_cast<char *>(path.c_str()),
-						0};
+		char *argv[] = { const_cast<char *>("/usr/bin/python3"),
+						 const_cast<char *>(path.c_str()),
+						 0 };
 		if (execve("/usr/bin/python3", argv, 0) == -1) {
 			std::cerr << "Failed to execute CGI script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-	} else { // Parent process
+	}
+	else { // Parent process
 		// Close the write end of the pipe
 		close(pipe_fd[1]);
 
@@ -92,13 +91,13 @@ std::string runCommand() {
 		}
 
 		return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-			   intToString(result.length()) + "\r\n\r\n" + result;
+			intToString(result.length()) + "\r\n\r\n" + result;
 	}
 	return "";
 }
 
-std::string Cgi::run() {
-
+std::string Cgi::run()
+{
 	std::string result = "";
 	result = runCommand();
 
