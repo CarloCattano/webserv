@@ -32,7 +32,7 @@ void Server::start()
 	fds[0].fd = _socket_fd;
 	fds[0].events = POLLIN;
 
-	std::cout << "Server listening on http://localhost:" << _port << std::endl;
+	std::cout << "Server started on http://localhost:" << _port << std::endl;
 
 	while (true) {
 		int activity = poll(fds, MAX_EVENTS, -1);
@@ -81,10 +81,8 @@ void Server::handle_request(int client_fd)
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
 	else {
-		// Determine content type based on file extension
 		std::string content_type = getContentType(requested_file_path);
 
-		// Construct HTTP response
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
