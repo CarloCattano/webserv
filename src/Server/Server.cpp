@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "Cgi.hpp"
+#include "utils.hpp"
 #include <signal.h>
 
 const int MAX_EVENTS = 10;
@@ -13,9 +14,9 @@ Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _por
 	start();
 }
 
-void stop(int signal) {
-	Error("Server stopped");
-	Error(signal);
+void Server::stop(int signal) {
+	(void)signal;
+	log("\nServer stopped");
 	exit(0);
 }
 

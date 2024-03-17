@@ -1,5 +1,11 @@
 #pragma once
+#include <fstream>
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <stdexcept>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
 
 #define RED "\033[31m"
