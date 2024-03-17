@@ -8,3 +8,12 @@ MIME types for files upload
 CGI bins , python? php ? do we need both ?
 
 RFC only check the MUST 
+
+
+handle bind error with ports in use or not permitted 
+
+listen 422
+
+terminate called after throwing an instance of 'Server::BindErrorException'
+  what():  Bind error
+make: *** [Makefile:19: run] Aborted (core dumped)

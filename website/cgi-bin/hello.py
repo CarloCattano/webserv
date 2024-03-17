@@ -42,7 +42,7 @@ def generate_html():
         </form>
         <script>
             function goBack() {{
-                window.location.href = 'http://localhost:8080/index.html';
+                window.history.back();
             }}
         </script>
     </body>
