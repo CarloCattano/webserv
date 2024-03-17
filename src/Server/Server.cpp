@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "Cgi.hpp"
+#include <signal.h>
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -10,6 +11,12 @@ Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _por
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
 	start();
+}
+
+void stop(int signal) {
+	Error("Server stopped");
+	Error(signal);
+	exit(0);
 }
 
 void Server::start() {
@@ -31,6 +38,10 @@ void Server::start() {
 	fds[0].events = POLLIN;
 
 	std::cout << "Server started on http://localhost:" << _port << std::endl;
+
+	// handle ctrl+c
+
+	signal(SIGINT, stop);
 
 	while (true) {
 		int activity = poll(fds, MAX_EVENTS, -1);
