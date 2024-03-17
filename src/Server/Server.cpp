@@ -5,8 +5,6 @@ const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
-int PORT = 8080;
-
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
 	_server_address.sin_family = AF_INET;
@@ -34,7 +32,7 @@ void Server::start()
 	fds[0].fd = _socket_fd;
 	fds[0].events = POLLIN;
 
-	std::cout << "Server listening on http://localhost:" << PORT << std::endl;
+	std::cout << "Server listening on http://localhost:" << _port << std::endl;
 
 	while (true) {
 		int activity = poll(fds, MAX_EVENTS, -1);

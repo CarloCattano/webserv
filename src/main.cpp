@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 	}
 	populateContentTypes();
 
-	Config config(argv[1]); // TODO
+	Config config(argv[1]);
 
-	Server server("1234", 8080);
+	Server server("1234", config.port);
 	server.start();
 
 	return 0;

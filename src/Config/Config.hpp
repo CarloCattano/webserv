@@ -9,7 +9,10 @@ public:
 	Config(const std::string filename);
 	bool getConfig();
 	std::string get(const std::string &section, const std::string &key) const;
-	std::string trimInput(const std::string &str) const;
+
+	void getPort(std::string line);
+
+	unsigned int port;
 
 private:
 	std::string filename;
