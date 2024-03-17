@@ -1,0 +1,102 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/main.cpp",
+    "output": "/home/ccattano/webserv/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Utils/utils.o",
+      "src/Utils/utils.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Utils/utils.cpp",
+    "output": "/home/ccattano/webserv/src/Utils/utils.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Cgi/Cgi.o",
+      "src/Cgi/Cgi.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Cgi/Cgi.cpp",
+    "output": "/home/ccattano/webserv/src/Cgi/Cgi.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Server/Server.o",
+      "src/Server/Server.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/Server.cpp",
+    "output": "/home/ccattano/webserv/src/Server/Server.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Config/Config.o",
+      "src/Config/Config.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/Config.cpp",
+    "output": "/home/ccattano/webserv/src/Config/Config.o"
+  }
+]

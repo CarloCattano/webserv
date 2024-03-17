@@ -6,8 +6,7 @@
 
 std::map<std::string, std::string> content_types;
 
-std::string getContentType(const std::string &filename)
-{
+std::string getContentType(const std::string &filename) {
 	size_t dotPos = filename.find_last_of('.');
 	if (dotPos != std::string::npos) {
 		std::string extension = filename.substr(dotPos);
@@ -18,11 +17,11 @@ std::string getContentType(const std::string &filename)
 	return "text/plain";
 }
 
-std::string readFileToString(const std::string &filename)
-{
+std::string readFileToString(const std::string &filename) {
+
 	std::ifstream file(filename.c_str());
-	if (!file.is_open()) {
-		std::cerr << "Error opening file: " << filename << std::endl;
+
+	if (file == 0) {
 		return "";
 	}
 
@@ -31,15 +30,13 @@ std::string readFileToString(const std::string &filename)
 	return buffer.str();
 }
 
-std::string intToString(int value)
-{
+std::string intToString(int value) {
 	std::stringstream ss;
 	ss << value;
 	return ss.str();
 }
 
-std::string extract_requested_file_path(const char *buffer)
-{
+std::string extract_requested_file_path(const char *buffer) {
 	std::string request(buffer);
 	size_t start = request.find("GET") + 4;
 	size_t end = request.find("HTTP/1.1") - 1;
@@ -48,6 +45,5 @@ std::string extract_requested_file_path(const char *buffer)
 	if (path == "/")
 		return "/index.html";
 
-	/* std::cout << "Requested file path: " << path << std::endl; */
 	return path;
 }
