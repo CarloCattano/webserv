@@ -27,14 +27,20 @@ Cgi::Cgi(const Cgi &src)
 
 std::string relativePath(std::string path)
 {
-	std::string prefix = "website/cgi-bin/";
+	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
 	std::string result = prefix + path;
 	return result;
 }
 
+/**
+ * c++98 must be used and popen is forbiden, so this is the reason why we use fork and exec
+ * the problem is that waitpid is blocking the process, so we need
+ * to find a way to make it non-blocking
+ **/
+
 std::string runCommand(const std::string &scriptPath)
 {
-	const int TIMEOUT_SECONDS = 20; // Adjust timeout as needed
+	const int TIMEOUT_SECONDS = 20;
 
 	if (scriptPath.empty()) {
 		throw std::invalid_argument("Empty script path");
@@ -52,9 +58,8 @@ std::string runCommand(const std::string &scriptPath)
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0) { // Child process
-		// Close the read end of the pipe
-		close(pipe_fd[0]);
+	if (pid == 0) {		   // Child process
+		close(pipe_fd[0]); // Close the read end of the pipe
 
 		// Redirect stdout to the write end of the pipe
 		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
@@ -72,10 +77,10 @@ std::string runCommand(const std::string &scriptPath)
 	else {
 		close(pipe_fd[1]);
 
-		// Read the output from the child process
-		char buffer[128];
+		char buffer[128]; // output from the child process
 		std::string result;
 		ssize_t bytes_read;
+
 		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
 			result.append(buffer, bytes_read);
 		}
@@ -83,7 +88,7 @@ std::string runCommand(const std::string &scriptPath)
 		close(pipe_fd[0]);
 
 		int status;
-		waitpid(pid, &status, 0);
+		waitpid(pid, &status, 0); // blocks until the child process exits
 
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			std::cerr << "Child process failed" << std::endl;
