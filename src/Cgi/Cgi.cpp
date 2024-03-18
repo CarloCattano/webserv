@@ -1,4 +1,5 @@
 #include "Cgi.hpp"
+#include <csignal>
 #include <cstdlib>
 #include <sys/wait.h>
 #include "utils.hpp"
@@ -24,14 +25,21 @@ Cgi::Cgi(const Cgi &src)
 	*this = src;
 }
 
-std::string runCommand()
+std::string relativePath(std::string path)
 {
-	std::string path = "website/cgi-bin/hello.py";
+	std::string prefix = "website/cgi-bin/";
+	std::string result = prefix + path;
+	return result;
+}
 
-	if (path.empty())
-		throw std::runtime_error("Path to python script is empty");
+std::string runCommand(const std::string &scriptPath)
+{
+	const int TIMEOUT_SECONDS = 20; // Adjust timeout as needed
 
-	// Create pipes for communication between parent and child processes
+	if (scriptPath.empty()) {
+		throw std::invalid_argument("Empty script path");
+	}
+
 	int pipe_fd[2];
 	if (pipe(pipe_fd) == -1) {
 		std::cerr << "Failed to create pipe" << std::endl;
@@ -54,19 +62,14 @@ std::string runCommand()
 			exit(EXIT_FAILURE);
 		}
 
-		char *argv[] = { const_cast<char *>("/usr/bin/python3"),
-						 const_cast<char *>(path.c_str()),
-						 0 };
-		std::cout << "path: " << path << std::endl;
-		std::cout << "argv " << argv[0] << " " << argv[1] << std::endl;
+		alarm(TIMEOUT_SECONDS);
 
-		if (execve("/usr/bin/python3", argv, 0) == -1) {
-			std::cerr << "Failed to execute CGI script" << std::endl;
+		if (execl("/usr/bin/python3", "python3", relativePath(scriptPath).c_str(), NULL) == -1) {
+			std::cerr << "Failed to execute Python script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}
-	else { // Parent process
-		// Close the write end of the pipe
+	else {
 		close(pipe_fd[1]);
 
 		// Read the output from the child process
@@ -77,29 +80,24 @@ std::string runCommand()
 			result.append(buffer, bytes_read);
 		}
 
-		// Close the read end of the pipe
 		close(pipe_fd[0]);
 
-		// Wait for the child process to complete
 		int status;
 		waitpid(pid, &status, 0);
 
-		// Check if the child process terminated successfully
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			std::cerr << "Child process failed" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-			intToString(result.length()) + "\r\n\r\n" + result;
+		return result;
 	}
 	return "";
 }
 
-std::string Cgi::run()
+std::string Cgi::run(const std::string &scriptPath)
 {
 	std::string result = "";
-	result = runCommand();
-
+	result = runCommand(scriptPath);
 	return result;
 }

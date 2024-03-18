@@ -7,6 +7,8 @@ const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
+std::string CGI_BIN = "hello.py"; // TODO load from config
+
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
 	_server_address.sin_family = AF_INET;
@@ -78,11 +80,17 @@ void Server::handle_request(int client_fd)
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
+	std::string content_type = getContentType(requested_file_path);
 
 	if (requested_file_path.find(".py") != std::string::npos) {
 		try {
 			Cgi cgi;
-			std::string response = cgi.run();
+			std::string cgi_response = cgi.run(CGI_BIN);
+
+			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
+				cgi_response.c_str();
+
 			send(client_fd, response.c_str(), response.size(), 0);
 		}
 		catch (std::exception &e) {
@@ -90,12 +98,10 @@ void Server::handle_request(int client_fd)
 		}
 	}
 	else if (file_content.empty()) {
-		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
-		send(client_fd, response.c_str(), response.size(), 0);
+		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
 	}
 	else {
-		std::string content_type = getContentType(requested_file_path);
-
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
