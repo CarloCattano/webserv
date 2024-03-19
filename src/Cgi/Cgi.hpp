@@ -3,12 +3,12 @@
 #include <string>
 
 class Cgi {
-  public:
+public:
 	Cgi();
 	~Cgi();
-	std::string run();
+	std::string run(const std::string &script);
 
-  private:
+private:
 	std::string _cgi;
 
 	Cgi(const Cgi &src);

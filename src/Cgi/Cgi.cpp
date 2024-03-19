@@ -1,43 +1,51 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Cgi.cpp                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ccattano <ccattano@42Berlin.de>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/03/16 19:51:33 by ccattano          #+#    #+#             */
-/*   Updated: 2024/03/16 19:57:00 by ccattano         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Cgi.hpp"
-#include "../utils.hpp"
+#include <csignal>
 #include <cstdlib>
-#include <iostream>
-#include <stdexcept>
 #include <sys/wait.h>
-#include <unistd.h>
+#include "utils.hpp"
 
-Cgi::Cgi() {}
+Cgi::Cgi()
+{
+}
 
-Cgi::~Cgi() {}
+Cgi::~Cgi()
+{
+}
 
-Cgi &Cgi::operator=(const Cgi &src) {
+Cgi &Cgi::operator=(const Cgi &src)
+{
 	if (this != &src) {
 		this->_cgi = src._cgi;
 	}
 	return *this;
 }
 
-Cgi::Cgi(const Cgi &src) { *this = src; }
+Cgi::Cgi(const Cgi &src)
+{
+	*this = src;
+}
 
-std::string runCommand() {
-	std::string path = "website/cgi-bin/hello.py";
+std::string relativePath(std::string path)
+{
+	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
+	std::string result = prefix + path;
+	return result;
+}
 
-	if (path.empty())
-		throw std::runtime_error("Path to python script is empty");
+/**
+ * c++98 must be used and popen is forbiden, so this is the reason why we use fork and exec
+ * the problem is that waitpid is blocking the process, so we need
+ * to find a way to make it non-blocking
+ **/
 
-	// Create pipes for communication between parent and child processes
+std::string runCommand(const std::string &scriptPath)
+{
+	const int TIMEOUT_SECONDS = 20;
+
+	if (scriptPath.empty()) {
+		throw std::invalid_argument("Empty script path");
+	}
+
 	int pipe_fd[2];
 	if (pipe(pipe_fd) == -1) {
 		std::cerr << "Failed to create pipe" << std::endl;
@@ -50,9 +58,8 @@ std::string runCommand() {
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0) { // Child process
-		// Close the read end of the pipe
-		close(pipe_fd[0]);
+	if (pid == 0) {		   // Child process
+		close(pipe_fd[0]); // Close the read end of the pipe
 
 		// Redirect stdout to the write end of the pipe
 		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
@@ -60,47 +67,42 @@ std::string runCommand() {
 			exit(EXIT_FAILURE);
 		}
 
-		char *argv[] = {const_cast<char *>("/usr/bin/python3"), const_cast<char *>(path.c_str()),
-						0};
-		if (execve("/usr/bin/python3", argv, 0) == -1) {
-			std::cerr << "Failed to execute CGI script" << std::endl;
+		alarm(TIMEOUT_SECONDS);
+
+		if (execl("/usr/bin/python3", "python3", relativePath(scriptPath).c_str(), NULL) == -1) {
+			std::cerr << "Failed to execute Python script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-	} else { // Parent process
-		// Close the write end of the pipe
+	}
+	else {
 		close(pipe_fd[1]);
 
-		// Read the output from the child process
-		char buffer[128];
+		char buffer[128]; // output from the child process
 		std::string result;
 		ssize_t bytes_read;
+
 		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
 			result.append(buffer, bytes_read);
 		}
 
-		// Close the read end of the pipe
 		close(pipe_fd[0]);
 
-		// Wait for the child process to complete
 		int status;
-		waitpid(pid, &status, 0);
+		waitpid(pid, &status, 0); // blocks until the child process exits
 
-		// Check if the child process terminated successfully
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			std::cerr << "Child process failed" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-			   intToString(result.length()) + "\r\n\r\n" + result;
+		return result;
 	}
 	return "";
 }
 
-std::string Cgi::run() {
-
+std::string Cgi::run(const std::string &scriptPath)
+{
 	std::string result = "";
-	result = runCommand();
-
+	result = runCommand(scriptPath);
 	return result;
 }

@@ -1,21 +1,31 @@
-#include "./Server.hpp"
-#include "../Cgi/Cgi.hpp"
+#include "Server.hpp"
+#include <signal.h>
+#include "Cgi.hpp"
+#include "utils.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
 const int BUFFER_SIZE = 1024;
 
-int PORT = 8080; // TODO needs to be set by config file
+std::string CGI_BIN = "hello.py"; // TODO load from config
 
-Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port) {
-
+Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
+{
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
 	start();
 }
 
-void Server::start() {
+void Server::stop(int signal)
+{
+	(void)signal;
+	log("\nServer stopped");
+	exit(0);
+}
+
+void Server::start()
+{
 	_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socket_fd == -1)
 		throw SocketErrorException();
@@ -33,7 +43,11 @@ void Server::start() {
 	fds[0].fd = _socket_fd;
 	fds[0].events = POLLIN;
 
-	std::cout << "Server listening on http://localhost:" << PORT << std::endl;
+	std::cout << "Server started on http://localhost:" << _port << std::endl;
+
+	// handle ctrl+c
+
+	signal(SIGINT, stop);
 
 	while (true) {
 		int activity = poll(fds, MAX_EVENTS, -1);
@@ -55,7 +69,8 @@ void Server::start() {
 	}
 }
 
-void Server::handle_request(int client_fd) {
+void Server::handle_request(int client_fd)
+{
 	char buffer[BUFFER_SIZE];
 	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	if (size == -1) {
@@ -65,29 +80,36 @@ void Server::handle_request(int client_fd) {
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
+	std::string content_type = getContentType(requested_file_path);
 
 	if (requested_file_path.find(".py") != std::string::npos) {
 		try {
 			Cgi cgi;
-			std::string response = cgi.run();
+			std::string cgi_response = cgi.run(CGI_BIN);
+
+			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
+				cgi_response.c_str();
+
 			send(client_fd, response.c_str(), response.size(), 0);
-		} catch (std::exception &e) {
+		}
+		catch (std::exception &e) {
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	} else if (file_content.empty()) {
-		std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
-		send(client_fd, response.c_str(), response.size(), 0);
-	} else {
-		// Determine content type based on file extension
-		std::string content_type = getContentType(requested_file_path);
-
-		// Construct HTTP response
+	}
+	else if (file_content.empty()) {
+		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
+		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
+	}
+	else {
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-							   "\r\nContent-Length: " + intToString(file_content.length()) +
-							   "\r\n\r\n" + file_content;
+			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
 }
 
-Server::~Server() { close(_socket_fd); }
+Server::~Server()
+{
+	close(_socket_fd);
+}

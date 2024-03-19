@@ -9,8 +9,8 @@ In the configuration file, you should be able to:
     
     • Setup the server_names or not.
 
-    •  The first server for a host:port will be the default for this host:port (that means
-    it will answer to all the requests that don’t belong to an other server).
+    • The first server for a host:port will be the default for this host:port (that means
+        it will answer to all the requests that don’t belong to an other server).
 
     • Setup default error pages.
  
@@ -38,8 +38,7 @@ In the configuration file, you should be able to:
       ◦ Make the route able to accept uploaded files and configure where they should
         be saved.
 
-    ∗ Do you wonder what a CGI is?
-    ∗ Because you won’t call the CGI directly, use the full path as PATH_INFO.
+    ∗ won’t call the CGI directly, use the full path as PATH_INFO.
 
     ∗ Just remember that, for chunked request, your server needs to unchunk
     it, the CGI will expect EOF as end of the body.
@@ -52,6 +51,3 @@ In the configuration file, you should be able to:
     ∗ The CGI should be run in the correct directory for relative path file access.
     
     ∗ Your server should work with one CGI (php-CGI, Python, and so forth).
-
-You must provide some configuration files and default basic files to test and demon-
-strate every feature works during eva
