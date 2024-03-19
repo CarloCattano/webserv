@@ -1,7 +1,7 @@
 #include "Server.hpp"
 #include <signal.h>
 #include "Cgi.hpp"
-#include "utils.hpp"
+#include "../Utils/utils.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -24,7 +24,7 @@ void Server::stop(int signal)
 	exit(0);
 }
 
-void Server::start()
+void Server::start_listen()
 {
 	_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socket_fd == -1)
@@ -32,17 +32,20 @@ void Server::start()
 
 	int opt = 1;
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
-
+	
 	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
 		throw BindErrorException();
 
 	if (listen(_socket_fd, BACKLOG) == -1)
 		throw ListenErrorException();
 
+}
+
+void Server::await_connections()
+{
 	struct pollfd fds[MAX_EVENTS];
 	fds[0].fd = _socket_fd;
 	fds[0].events = POLLIN;
-
 	std::cout << "Server started on http://localhost:" << _port << std::endl;
 
 	// handle ctrl+c
@@ -67,6 +70,13 @@ void Server::start()
 			close(client_fd);
 		}
 	}
+}
+
+void Server::start()
+{
+	start_listen();
+	await_connections();
+	
 }
 
 void Server::handle_request(int client_fd)

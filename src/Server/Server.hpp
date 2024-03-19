@@ -23,6 +23,8 @@ class Server {
 	~Server();
 
 	void start();
+	void start_listen();
+	void await_connections();
 
 	class BindErrorException : public std::exception {
 	  public:
