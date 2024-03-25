@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
 		std::cerr << "Usage: " << argv[0] << " [configuration file]" << std::endl;
 		return 1;
 	}
+
 	populateContentTypes();
 
 	try {
