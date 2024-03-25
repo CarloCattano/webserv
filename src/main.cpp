@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "Config.hpp"
 #include "Server.hpp"
-#include "utils.hpp"
+#include "./Utils/utils.hpp"
 
 void populateContentTypes()
 {
