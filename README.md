@@ -1,6 +1,8 @@
 # WEBSERV
  by ccattano bmacmaho jalbers
 
+BUG - there is zombie processes after the cgi is done running
+
  ```bash
  make re
  or 
