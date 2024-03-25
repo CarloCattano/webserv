@@ -1,8 +1,9 @@
 #include "Server.hpp"
-#include "Cgi.hpp"
-#include "utils.hpp"
+#include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include "Cgi.hpp"
+#include "utils.hpp"
 
 const int MAX_EVENTS = 10;
 const int BACKLOG = 10;
@@ -10,20 +11,23 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = "test.py"; // TODO load from config
 
-Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port) {
+Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
+{
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
 	start();
 }
 
-void Server::stop(int signal) {
+void Server::stop(int signal)
+{
 	(void)signal;
 	log("\nServer stopped");
 	exit(0);
 }
 
-void Server::start() {
+void Server::start()
+{
 	_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socket_fd == -1)
 		throw SocketErrorException();
@@ -62,13 +66,15 @@ void Server::start() {
 			}
 
 			handle_request(client_fd);
+			fcntl(client_fd, F_SETFL, O_NONBLOCK);
 			close(client_fd);
 		}
 	}
 	close(_socket_fd);
 }
 
-void Server::handle_request(int client_fd) {
+void Server::handle_request(int client_fd)
+{
 	char buffer[BUFFER_SIZE];
 	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
 
@@ -95,35 +101,50 @@ void Server::handle_request(int client_fd) {
 				std::string cgi_response = cgi.run(CGI_BIN);
 
 				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-									   "\r\nContent-Length: " + intToString(cgi_response.length()) +
-									   "\r\n\r\n" + cgi_response.c_str();
+					"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
+					cgi_response.c_str();
 				send(client_fd, response.c_str(), response.size(), 0);
+				close(client_fd);
 				exit(0);
-			} catch (std::exception &e) {
+			}
+			catch (std::exception &e) {
 				std::cerr << "Error: " << e.what() << std::endl;
 			}
 			close(client_fd);
 			exit(0);
-		} else { // Parent process
+		}
+		else { // Parent process
 			// Non-blocking wait for the child process to complete
 			int status;
 			waitpid(pid, &status, WNOHANG);
+
+			if (WIFEXITED(status)) {
+				std::cout << "Child process exited normally" << std::endl;
+				close(client_fd);
+			}
+			else {
+				std::cout << "Child process exited abnormally" << std::endl;
+				close(client_fd);
+			}
 		}
-
-	} else if (file_content.empty()) {
-
+	}
+	else if (file_content.empty()) {
 		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
 		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
-
-	} else {
+	}
+	else {
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-							   "\r\nContent-Length: " + intToString(file_content.length()) +
-							   "\r\n\r\n" + file_content;
+			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
 
 	close(client_fd);
+	// handle parent process , no zombie process
+	signal(SIGCHLD, SIG_IGN); // this will ignore the signal sent by child process
 }
 
-Server::~Server() { close(_socket_fd); }
+Server::~Server()
+{
+	close(_socket_fd);
+}

@@ -73,6 +73,7 @@ std::string runCommand(const std::string &scriptPath)
 			std::cerr << "Failed to execute Python script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
+		exit(EXIT_SUCCESS);
 	}
 	else {
 		close(pipe_fd[1]);
