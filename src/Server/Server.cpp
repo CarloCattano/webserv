@@ -88,8 +88,8 @@ void Server::handle_request(int client_fd)
 	std::string content_type = getContentType(requested_file_path);
 
 	if (requested_file_path.find(".py") != std::string::npos) {
-		// Start CGI execution asynchronously
 		pid_t pid = fork();
+
 		if (pid == -1) {
 			perror("fork");
 			return;
@@ -116,15 +116,25 @@ void Server::handle_request(int client_fd)
 		else { // Parent process
 			// Non-blocking wait for the child process to complete
 			int status;
-			waitpid(pid, &status, WNOHANG);
+			int result = waitpid(pid, &status, WNOHANG);
 
-			if (WIFEXITED(status)) {
-				std::cout << "Child process exited normally" << std::endl;
-				close(client_fd);
+			if (result == -1) {
+				perror("waitpid");
+				return;
+			}
+
+			else if (result == 0) {
+				return;
 			}
 			else {
-				std::cout << "Child process exited abnormally" << std::endl;
-				close(client_fd);
+				if (WIFEXITED(status)) {
+					std::cout << "Child process exited normally" << std::endl;
+					close(client_fd);
+				}
+				else {
+					std::cout << "Child process exited abnormally" << std::endl;
+					close(client_fd);
+				}
 			}
 		}
 	}
