@@ -65,6 +65,7 @@ void Server::start() {
 			close(client_fd);
 		}
 	}
+	close(_socket_fd);
 }
 
 void Server::handle_request(int client_fd) {
@@ -88,7 +89,7 @@ void Server::handle_request(int client_fd) {
 			return;
 		}
 
-		if (pid == 0) { // Child process
+		if (pid == 0) {
 			try {
 				Cgi cgi;
 				std::string cgi_response = cgi.run(CGI_BIN);
@@ -97,7 +98,6 @@ void Server::handle_request(int client_fd) {
 									   "\r\nContent-Length: " + intToString(cgi_response.length()) +
 									   "\r\n\r\n" + cgi_response.c_str();
 				send(client_fd, response.c_str(), response.size(), 0);
-				// Exit child process after CGI execution
 				exit(0);
 			} catch (std::exception &e) {
 				std::cerr << "Error: " << e.what() << std::endl;
@@ -107,16 +107,14 @@ void Server::handle_request(int client_fd) {
 		} else { // Parent process
 			// Non-blocking wait for the child process to complete
 			int status;
-			while (waitpid(pid, &status, WNOHANG) == 0) {
-				// Sleep for a short interval to avoid busy-waiting
-				usleep(100); // Sleep for 1 millisecond
-			}
-			return;
+			waitpid(pid, &status, WNOHANG);
 		}
 
 	} else if (file_content.empty()) {
+
 		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
 		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
+
 	} else {
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 							   "\r\nContent-Length: " + intToString(file_content.length()) +
@@ -124,6 +122,8 @@ void Server::handle_request(int client_fd) {
 
 		send(client_fd, response.c_str(), response.size(), 0);
 	}
+
+	close(client_fd);
 }
 
 Server::~Server() { close(_socket_fd); }
