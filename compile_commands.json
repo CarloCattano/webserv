@@ -58,45 +58,5 @@
     "directory": "/home/carlo/42/webserv",
     "file": "/home/carlo/42/webserv/src/Cgi/Cgi.cpp",
     "output": "/home/carlo/42/webserv/src/Cgi/Cgi.o"
-  },
-  {
-    "arguments": [
-      "/sbin/c++",
-      "-c",
-      "-Wall",
-      "-Werror",
-      "-Wextra",
-      "-std=c++98",
-      "-I./src/Cgi",
-      "-I./src/Server",
-      "-I./src/Config",
-      "-I./src/Utils",
-      "-o",
-      "src/Server/Server.o",
-      "src/Server/Server.cpp"
-    ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Server/Server.cpp",
-    "output": "/home/carlo/42/webserv/src/Server/Server.o"
-  },
-  {
-    "arguments": [
-      "/sbin/c++",
-      "-c",
-      "-Wall",
-      "-Werror",
-      "-Wextra",
-      "-std=c++98",
-      "-I./src/Cgi",
-      "-I./src/Server",
-      "-I./src/Config",
-      "-I./src/Utils",
-      "-o",
-      "src/Config/Config.o",
-      "src/Config/Config.cpp"
-    ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Config/Config.cpp",
-    "output": "/home/carlo/42/webserv/src/Config/Config.o"
   }
 ]

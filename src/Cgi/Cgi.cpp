@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <sys/wait.h>
 #include "utils.hpp"
+// include for execve
+#include <string.h>
+#include <unistd.h>
 
 Cgi::Cgi()
 {
@@ -27,8 +30,10 @@ Cgi::Cgi(const Cgi &src)
 
 std::string relativePath(std::string path)
 {
+	// add main folder abs path
+	std::string mainFolder = "/home/carlo/42/webserv/";
 	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
-	std::string result = prefix + path;
+	std::string result = mainFolder + prefix + path;
 	return result;
 }
 
@@ -69,7 +74,11 @@ std::string runCommand(const std::string &scriptPath)
 
 		alarm(TIMEOUT_SECONDS);
 
-		if (execl("/usr/bin/python3", "python3", relativePath(scriptPath).c_str(), NULL) == -1) {
+		char pyBin[] = "/usr/bin/python3";
+
+		char *av[] = { pyBin, strdup(scriptPath.c_str()), NULL };
+
+		if (execve(pyBin, av, NULL) == -1) {
 			std::cerr << "Failed to execute Python script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
