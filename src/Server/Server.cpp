@@ -36,6 +36,13 @@ void Server::stop(int signal)
 	exit(0);
 }
 
+void handleSigchild(int sig)
+{
+	(void)sig;
+	while (waitpid(-1, NULL, WNOHANG) > 0)
+		continue;
+}
+
 void Server::start_listen()
 {
 	_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -62,6 +69,7 @@ void Server::await_connections()
 	// handle ctrl+c
 
 	signal(SIGINT, stop);
+	signal(SIGCHLD, handleSigchild);
 
 	while (true) {
 		int activity = poll(fds, MAX_EVENTS, -1);
@@ -89,6 +97,8 @@ void Server::start()
 {
 	start_listen();
 	await_connections();
+	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
+		perror("signal(SIGCHLD) error");
 }
 
 void Server::handle_request(int client_fd)
@@ -125,7 +135,7 @@ void Server::handle_request(int client_fd)
 					cgi_response.c_str();
 				send(client_fd, response.c_str(), response.size(), 0);
 				close(client_fd);
-				exit(0);
+				exit(0); // Exit the child process
 			}
 			catch (std::exception &e) {
 				std::cerr << "Error: " << e.what() << std::endl;
@@ -133,7 +143,6 @@ void Server::handle_request(int client_fd)
 			}
 		}
 		else {
-			// Parent process
 			// Close the client socket in the parent process and continue accepting connections
 			close(client_fd);
 		}

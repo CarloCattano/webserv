@@ -98,12 +98,27 @@ std::string runCommand(const std::string &scriptPath)
 		close(pipe_fd[0]);
 
 		int status;
-		waitpid(pid, &status, 0); // blocks until the child process exits
 
-		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-			std::cerr << "Child process failed" << std::endl;
-			exit(EXIT_FAILURE);
+		// while waipid WNOHANG
+		while (waitpid(pid, &status, WNOHANG) == 0) {
+			continue;
 		}
+
+		/* 		if (WIFEXITED(status)) { */
+		/* 			std::cout << "Child process exited with status " << WEXITSTATUS(status) <<
+		 * std::endl; */
+		/* 		} */
+		/* 		else if (WIFSIGNALED(status)) { */
+		/* 			std::cout << "Child process killed by signal " << WTERMSIG(status) << std::endl;
+		 */
+		/* 		} */
+		/* 		else if (WIFSTOPPED(status)) { */
+		/* 			std::cout << "Child process stopped by signal " << WSTOPSIG(status) <<
+		 * std::endl; */
+		/* 		} */
+		/* 		else if (WIFCONTINUED(status)) { */
+		/* 			std::cout << "Child process continued" << std::endl; */
+		/* 		} */
 
 		return result;
 	}
