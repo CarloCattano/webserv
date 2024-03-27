@@ -135,7 +135,7 @@ void Server::handle_request(int client_fd)
 					cgi_response.c_str();
 				send(client_fd, response.c_str(), response.size(), 0);
 				close(client_fd);
-				exit(0);
+				exit(0); // Exit the child process
 			}
 			catch (std::exception &e) {
 				std::cerr << "Error: " << e.what() << std::endl;
@@ -143,7 +143,6 @@ void Server::handle_request(int client_fd)
 			}
 		}
 		else {
-			// Parent process
 			// Close the client socket in the parent process and continue accepting connections
 			close(client_fd);
 		}
