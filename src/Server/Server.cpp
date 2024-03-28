@@ -2,15 +2,17 @@
 #include <string>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/epoll.h>
 #include <sys/wait.h>
 #include "../Utils/utils.hpp"
 #include "Cgi.hpp"
 
-const int MAX_EVENTS = 10;
-const int BACKLOG = 10;
+const int MAX_EVENTS = 100;
+const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
 
 // get the path of the folder from where the server is run
+
 std::string get_current_dir()
 {
 	char cwd[1024];
@@ -37,6 +39,10 @@ void Server::stop(int signal)
 	exit(0);
 }
 
+// takes care of the signal when a child process is terminated
+// and the parent process is not waiting for it
+// so it doesn't become a zombie process
+
 void handleSigchild(int sig)
 {
 	(void)sig;
@@ -52,6 +58,8 @@ void Server::start_listen()
 
 	int opt = 1;
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
+
+	fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
 
 	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
 		throw BindErrorException();
@@ -70,7 +78,7 @@ void Server::await_connections()
 	signal(SIGINT, stop);
 
 	while (1) {
-		int activity = poll(fds, MAX_EVENTS, -1);
+		int activity = poll(fds, MAX_EVENTS, 1);
 		if (activity == -1) {
 			perror("poll");
 			continue;
@@ -85,17 +93,20 @@ void Server::await_connections()
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				continue;
 			}
-
 			_clients.push_back(client_fd);
-
 			handle_request(client_fd);
 		}
-		else {
-			usleep(1000);
+
+		else { // avoid busy waiting high cpu usage
+			struct epoll_event ev;
+			ev.events = EPOLLIN;
+			ev.data.fd = _socket_fd;
+			int epoll_fd = epoll_create1(0);
+			epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _socket_fd, &ev);
+			epoll_wait(epoll_fd, &ev, 1, -1);
 		}
 	}
 	close(_socket_fd);
-	std::cout << "Server socket: " << _socket_fd << " closed" << std::endl;
 }
 
 void Server::start()
@@ -117,11 +128,17 @@ void Server::handle_request(int client_fd)
 		return;
 	}
 
+	fcntl(client_fd, F_SETFL, O_NONBLOCK);
+
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
 	if (requested_file_path.find(".py") != std::string::npos) {
+		// TODO check if file exists and we are allowed to execute it
+		//      from the config file
+		// TODO check if the file is executable provided by config only
+
 		pid_t pid = fork();
 
 		if (pid == -1) {
@@ -133,12 +150,15 @@ void Server::handle_request(int client_fd)
 			// Child process - for every request
 			try {
 				close(_socket_fd); // Close the listening socket in the child process
+
 				Cgi cgi;
+
 				std::string cgi_response = cgi.run(CGI_BIN);
 
 				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 					"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
 					cgi_response.c_str();
+
 				send(client_fd, response.c_str(), response.size(), 0);
 				close(client_fd);
 				exit(0); // Exit the child process
