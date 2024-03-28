@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <string>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
@@ -66,12 +67,9 @@ void Server::await_connections()
 	fds[0].events = POLLIN;
 	std::cout << "Server started on http://localhost:" << _port << std::endl;
 
-	// handle ctrl+c
-
 	signal(SIGINT, stop);
-	signal(SIGCHLD, handleSigchild);
 
-	while (true) {
+	while (1) {
 		int activity = poll(fds, MAX_EVENTS, -1);
 		if (activity == -1) {
 			perror("poll");
@@ -84,27 +82,35 @@ void Server::await_connections()
 				perror("accept");
 				continue;
 			}
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				continue;
+			}
+
+			_clients.push_back(client_fd);
 
 			handle_request(client_fd);
-			fcntl(client_fd, F_SETFL, O_NONBLOCK);
-			close(client_fd);
+		}
+		else {
+			usleep(1000);
 		}
 	}
 	close(_socket_fd);
+	std::cout << "Server socket: " << _socket_fd << " closed" << std::endl;
 }
 
 void Server::start()
 {
-	start_listen();
-	await_connections();
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
 		perror("signal(SIGCHLD) error");
+
+	start_listen();
+	await_connections();
 }
 
 void Server::handle_request(int client_fd)
 {
 	char buffer[BUFFER_SIZE];
-	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
+	int size = recv(client_fd, buffer, BUFFER_SIZE, 0); // MSG_DONTWAIT);
 
 	if (size == -1) {
 		perror("recv");
