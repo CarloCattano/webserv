@@ -4,9 +4,9 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -22,3 +22,4 @@ std::string getContentType(const std::string &filename);
 std::string readFileToString(const std::string &filename);
 std::string intToString(int value);
 std::string extract_requested_file_path(const char *buffer);
+std::string get_current_dir();
