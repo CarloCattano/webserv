@@ -70,43 +70,55 @@ void Server::start_listen()
 
 void Server::await_connections()
 {
-	struct pollfd fds[MAX_EVENTS];
-	fds[0].fd = _socket_fd;
-	fds[0].events = POLLIN;
-	std::cout << "Server started on http://localhost:" << _port << std::endl;
+	/* fds[0].fd = _socket_fd; */
+	/* fds[0].events = POLLIN; */
+	/* std::cout << "Server started on http://localhost:" << _port << std::endl; */
 
-	signal(SIGINT, stop);
+	int epoll_fd = epoll_create1(0);
+	if (epoll_fd == -1) {
+		perror("epoll_create1");
+		exit(EXIT_FAILURE);
+	}
+
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = _socket_fd;
+
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _socket_fd, &ev) == -1) {
+		perror("epoll_ctl");
+		exit(EXIT_FAILURE);
+	}
 
 	while (1) {
-		int activity = poll(fds, MAX_EVENTS, 1);
-		if (activity == -1) {
-			perror("poll");
+		struct epoll_event events[MAX_EVENTS];
+		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		if (num_events == -1) {
 			continue;
 		}
 
-		if (fds[0].revents & POLLIN) {
-			int client_fd = accept(_socket_fd, NULL, NULL);
-			if (client_fd == -1) {
-				perror("accept");
-				continue;
-			}
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				continue;
-			}
-			_clients.push_back(client_fd);
-			handle_request(client_fd);
-		}
+		for (int i = 0; i < num_events; ++i) {
+			if (events[i].data.fd == _socket_fd) {
+				int client_fd = accept(_socket_fd, NULL, NULL);
+				if (client_fd == -1) {
+					perror("accept");
+					continue;
+				}
+				fcntl(client_fd, F_SETFL, O_NONBLOCK);
+				ev.events = EPOLLIN | EPOLLET; // Add client socket to epoll
+				ev.data.fd = client_fd;
 
-		else { // avoid busy waiting high cpu usage
-			struct epoll_event ev;
-			ev.events = EPOLLIN;
-			ev.data.fd = _socket_fd;
-			int epoll_fd = epoll_create1(0);
-			epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _socket_fd, &ev);
-			epoll_wait(epoll_fd, &ev, 1, -1);
+				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
+					perror("epoll_ctl");
+					exit(EXIT_FAILURE);
+				}
+			}
+			else {
+				int client_fd = events[i].data.fd;
+				handle_request(client_fd);
+				close(client_fd);
+			}
 		}
 	}
-	close(_socket_fd);
 }
 
 void Server::start()
@@ -114,6 +126,7 @@ void Server::start()
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
 		perror("signal(SIGCHLD) error");
 
+	signal(SIGINT, stop);
 	start_listen();
 	await_connections();
 }
