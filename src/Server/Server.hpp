@@ -2,11 +2,11 @@
 #define SERVER_HPP
 
 #include <string>
-#include <vector>
 #include <arpa/inet.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "../Utils/FileUpload.hpp"
 
 class Server {
 private:
@@ -17,8 +17,8 @@ private:
 
 	void handle_request(int fd);
 	static void stop(int signal);
-	// clients fds
-	std::vector<int> _clients;
+
+	FileUploader uploader;
 
 public:
 	Server(std::string ip_address, int port);

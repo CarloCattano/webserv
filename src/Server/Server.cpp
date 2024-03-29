@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <cstring>
 #include <string>
 #include <fcntl.h>
 #include <signal.h>
@@ -13,12 +14,46 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
+bool is_file_upload_request(const char *request)
+{
+	const char *content_type_header = strstr(request, "Content-Type:");
+	if (content_type_header != NULL) {
+		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
+		if (multipart_form_data != NULL) {
+			return true;
+		}
+	}
+	return false;
+}
+
+enum HttpMethod { GET, POST, DELETE, UNKNOWN };
+
+HttpMethod get_http_method(const char *request)
+{
+	// Find the first space in the request line
+	const char *first_space = strchr(request, ' ');
+	if (first_space != NULL) {
+		// Extract the HTTP method from the request line
+		std::string method(request, first_space - request);
+		if (method == "GET") {
+			return GET;
+		}
+		else if (method == "POST") {
+			return POST;
+		}
+		else if (method == "DELETE") {
+			return DELETE;
+		}
+	}
+	return UNKNOWN; // Unable to determine HTTP method
+}
+
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
-	start();
+	Server::start();
 }
 
 void Server::stop(int signal)
@@ -28,9 +63,9 @@ void Server::stop(int signal)
 	exit(0);
 }
 
-// takes care of the signal when a child process is terminated
-// and the parent process is not waiting for it
-// so it doesn't become a zombie process
+/* takes care of the signal when a child process is terminated
+	and the parent process is not waiting for it
+	so it doesn't become a zombie process */
 
 void handleSigchild(int sig)
 {
@@ -162,6 +197,12 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
+	// TODO file uploead request
+	if (is_file_upload_request(buffer)) {
+		std::cout << "File upload request" << std::endl;
+		uploader.handle_file_upload(client_fd, requested_file_path, size);
+	}
+
 	if (requested_file_path.find(".py") != std::string::npos) {
 		// TODO check if file exists and we are allowed to execute it
 		//      from the config file
@@ -187,7 +228,7 @@ void Server::handle_request(int client_fd)
 
 			send(client_fd, response.c_str(), response.size(), 0);
 			close(client_fd);
-			exit(0); // Exit the child process
+			exit(0);
 		}
 		else {
 			// Close the client socket in the parent process and continue accepting connections
@@ -200,6 +241,9 @@ void Server::handle_request(int client_fd)
 		close(client_fd);
 	}
 	else {
+		// TODO filter http methods
+		// get_http_method(buffer);
+
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
