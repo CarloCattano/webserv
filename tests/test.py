@@ -5,7 +5,7 @@ import sys
 
 def send_curl_request(url):
     start_time = time.time()
-    response = requests.post(url)
+    response = requests.get(url)
     end_time = time.time()
     response_time = end_time - start_time
     print(f"Response at {time.strftime('%H:%M:%S')} took {response_time:.2f} seconds")

@@ -63,10 +63,10 @@ std::string runCommand(const std::string &scriptPath)
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0) {		   // Child process
-		close(pipe_fd[0]); // Close the read end of the pipe
+	if (pid == 0) {
+		close(pipe_fd[0]); // Close read
 
-		// Redirect stdout to the write end of the pipe
+		// stdout to write
 		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
 			std::cerr << "Failed to redirect stdout" << std::endl;
 			exit(EXIT_FAILURE);
@@ -87,7 +87,7 @@ std::string runCommand(const std::string &scriptPath)
 	else {
 		close(pipe_fd[1]);
 
-		char buffer[128]; // output from the child process
+		char buffer[1024]; // output from the child process
 		std::string result;
 		ssize_t bytes_read;
 
@@ -99,26 +99,9 @@ std::string runCommand(const std::string &scriptPath)
 
 		int status;
 
-		// while waipid WNOHANG
 		while (waitpid(pid, &status, WNOHANG) == 0) {
 			continue;
 		}
-
-		/* 		if (WIFEXITED(status)) { */
-		/* 			std::cout << "Child process exited with status " << WEXITSTATUS(status) <<
-		 * std::endl; */
-		/* 		} */
-		/* 		else if (WIFSIGNALED(status)) { */
-		/* 			std::cout << "Child process killed by signal " << WTERMSIG(status) << std::endl;
-		 */
-		/* 		} */
-		/* 		else if (WIFSTOPPED(status)) { */
-		/* 			std::cout << "Child process stopped by signal " << WSTOPSIG(status) <<
-		 * std::endl; */
-		/* 		} */
-		/* 		else if (WIFCONTINUED(status)) { */
-		/* 			std::cout << "Child process continued" << std::endl; */
-		/* 		} */
 
 		return result;
 	}

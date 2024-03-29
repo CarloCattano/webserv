@@ -18,4 +18,18 @@ make: *** [Makefile:19: run] Aborted (core dumped)
 - Load the cgi-bin python script and cgi-bin allowed directory from the 
   nginx style configuration file
 
-- Abstract response/request headers, status code, and body to a class
+### Requests and Responses
+
+ * Abstract response/request headers, status code, and body to a class
+
+ * Filter requests by type and path
+
+ * Check for allowed paths
+
+ * Check for allowed methods
+
+ * Check for allowed headers
+
+* fix hardcoded path extraction from the request
+
+
