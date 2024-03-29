@@ -3,6 +3,8 @@
 #include <iostream>
 #include <map>
 #include <sstream>
+// getcwd include
+#include <unistd.h>
 
 std::map<std::string, std::string> content_types;
 
