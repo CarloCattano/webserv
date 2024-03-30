@@ -200,7 +200,13 @@ void Server::handle_request(int client_fd)
 		return;
 	}
 
-	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
+	/* int size = recv(client_fd, buffer, BUFFER_SIZE, 0); */
+
+	// non blocking recv version
+	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		return;
+	}
 
 	if (size == -1) {
 		perror("recv");
@@ -227,7 +233,8 @@ void Server::handle_request(int client_fd)
 			std::cout << "Filename: " << filename << " Content-Type: " << content_type << std::endl;
 			std::cout << "Size: " << file_content.size() << std::endl;
 			std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
-			uploader.handle_file_upload(client_fd, filename, file_content.size());
+			uploader.handle_file_upload(
+				client_fd, filename, file_content.size()); // TODO file content size is 0
 		}
 		break;
 	case DELETE:

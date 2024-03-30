@@ -23,23 +23,23 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 	ssize_t bytes_received;
 	int file_fd;
 
-	bytes_received = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
-	if (bytes_received <= 0) {
-		perror("Error receiving filename");
-		return;
-	}
-
-	buffer[bytes_received] = '\0'; // Null-terminate the received filename
-
 	file_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+	std::cout << "File size: " << file_size << std::endl;
+	std::cout << "File descriptor: " << file_fd << std::endl;
+	std::cout << "Filename: " << filename << std::endl;
+	std::cout << "Client file descriptor: " << client_fd << std::endl;
+	std::cout << "Buffer size: " << BUFFER_SIZE << std::endl;
+
 	if (file_fd == -1) {
 		perror("Error opening file");
 		return;
 	}
 
-	// Read data from client and write to file
 	while (total_bytes_received < file_size) {
+		std::cout << " Entered while loop\n" << std::endl;
 		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+		std::cout << "DEBUG\n---------------\nBytes received: " << bytes_received << std::endl;
 		if (bytes_received > 0) {
 			std::cout << "Bytes received: " << bytes_received << std::endl;
 			ssize_t bytes_written = write(file_fd, buffer, bytes_received);
@@ -57,7 +57,7 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 		else {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				// No data available, wait and try again
-				/* usleep(1000); // Sleep for 1 millisecond */
+				usleep(1000); // Sleep for 1 millisecond
 				/* std::cout << "No data available, waiting..." << std::endl; */
 				continue;
 			}
