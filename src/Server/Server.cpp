@@ -14,6 +14,20 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
+std::string extract_filename_from_request(const char *request)
+{
+	const char *filename_field = strstr(request, "filename=");
+	if (filename_field != NULL) {
+		const char *filename_start = filename_field + strlen("filename=");
+		const char *filename_end = strstr(filename_start, "\r\n");
+		if (filename_end != NULL) {
+			std::string filename(filename_start, filename_end - filename_start);
+			return filename;
+		}
+	}
+	return "";
+}
+
 bool is_file_upload_request(const char *request)
 {
 	const char *content_type_header = strstr(request, "Content-Type:");
@@ -197,6 +211,33 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
+	// get the request type (GET, POST, DELETE)
+	HttpMethod method = get_http_method(buffer);
+	switch (method) {
+	case GET:
+		std::cout << "GET" << std::endl;
+		break;
+	case POST:
+		std::cout << "POST" << std::endl;
+		if (is_file_upload_request(buffer)) {
+			std::cout << "File upload request" << std::endl;
+			std::string filename = extract_filename_from_request(buffer);
+			std::string content_type = getContentType(filename);
+
+			std::cout << "Filename: " << filename << " Content-Type: " << content_type << std::endl;
+			std::cout << "Size: " << file_content.size() << std::endl;
+			std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
+			uploader.handle_file_upload(client_fd, filename, file_content.size());
+		}
+		break;
+	case DELETE:
+		std::cout << "DELETE" << std::endl;
+		break;
+	case UNKNOWN:
+		std::cout << "UNKNOWN" << std::endl;
+		break;
+	}
+
 	// Fork a new process for every request
 	pid_t pid = fork();
 
@@ -207,14 +248,7 @@ void Server::handle_request(int client_fd)
 
 	if (pid == 0) {
 		// Child process
-		close(_socket_fd); // Close the listening socket in the child process
-
-		// Handle the request in the child process
-		// For example, handle file upload or execute CGI script
-		if (is_file_upload_request(buffer)) {
-			std::cout << "File upload request" << std::endl;
-			uploader.handle_file_upload(client_fd, requested_file_path, size);
-		}
+		close(_socket_fd);
 
 		if (requested_file_path.find(".py") != std::string::npos) {
 			// Handle CGI request
