@@ -197,29 +197,28 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
-	// TODO file uploead request
-	if (is_file_upload_request(buffer)) {
-		std::cout << "File upload request" << std::endl;
-		uploader.handle_file_upload(client_fd, requested_file_path, size);
+	// Fork a new process for every request
+	pid_t pid = fork();
+
+	if (pid == -1) {
+		perror("fork");
+		return;
 	}
 
-	if (requested_file_path.find(".py") != std::string::npos) {
-		// TODO check if file exists and we are allowed to execute it
-		//      from the config file
-		// TODO check if the file is executable provided by config only
+	if (pid == 0) {
+		// Child process
+		close(_socket_fd); // Close the listening socket in the child process
 
-		pid_t pid = fork();
-
-		if (pid == -1) {
-			perror("fork");
-			return;
+		// Handle the request in the child process
+		// For example, handle file upload or execute CGI script
+		if (is_file_upload_request(buffer)) {
+			std::cout << "File upload request" << std::endl;
+			uploader.handle_file_upload(client_fd, requested_file_path, size);
 		}
 
-		if (pid == 0) {
-			close(_socket_fd); // Close the listening socket in the child process
-
+		if (requested_file_path.find(".py") != std::string::npos) {
+			// Handle CGI request
 			Cgi cgi;
-
 			std::string cgi_response = cgi.run(CGI_BIN);
 
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
@@ -231,23 +230,19 @@ void Server::handle_request(int client_fd)
 			exit(0);
 		}
 		else {
-			// Close the client socket in the parent process and continue accepting connections
+			// Handle other types of requests
+			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+				"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
+				file_content;
+
+			send(client_fd, response.c_str(), response.size(), 0);
 			close(client_fd);
+			exit(0);
 		}
 	}
-	else if (file_content.empty()) {
-		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
-		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
-		close(client_fd);
-	}
 	else {
-		// TODO filter http methods
-		// get_http_method(buffer);
-
-		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
-
-		send(client_fd, response.c_str(), response.size(), 0);
+		// Parent process
+		// Close the client socket in the parent process and continue accepting connections
 		close(client_fd);
 	}
 }
