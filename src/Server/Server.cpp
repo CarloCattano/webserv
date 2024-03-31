@@ -14,6 +14,19 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
+std::size_t extract_content_length(const char *request)
+{
+	const char *content_length_header = strstr(request, "Content-Length:");
+	if (content_length_header != NULL) {
+		// Skip the "Content-Length:" prefix
+		content_length_header += strlen("Content-Length:");
+		// Convert the value to size_t
+		return std::strtoul(content_length_header, NULL, 10);
+	}
+	// If Content-Length header is not found or invalid, return 0
+	return 0;
+}
+
 std::string extract_filename_from_request(const char *request)
 {
 	const char *filename_field = strstr(request, "filename=");
@@ -230,11 +243,12 @@ void Server::handle_request(int client_fd)
 			std::string filename = extract_filename_from_request(buffer);
 			std::string content_type = getContentType(filename);
 
+			std::string file_size_str = intToString(extract_content_length(buffer));
 			std::cout << "Filename: " << filename << " Content-Type: " << content_type << std::endl;
 			std::cout << "Size: " << file_content.size() << std::endl;
 			std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
 			uploader.handle_file_upload(
-				client_fd, filename, file_content.size()); // TODO file content size is 0
+				client_fd, filename, extract_content_length(buffer)); // TODO file content size is 0
 		}
 		break;
 	case DELETE:

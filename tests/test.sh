@@ -6,7 +6,7 @@ T_DIFF=0
 # Function to send curl request
 send_curl_request() {
     T_START=$(date +%s)
-    curl -X POST http://localhost:4222/cgi-bin/test.py &> /dev/null 
+    curl -X GET http://localhost:4222/cgi-bin/test.py &> /dev/null 
     T_END=$(date +%s)
     T_DIFF=$(($T_END - $T_START))
     echo "Response at $(date +%H:%M:%S) took $T_DIFF seconds"

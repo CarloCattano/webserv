@@ -1,4 +1,5 @@
 #include "FileUpload.hpp"
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <errno.h>
@@ -17,37 +18,21 @@ FileUploader::~FileUploader()
 
 void FileUploader::handle_file_upload(int client_fd, const std::string &filename, int file_size)
 {
-	const int BUFFER_SIZE = 1024; // Choose an appropriate buffer size
+	const int BUFFER_SIZE = 1024;
 	char buffer[BUFFER_SIZE];
 	ssize_t total_bytes_received = 0; // Total bytes received from the client
 	ssize_t bytes_received;
-	int file_fd;
 
-	file_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
-
-	std::cout << "File size: " << file_size << std::endl;
-	std::cout << "File descriptor: " << file_fd << std::endl;
-	std::cout << "Filename: " << filename << std::endl;
-	std::cout << "Client file descriptor: " << client_fd << std::endl;
-	std::cout << "Buffer size: " << BUFFER_SIZE << std::endl;
-
-	if (file_fd == -1) {
-		perror("Error opening file");
+	std::ofstream outfile(filename.c_str(), std::ios::binary);
+	if (!outfile) {
+		std::cerr << "Failed to open file for writing." << std::endl;
 		return;
 	}
 
 	while (total_bytes_received < file_size) {
-		std::cout << " Entered while loop\n" << std::endl;
-		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-		std::cout << "DEBUG\n---------------\nBytes received: " << bytes_received << std::endl;
+		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
 		if (bytes_received > 0) {
-			std::cout << "Bytes received: " << bytes_received << std::endl;
-			ssize_t bytes_written = write(file_fd, buffer, bytes_received);
-			if (bytes_written < 0) {
-				perror("Error writing to file");
-				break;
-			}
-			std::cout << "Bytes written: " << bytes_written << std::endl;
+			outfile.write(buffer, bytes_received);
 			total_bytes_received += bytes_received; // Update total bytes received
 		}
 		else if (bytes_received == 0) {
@@ -67,8 +52,9 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 				break;
 			}
 		}
+		std::cout << "Total bytes received: " << total_bytes_received << std::endl;
 	}
 
-	close(file_fd);
+	outfile.close();
 	std::cout << "File closed" << std::endl;
 }
