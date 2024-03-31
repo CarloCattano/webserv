@@ -158,7 +158,7 @@ void Server::await_connections()
 					continue;
 				}
 
-				ev.events = EPOLLIN | EPOLLET; // Add client socket to epoll
+				ev.events = EPOLLIN | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLOUT;
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -232,32 +232,6 @@ void Server::handle_request(int client_fd)
 
 	// get the request type (GET, POST, DELETE)
 	HttpMethod method = get_http_method(buffer);
-	switch (method) {
-	case GET:
-		std::cout << "GET" << std::endl;
-		break;
-	case POST:
-		std::cout << "POST" << std::endl;
-		if (is_file_upload_request(buffer)) {
-			std::cout << "File upload request" << std::endl;
-			std::string filename = extract_filename_from_request(buffer);
-			std::string content_type = getContentType(filename);
-
-			std::string file_size_str = intToString(extract_content_length(buffer));
-			std::cout << "Filename: " << filename << " Content-Type: " << content_type << std::endl;
-			std::cout << "Size: " << file_content.size() << std::endl;
-			std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
-			uploader.handle_file_upload(
-				client_fd, filename, extract_content_length(buffer)); // TODO file content size is 0
-		}
-		break;
-	case DELETE:
-		std::cout << "DELETE" << std::endl;
-		break;
-	case UNKNOWN:
-		std::cout << "UNKNOWN" << std::endl;
-		break;
-	}
 
 	// Fork a new process for every request
 	pid_t pid = fork();
@@ -268,36 +242,66 @@ void Server::handle_request(int client_fd)
 	}
 
 	if (pid == 0) {
-		// Child process
 		close(_socket_fd);
+		switch (method) {
+		case GET:
+			std::cout << "GET" << std::endl;
+			if (requested_file_path.find(".py") != std::string::npos) {
+				// Handle CGI request
+				Cgi cgi;
+				std::string cgi_response = cgi.run(CGI_BIN);
 
-		if (requested_file_path.find(".py") != std::string::npos) {
-			// Handle CGI request
-			Cgi cgi;
-			std::string cgi_response = cgi.run(CGI_BIN);
+				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+					"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
+					cgi_response.c_str();
 
-			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
-				cgi_response.c_str();
+				send(client_fd, response.c_str(), response.size(), 0);
+				close(client_fd);
+				exit(0);
+			}
+			else { // Handle static file request
+				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+					"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
+					file_content;
 
-			send(client_fd, response.c_str(), response.size(), 0);
+				send(client_fd, response.c_str(), response.size(), 0);
+				close(client_fd);
+				exit(0);
+			}
+			break;
+
+		case POST:
+			std::cout << "POST" << std::endl; // TODO handle POST request
+			if (is_file_upload_request(buffer)) {
+				std::cout << "File upload request" << std::endl;
+				std::string filename = extract_filename_from_request(buffer);
+				std::string content_type = getContentType(filename);
+
+				std::string file_size_str = intToString(extract_content_length(buffer));
+				std::cout << "Filename: " << filename << " Content-Type: " << content_type
+						  << std::endl;
+				std::cout << "Size: " << file_size_str << std::endl;
+				std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
+
+				uploader.handle_file_upload(
+					client_fd,
+					filename,
+					extract_content_length(buffer)); // TODO file content size is 0
+			}
+			break;
+		case DELETE:
+			std::cout << "DELETE" << std::endl;
 			close(client_fd);
 			exit(0);
-		}
-		else {
-			// Handle other types of requests
-			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-				"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
-				file_content;
-
-			send(client_fd, response.c_str(), response.size(), 0);
+			break;
+		case UNKNOWN:
+			std::cout << "UNKNOWN" << std::endl;
 			close(client_fd);
 			exit(0);
+			break;
 		}
 	}
-	else {
-		// Parent process
-		// Close the client socket in the parent process and continue accepting connections
+	else { // parent process
 		close(client_fd);
 	}
 }

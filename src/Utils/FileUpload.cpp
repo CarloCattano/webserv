@@ -24,10 +24,18 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 	ssize_t bytes_received;
 
 	std::ofstream outfile(filename.c_str(), std::ios::binary);
+
 	if (!outfile) {
 		std::cerr << "Failed to open file for writing." << std::endl;
 		return;
 	}
+
+	std::cout << "File opened" << std::endl;
+	std::cout << "File size: " << file_size << std::endl;
+	std::cout << "Filename: " << filename << std::endl;
+	std::cout << "Client fd: " << client_fd << std::endl;
+	std::cout << "Buffer size: " << BUFFER_SIZE << std::endl;
+	std::cout << "Total bytes received: " << total_bytes_received << std::endl;
 
 	while (total_bytes_received < file_size) {
 		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0);
@@ -42,7 +50,7 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 		else {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				// No data available, wait and try again
-				usleep(1000); // Sleep for 1 millisecond
+				usleep(100); // Sleep for 1 millisecond
 				/* std::cout << "No data available, waiting..." << std::endl; */
 				continue;
 			}
@@ -52,8 +60,10 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 				break;
 			}
 		}
-		std::cout << "Total bytes received: " << total_bytes_received << std::endl;
 	}
+
+	std::cout << "Total bytes received: " << total_bytes_received << std::endl;
+	std::cout << "File size: " << file_size << std::endl;
 
 	outfile.close();
 	std::cout << "File closed" << std::endl;
