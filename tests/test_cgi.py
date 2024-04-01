@@ -17,7 +17,7 @@ def send_concurrent_requests(url, num_requests):
 # Main function
 def main():
     num_requests = int(sys.argv[1])
-    url = "http://localhost:4222/cgi-bin/test.py"  # Adjust URL as needed
+    url = "http://localhost:8080/cgi-bin/test.py"  # Adjust URL as needed
     send_concurrent_requests(url, num_requests)
 
 if __name__ == "__main__":

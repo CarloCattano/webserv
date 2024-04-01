@@ -1,12 +1,12 @@
 #include "Server.hpp"
+#include "../Cgi/Cgi.hpp"
+#include "../Utils/utils.hpp"
 #include <cstring>
-#include <string>
 #include <fcntl.h>
 #include <signal.h>
+#include <string>
 #include <sys/epoll.h>
 #include <sys/wait.h>
-#include "../Utils/utils.hpp"
-#include "Cgi.hpp"
 
 const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
@@ -14,8 +14,7 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
-std::size_t extract_content_length(const char *request)
-{
+std::size_t extract_content_length(const char *request) {
 	const char *content_length_header = strstr(request, "Content-Length:");
 	if (content_length_header != NULL) {
 		// Skip the "Content-Length:" prefix
@@ -27,8 +26,7 @@ std::size_t extract_content_length(const char *request)
 	return 0;
 }
 
-std::string extract_filename_from_request(const char *request)
-{
+std::string extract_filename_from_request(const char *request) {
 	const char *filename_field = strstr(request, "filename=");
 	if (filename_field != NULL) {
 		const char *filename_start = filename_field + strlen("filename=");
@@ -41,8 +39,7 @@ std::string extract_filename_from_request(const char *request)
 	return "";
 }
 
-bool is_file_upload_request(const char *request)
-{
+bool is_file_upload_request(const char *request) {
 	const char *content_type_header = strstr(request, "Content-Type:");
 	if (content_type_header != NULL) {
 		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
@@ -55,8 +52,7 @@ bool is_file_upload_request(const char *request)
 
 enum HttpMethod { GET, POST, DELETE, UNKNOWN };
 
-HttpMethod get_http_method(const char *request)
-{
+HttpMethod get_http_method(const char *request) {
 	// Find the first space in the request line
 	const char *first_space = strchr(request, ' ');
 	if (first_space != NULL) {
@@ -64,27 +60,23 @@ HttpMethod get_http_method(const char *request)
 		std::string method(request, first_space - request);
 		if (method == "GET") {
 			return GET;
-		}
-		else if (method == "POST") {
+		} else if (method == "POST") {
 			return POST;
-		}
-		else if (method == "DELETE") {
+		} else if (method == "DELETE") {
 			return DELETE;
 		}
 	}
 	return UNKNOWN; // Unable to determine HTTP method
 }
 
-Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
-{
+Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port) {
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
 	Server::start();
 }
 
-void Server::stop(int signal)
-{
+void Server::stop(int signal) {
 	(void)signal;
 	log("\nServer stopped");
 	exit(0);
@@ -94,15 +86,13 @@ void Server::stop(int signal)
 	and the parent process is not waiting for it
 	so it doesn't become a zombie process */
 
-void handleSigchild(int sig)
-{
+void handleSigchild(int sig) {
 	(void)sig;
 	while (waitpid(-1, NULL, WNOHANG) > 0)
 		continue;
 }
 
-void Server::start_listen()
-{
+void Server::start_listen() {
 	// TODO parse max port in config
 	const int MAX_PORT = 65535;
 	if (_port < 0 || _port > MAX_PORT)
@@ -124,8 +114,7 @@ void Server::start_listen()
 		throw ListenErrorException();
 }
 
-void Server::await_connections()
-{
+void Server::await_connections() {
 	int epoll_fd = epoll_create1(0);
 	if (epoll_fd == -1) {
 		perror("epoll_create1");
@@ -165,8 +154,7 @@ void Server::await_connections()
 					perror("epoll_ctl");
 					exit(EXIT_FAILURE);
 				}
-			}
-			else {
+			} else {
 				// message from existing client
 				int client_fd = events[i].data.fd;
 				if (client_fd == -1) {
@@ -178,14 +166,13 @@ void Server::await_connections()
 					handle_request(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
-				}
-				else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+				} else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
-				}
-				else if (events[i].events & EPOLLOUT) {
+				} else if (events[i].events & EPOLLOUT) {
 					// ready to write
 					// TODO implement
+					handle_write(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
@@ -194,8 +181,7 @@ void Server::await_connections()
 	}
 }
 
-void Server::start()
-{
+void Server::start() {
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
 		perror("signal(SIGCHLD) error");
 
@@ -205,21 +191,46 @@ void Server::start()
 	await_connections();
 }
 
-void Server::handle_request(int client_fd)
-{
+void Server::handle_write(int client_fd) {
+
 	char buffer[BUFFER_SIZE];
 	if (client_fd == -1) {
 		perror("client_fd");
 		return;
 	}
 
-	/* int size = recv(client_fd, buffer, BUFFER_SIZE, 0); */
+	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
 
-	// non blocking recv version
-	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	if (size == -1) {
+		perror("recv");
 		return;
 	}
+
+	std::string request(buffer);
+
+	if (is_file_upload_request(buffer)) {
+		FileUploader uploader;
+		std::size_t content_length = extract_content_length(buffer);
+		std::string filename = extract_filename_from_request(buffer);
+		uploader.handle_file_upload(client_fd, filename, content_length);
+	}
+	close(client_fd);
+}
+
+void Server::handle_request(int client_fd) {
+	char buffer[BUFFER_SIZE];
+	if (client_fd == -1) {
+		perror("client_fd");
+		return;
+	}
+
+	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
+
+	// ?? non blocking recv version
+	/* int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT); */
+	/* if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) { */
+	/* 	return; */
+	/* } */
 
 	if (size == -1) {
 		perror("recv");
@@ -230,83 +241,43 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
-	// get the request type (GET, POST, DELETE)
-	HttpMethod method = get_http_method(buffer);
+	if (requested_file_path.find(".py") != std::string::npos) {
 
-	// Fork a new process for every request
-	pid_t pid = fork();
+		int forked = fork();
 
-	if (pid == -1) {
-		perror("fork");
-		return;
-	}
-
-	if (pid == 0) {
-		close(_socket_fd);
-		switch (method) {
-		case GET:
-			std::cout << "GET" << std::endl;
-			if (requested_file_path.find(".py") != std::string::npos) {
-				// Handle CGI request
-				Cgi cgi;
-				std::string cgi_response = cgi.run(CGI_BIN);
-
-				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-					"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
-					cgi_response.c_str();
-
-				send(client_fd, response.c_str(), response.size(), 0);
-				close(client_fd);
-				exit(0);
-			}
-			else { // Handle static file request
-				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-					"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
-					file_content;
-
-				send(client_fd, response.c_str(), response.size(), 0);
-				close(client_fd);
-				exit(0);
-			}
-			break;
-
-		case POST:
-			std::cout << "POST" << std::endl; // TODO handle POST request
-			if (is_file_upload_request(buffer)) {
-				std::cout << "File upload request" << std::endl;
-				std::string filename = extract_filename_from_request(buffer);
-				std::string content_type = getContentType(filename);
-
-				std::string file_size_str = intToString(extract_content_length(buffer));
-				std::cout << "Filename: " << filename << " Content-Type: " << content_type
-						  << std::endl;
-				std::cout << "Size: " << file_size_str << std::endl;
-				std::cout << "RAW REQUEST DATA: \n" << buffer << std::endl;
-
-				uploader.handle_file_upload(
-					client_fd,
-					filename,
-					extract_content_length(buffer)); // TODO file content size is 0
-			}
-			break;
-		case DELETE:
-			std::cout << "DELETE" << std::endl;
-			close(client_fd);
-			exit(0);
-			break;
-		case UNKNOWN:
-			std::cout << "UNKNOWN" << std::endl;
-			close(client_fd);
-			exit(0);
-			break;
+		if (forked == -1) {
+			perror("fork");
+			exit(EXIT_FAILURE);
 		}
-	}
-	else { // parent process
+
+		if (forked == 0) {
+
+			Cgi cgi;
+			std::string cgi_response = cgi.run(CGI_BIN);
+
+			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+								   "\r\nContent-Length: " + intToString(cgi_response.length()) +
+								   "\r\n\r\n" + cgi_response.c_str();
+
+			send(client_fd, response.c_str(), response.size(), 0);
+			close(client_fd);
+			exit(0);
+		} else {
+			close(client_fd);
+			return;
+		}
+	} else { // Handle static file request
+		// if req contains /upload , skip it
+		if (requested_file_path.find("/upload") != std::string::npos) {
+			return;
+		}
+		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+							   "\r\nContent-Length: " + intToString(file_content.length()) +
+							   "\r\n\r\n" + file_content;
+
+		send(client_fd, response.c_str(), response.size(), 0);
 		close(client_fd);
 	}
 }
 
-Server::~Server()
-{
-	close(_socket_fd);
-}
+Server::~Server() { close(_socket_fd); }
