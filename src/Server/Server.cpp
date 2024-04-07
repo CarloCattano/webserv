@@ -151,7 +151,7 @@ void Server::await_connections() {
 					continue;
 				}
 
-				ev.events = EPOLLIN;
+				ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -177,6 +177,7 @@ void Server::await_connections() {
 				} else if (events[i].events & EPOLLOUT) {
 					// ready to write
 					// TODO implement
+					std::cout << "EPOLLOUT" << std::endl;
 					handle_write(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);

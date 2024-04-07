@@ -32,6 +32,9 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 	while (total_bytes_received < file_size) {
 		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
 		if (bytes_received > 0) {
+			if (total_bytes_received + bytes_received > file_size - 6) {
+				break;
+			}
 			ssize_t bytes_written = write(outfile, buffer, bytes_received);
 			if (bytes_written == -1) {
 				perror("write");
