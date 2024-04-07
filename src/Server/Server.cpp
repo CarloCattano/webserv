@@ -112,6 +112,8 @@ void Server::start_listen() {
 
 	if (listen(_socket_fd, BACKLOG) == -1)
 		throw ListenErrorException();
+
+	std::cout << "Server started at http://" << _ip_address << ":" << _port << std::endl;
 }
 
 void Server::await_connections() {
@@ -131,7 +133,9 @@ void Server::await_connections() {
 	}
 
 	while (1) {
+
 		struct epoll_event events[MAX_EVENTS];
+
 		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 
 		if (num_events == -1) {
@@ -147,13 +151,14 @@ void Server::await_connections() {
 					continue;
 				}
 
-				ev.events = EPOLLIN | EPOLLET | EPOLLHUP | EPOLLERR | EPOLLOUT;
+				ev.events = EPOLLIN;
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
 					perror("epoll_ctl");
 					exit(EXIT_FAILURE);
 				}
+
 			} else {
 				// message from existing client
 				int client_fd = events[i].data.fd;
@@ -224,13 +229,13 @@ void Server::handle_request(int client_fd) {
 		return;
 	}
 
-	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
+	/* int size = recv(client_fd, buffer, BUFFER_SIZE, 0); */
 
 	// ?? non blocking recv version
-	/* int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT); */
-	/* if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) { */
-	/* 	return; */
-	/* } */
+	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		return;
+	}
 
 	if (size == -1) {
 		perror("recv");
@@ -268,9 +273,9 @@ void Server::handle_request(int client_fd) {
 		}
 	} else { // Handle static file request
 		// if req contains /upload , skip it
-		if (requested_file_path.find("/upload") != std::string::npos) {
-			return;
-		}
+		/* if (requested_file_path.find("/upload") != std::string::npos) { */
+		/* 	return; */
+		/* } */
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 							   "\r\nContent-Length: " + intToString(file_content.length()) +
 							   "\r\n\r\n" + file_content;
