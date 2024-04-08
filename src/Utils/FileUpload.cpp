@@ -36,6 +36,9 @@ void FileUploader::handle_file_upload(int client_fd,
 		cleanFile = filename;
 	}
 
+	// prepend path to cleanFile
+	cleanFile = "./website/upload/" + cleanFile;
+
 	int outfile = open(cleanFile.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
 	if (outfile == -1) {
 		perror("open");
@@ -69,9 +72,10 @@ void FileUploader::handle_file_upload(int client_fd,
 			}
 		}
 	}
-
-	// add a null terminator to the file
-	write(outfile, "\0", 1);
+	// TODO , check the real file size and compare it with the file_size to
+	// exit the function if the file is not fully uploaded
+	//
+	write(outfile, "\0", 1); // TODO WHAT ?
 	close(outfile);
 
 	/* if (total_bytes_received == file_size) { */

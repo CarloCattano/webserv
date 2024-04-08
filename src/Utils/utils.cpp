@@ -107,23 +107,15 @@ std::string extract_content_body(const char *buffer)
 		body = body.substr(0, end);
 	}
 
-	size_t last_carriage_return = body.rfind("\r");
-	if (last_carriage_return != std::string::npos) {
-		body.erase(last_carriage_return);
-	}
+	/* 	size_t last_carriage_return = body.rfind("\r"); */
+	/* 	if (last_carriage_return != std::string::npos) { */
+	/* 		body.erase(last_carriage_return); */
+	/* 	} */
 
-	// if we find a large amount of -
-	if (body.find("------") != std::string::npos) {
-		// and in that line there is our boundary string
-		if (body.find(boundary) != std::string::npos) {
-			// then we remove the first part of the body
-			body = body.substr(body.find(boundary) + boundary.size());
-		}
-	}
-	// remove the last boundary
-	if (body.find(boundary) != std::string::npos) {
-		body = body.substr(0, body.find(boundary));
-	}
+	/* 	for (size_t pos = body.find(boundary); pos != std::string::npos; */
+	/* 		 pos = body.find(boundary, pos + 1)) { */
+	/* 		body.erase(pos, boundary.length()); */
+	/* 	} */
 
 	return body;
 }
