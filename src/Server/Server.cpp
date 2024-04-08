@@ -1,8 +1,12 @@
 #include "Server.hpp"
+#include <cerrno>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
 #include "../Cgi/Cgi.hpp"
@@ -178,13 +182,11 @@ void Server::await_connections()
 				}
 
 				if (events[i].events & EPOLLIN) {
-					std::cout << "Handling request" << std::endl;
 					handle_request(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
 				else if (events[i].events & EPOLLOUT) {
-					std::cout << "Handling write" << std::endl;
 					handle_write(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
@@ -229,8 +231,19 @@ void Server::handle_write(int client_fd)
 	if (is_file_upload_request(buffer)) {
 		FileUploader uploader;
 		std::size_t content_length = extract_content_length(buffer);
+		std::cout << "Content length: " << content_length << std::endl;
 		std::string filename = extract_filename_from_request(buffer);
-		uploader.handle_file_upload(client_fd, filename, content_length);
+
+		// we must extract the first part of the request body in between the boundary
+		// to pass it to the file upload which will further extract the file content
+		// but the first part of the request body is not in the buffer if we dont read it
+
+		std::string content = extract_content_body(request.c_str());
+
+		std::cout << "Content:\n" << content << std::endl;
+		std::cout << "---------END OF CONTENT---------" << std::endl;
+
+		uploader.handle_file_upload(client_fd, filename, content_length, content.c_str());
 	}
 	close(client_fd);
 }

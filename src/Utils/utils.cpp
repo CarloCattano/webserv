@@ -4,6 +4,7 @@
 #include <map>
 #include <sstream>
 // getcwd include
+#include <cerrno>
 #include <unistd.h>
 
 std::map<std::string, std::string> content_types;
@@ -61,4 +62,36 @@ std::string get_current_dir()
 		return std::string(cwd);
 	else
 		return "";
+}
+
+std::string extract_boundary(const char *buffer)
+{
+	std::string request(buffer);
+	size_t start = request.find("boundary=") + 9;
+	size_t end = request.find("\r\n") - 1;
+	std::string boundary = request.substr(start, end - start);
+
+	return boundary;
+}
+
+// extract request header
+std::string extract_request_header(const char *buffer)
+{
+	std::string request(buffer);
+	size_t end = request.find("\r\n\r\n") + 4;
+	std::string header = request.substr(0, end);
+	return header;
+}
+
+// extract request body
+std::string extract_content_body(const char *buffer)
+{
+	std::string request(buffer);
+
+	size_t start = request.find("\r\n\r\n") + 4;
+	std::string body = request.substr(start);
+	size_t start2 = body.find("\r\n\r\n") + 4;
+
+	body = body.substr(start2);
+	return body;
 }
