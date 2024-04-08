@@ -87,11 +87,43 @@ std::string extract_request_header(const char *buffer)
 std::string extract_content_body(const char *buffer)
 {
 	std::string request(buffer);
-
-	size_t start = request.find("\r\n\r\n") + 4;
+	size_t start = request.find("\r\n\r\n") + 4; // +4 to skip the \r\n\r\n
 	std::string body = request.substr(start);
+
+	size_t boundary_pos = request.find("boundary=");
+	if (boundary_pos == std::string::npos) {
+		return "";
+	}
+
+	// store the boundary string
+	std::string boundary = extract_boundary(buffer);
+
 	size_t start2 = body.find("\r\n\r\n") + 4;
 
 	body = body.substr(start2);
+
+	size_t end = body.find("\r\n-");
+	if (end != std::string::npos) {
+		body = body.substr(0, end);
+	}
+
+	size_t last_carriage_return = body.rfind("\r");
+	if (last_carriage_return != std::string::npos) {
+		body.erase(last_carriage_return);
+	}
+
+	// if we find a large amount of -
+	if (body.find("------") != std::string::npos) {
+		// and in that line there is our boundary string
+		if (body.find(boundary) != std::string::npos) {
+			// then we remove the first part of the body
+			body = body.substr(body.find(boundary) + boundary.size());
+		}
+	}
+	// remove the last boundary
+	if (body.find(boundary) != std::string::npos) {
+		body = body.substr(0, body.find(boundary));
+	}
+
 	return body;
 }

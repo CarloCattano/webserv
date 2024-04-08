@@ -43,7 +43,6 @@ void FileUploader::handle_file_upload(int client_fd,
 	}
 
 	total_bytes_received += write(outfile, start, strlen(start));
-	total_bytes_received += write(outfile, "\n", 1);
 
 	while (total_bytes_received < file_size) {
 		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
@@ -71,6 +70,8 @@ void FileUploader::handle_file_upload(int client_fd,
 		}
 	}
 
+	// add a null terminator to the file
+	write(outfile, "\0", 1);
 	close(outfile);
 
 	/* if (total_bytes_received == file_size) { */
