@@ -49,13 +49,15 @@ void	print_server_routes(std::vector<Route> routes) {
             std::cout << "\t\t\tCode: " << routes[i].redirections[j].code << std::endl;
             std::cout << "\t\t\tUrl: " << routes[i].redirections[j].url << std::endl;
         }
+        if (routes[i].autoindex)
+            std::cout << "\t\tAutoIndex: " << "true" << std::endl;
     }
     std::cout << std::endl;
 }
 
-void	print_server_obj(Virtual_Server_Config obj)
+void	print_server_obj(Virtual_Server_Config obj, int i)
 {
-	std::cout << GREEN << "SERVER_OBJ" << RESET << std::endl;
+	std::cout << GREEN << "SERVER_OBJ " << i << RESET << std::endl;
     if (obj.port)
         std::cout << "\tPort: " << obj.port << std::endl;
     if (obj.server_names.size() > 0) {
@@ -73,4 +75,13 @@ void	print_server_obj(Virtual_Server_Config obj)
     std::cout << std::endl;
 }
 
+std::string toLowerCase(std::string str) {
+    std::string lowerCaseStr;
+    long unsigned int i = 0;
+    while (i < str.size()) {
+        lowerCaseStr += std::tolower(str[i]);
+        i++;
+    }
+    return (lowerCaseStr);
+}
 

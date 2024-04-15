@@ -98,6 +98,8 @@ int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i) {
 			}
 			route.redirections.push_back(redirection);
 		}
+		else if (key_with_values[0] == "autoindex" && size == 2 && toLowerCase(key_with_values[1]) == "true")
+			route.autoindex = true;
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')
@@ -131,7 +133,7 @@ Config::Config(const std::string filename)
 	size_t index = file_content.find("server");
 	while (index != std::string::npos) {
 		virtual_server_obj = get_virtual_server_obj(file_content, index + 6);
-		print_server_obj(virtual_server_obj);
+		print_server_obj(virtual_server_obj, index);
 		this->virtual_servers.push_back(virtual_server_obj);
 		while (file_content[index] && file_content[index] != '}') {index++;}
 		index = file_content.find("server", index);

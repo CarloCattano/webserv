@@ -18,9 +18,12 @@ struct Route {
 	std::string						matching_style;
 	std::string						root;
 	std::vector<HttpRedirection>	redirections;
+	bool							autoindex;
 
 	Route()
-		: location(""), matching_style(""), root("") {}
+		: location(""), matching_style(""), root(""), autoindex(false) {
+		redirections = std::vector<HttpRedirection>();
+	}
 };
 
 struct Virtual_Server_Config {
@@ -32,8 +35,11 @@ struct Virtual_Server_Config {
 	std::vector<Route>			routes;
 
 	Virtual_Server_Config()
-		: default_server(false) {}
-
+		: port(0), default_server(false), client_max_body_size("") {
+		server_names = std::vector<std::string>();
+		error_pages = std::vector<std::string>();
+		routes = std::vector<Route>();
+	}
 };
 
 class Config {
@@ -51,6 +57,7 @@ private:
 
 std::string get_file_content(const std::string &filename);
 bool is_whitespace_char(char c);
-void	print_server_obj(Virtual_Server_Config obj);
+void	print_server_obj(Virtual_Server_Config obj, int i);
 template <typename T>
 void    print_vector(T vector);
+std::string toLowerCase(std::string str);
