@@ -3,6 +3,8 @@
 #include <iostream>
 #include <map>
 #include <sstream>
+// getcwd include
+#include <unistd.h>
 
 std::map<std::string, std::string> content_types;
 
@@ -21,8 +23,8 @@ std::string getContentType(const std::string &filename)
 std::string readFileToString(const std::string &filename)
 {
 	std::ifstream file(filename.c_str());
-	if (!file.is_open()) {
-		std::cerr << "Error opening file: " << filename << std::endl;
+
+	if (file == 0) {
 		return "";
 	}
 
@@ -48,6 +50,15 @@ std::string extract_requested_file_path(const char *buffer)
 	if (path == "/")
 		return "/index.html";
 
-	/* std::cout << "Requested file path: " << path << std::endl; */
 	return path;
+}
+
+// get the path of the folder from where the server is run
+std::string get_current_dir()
+{
+	char cwd[1024];
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		return std::string(cwd);
+	else
+		return "";
 }

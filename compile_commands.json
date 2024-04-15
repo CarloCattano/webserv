@@ -1,0 +1,62 @@
+[
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/main.cpp",
+    "output": "/home/carlo/42/webserv/src/main.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Utils/utils.o",
+      "src/Utils/utils.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Utils/utils.cpp",
+    "output": "/home/carlo/42/webserv/src/Utils/utils.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Cgi/Cgi.o",
+      "src/Cgi/Cgi.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Cgi/Cgi.cpp",
+    "output": "/home/carlo/42/webserv/src/Cgi/Cgi.o"
+  }
+]

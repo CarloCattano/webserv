@@ -7,13 +7,14 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "./Utils/utils.hpp"
 #include "Config.hpp"
 #include "Server.hpp"
-#include "./Utils/utils.hpp"
 
 void populateContentTypes()
 {
 	content_types[".html"] = "text/html";
+	content_types[".php"] = "text/html";
 	content_types[".css"] = "text/css";
 	content_types[".jpg"] = "image/jpeg";
 	content_types[".jpeg"] = "image/jpeg";
@@ -28,16 +29,17 @@ int main(int argc, char *argv[])
 		std::cerr << "Usage: " << argv[0] << " [configuration file]" << std::endl;
 		return 1;
 	}
+
 	populateContentTypes();
 
 	try {
 		Config config(argv[1]);
 		Server server("1234", config.get_virtual_servers()[0].port);
-		server.start();
 	}
 	catch (std::exception &e) {
-		// Error("ERROR : " << e.what());
+		Error("ERROR : " << e.what());
 		return 1;
 	}
+
 	return 0;
 }

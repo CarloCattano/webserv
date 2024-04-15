@@ -51,5 +51,6 @@ def generate_html():
 
     return html_content
 
-print(generate_html())
+response_html = generate_html()
 
+print(response_html)

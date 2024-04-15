@@ -1,15 +1,12 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include <iostream>
 #include <string>
+#include <vector>
 #include <arpa/inet.h>
 #include <poll.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "utils.hpp"
 
 class Server {
 private:
@@ -17,15 +14,19 @@ private:
 	struct sockaddr_in _server_address;
 	int _port;
 	int _socket_fd;
-	// int 				_client_socket_fd;
 
 	void handle_request(int fd);
+	static void stop(int signal);
+	// clients fds
+	std::vector<int> _clients;
 
 public:
 	Server(std::string ip_address, int port);
 	~Server();
 
 	void start();
+	void start_listen();
+	void await_connections();
 
 	class BindErrorException : public std::exception {
 	public:
@@ -50,6 +51,13 @@ public:
 			return ("Listen error");
 		}
 	};
-};
 
+	class InvalidPortException : public std::exception {
+	public:
+		virtual const char *what() const throw()
+		{
+			return ("Invalid port");
+		}
+	};
+};
 #endif
