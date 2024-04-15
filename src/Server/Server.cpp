@@ -162,6 +162,9 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
+	std::cout << "Raw Request: " << std::endl;
+	std::cout << buffer << std::endl;
+
 	if (requested_file_path.find(".py") != std::string::npos) {
 		// TODO check if file exists and we are allowed to execute it
 		//      from the config file
