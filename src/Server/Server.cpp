@@ -66,6 +66,9 @@ void Server::handle_request(int client_fd)
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 
+	std::cout << "Raw Request: " << std::endl;
+	std::cout << buffer << std::endl;
+
 	if (requested_file_path.find(".py") != std::string::npos) {
 		try {
 			Cgi cgi;

@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "Config.hpp"
 #include "Server.hpp"
-#include "utils.hpp"
+#include "./Utils/utils.hpp"
 
 void populateContentTypes()
 {
@@ -30,10 +30,14 @@ int main(int argc, char *argv[])
 	}
 	populateContentTypes();
 
-	Config config(argv[1]);
-
-	Server server("1234", config.get_virtual_servers()[1].port);
-	server.start();
-
+	try {
+		Config config(argv[1]);
+		Server server("1234", config.get_virtual_servers()[0].port);
+		server.start();
+	}
+	catch (std::exception &e) {
+		// Error("ERROR : " << e.what());
+		return 1;
+	}
 	return 0;
 }
