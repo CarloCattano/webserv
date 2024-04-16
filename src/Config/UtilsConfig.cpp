@@ -51,6 +51,15 @@ void	print_server_routes(std::vector<Route> routes) {
         }
         if (routes[i].autoindex)
             std::cout << "\t\tAutoIndex: " << "true" << std::endl;
+        for (size_t j = 0; j < routes[i].index_files.size(); ++j) {
+            if (j == 0)
+                std::cout << "\t\tIndexFiles:";
+            std::cout << " "<< routes[i].index_files[j];
+            if (j == routes[i].index_files.size() - 1)
+                std::cout << std::endl;
+        }
+        std::cout << "POST: " << routes[i].POST.is_allowed << std::endl;
+        std::cout << "GET: " << routes[i].GET.is_allowed << std::endl;
     }
     std::cout << std::endl;
 }
@@ -85,3 +94,32 @@ std::string toLowerCase(std::string str) {
     return (lowerCaseStr);
 }
 
+int	iterate_to_next_server_line(std::string str, int i) {
+	while (str[i] && str[i] != '}' && str[i] != ';' && str[i] != '\n')
+		i++;
+	while (str[i] && str[i] != '}' && (str[i] == ';' || is_whitespace_char(str[i])))
+		i++;
+	return (i);
+}
+
+std::vector<std::string>	convert_server_line_2_vector(std::string str, int i) {
+	std::vector<std::string> values;
+
+	while (str[i] && str[i] != '}' && str[i] != ';' && str[i] != '\n') {
+		std::string single_value;
+		while (str[i] && str[i] != '}' && str[i] != ';' && str[i] != '\n' && str[i] != ' ') {
+			single_value+= str[i++];
+		}
+		values.push_back(single_value);
+		while (str[i] == ' ') {i++;}
+	}
+	return (values);
+}
+
+int	iterate_to_first_server_line(std::string str, int i) {
+	while (is_whitespace_char(str[i])) {i++;}
+	if (str[i++] != '{')
+		throw std::runtime_error("Starting curly brace missing: '{'");
+	while (is_whitespace_char(str[i])) {i++;}
+	return (i);
+}

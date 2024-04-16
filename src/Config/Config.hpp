@@ -13,16 +13,28 @@ struct HttpRedirection {
 		: code("302"), url(url) {}
 };
 
+struct Method {
+	bool	is_allowed;
+	bool	can_be_edited;
+
+	Method()
+		: is_allowed(true), can_be_edited(true) {}
+};
+
 struct Route {
 	std::string						location;
 	std::string						matching_style;
 	std::string						root;
 	std::vector<HttpRedirection>	redirections;
 	bool							autoindex;
+	std::vector<std::string>		index_files;
+	Method							POST;
+	Method							GET;
 
 	Route()
 		: location(""), matching_style(""), root(""), autoindex(false) {
 		redirections = std::vector<HttpRedirection>();
+		index_files = std::vector<std::string>();
 	}
 };
 
@@ -61,3 +73,12 @@ void	print_server_obj(Virtual_Server_Config obj, int i);
 template <typename T>
 void    print_vector(T vector);
 std::string toLowerCase(std::string str);
+int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i);
+int	iterate_to_next_server_line(std::string str, int i);
+std::vector<std::string>	convert_server_line_2_vector(std::string str, int i);
+int	iterate_to_first_server_line(std::string str, int i);
+template<typename T>
+std::vector<T> get_values(std::vector<T> key_with_values) {
+	std::vector<T> values(key_with_values.begin() + 1, key_with_values.end());
+	return (values);
+}
