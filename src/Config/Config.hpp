@@ -21,6 +21,14 @@ struct Method {
 		: is_allowed(true), can_be_edited(true) {}
 };
 
+struct Fastcgi_Param {
+	std::string key;
+	std::string value;
+
+	Fastcgi_Param(std::string key, std::string value)
+		: key(key), value(value) {}
+};
+
 struct Route {
 	std::string						location;
 	std::string						matching_style;
@@ -30,11 +38,15 @@ struct Route {
 	std::vector<std::string>		index_files;
 	Method							POST;
 	Method							GET;
+	std::string						fastcgi_pass;
+	std::string						fastcgi_index;
+	std::vector<Fastcgi_Param>		fastcgi_params;
 
 	Route()
-		: location(""), matching_style(""), root(""), autoindex(false) {
+		: location(""), matching_style(""), root(""), autoindex(false), fastcgi_pass(""), fastcgi_index("") {
 		redirections = std::vector<HttpRedirection>();
 		index_files = std::vector<std::string>();
+		fastcgi_params = std::vector<Fastcgi_Param>();
 	}
 };
 
@@ -63,13 +75,13 @@ public:
 
 private:
 	std::string 						filename;
-	std::vector<Virtual_Server_Config> 	virtual_servers;
-	Virtual_Server_Config				default_server;
+	std::vector<Virtual_Server_Config> virtual_servers;
+	Virtual_Server_Config default_server;
 };
 
 std::string get_file_content(const std::string &filename);
 bool is_whitespace_char(char c);
-void	print_server_obj(Virtual_Server_Config obj, int i);
+void print_server_obj(Virtual_Server_Config obj, int i);
 template <typename T>
 void    print_vector(T vector);
 std::string toLowerCase(std::string str);
@@ -78,7 +90,7 @@ int	iterate_to_next_server_line(std::string str, int i);
 std::vector<std::string>	convert_server_line_2_vector(std::string str, int i);
 int	iterate_to_first_server_line(std::string str, int i);
 template<typename T>
-std::vector<T> get_values(std::vector<T> key_with_values) {
+std::vector<T> extract_values(std::vector<T> key_with_values) {
 	std::vector<T> values(key_with_values.begin() + 1, key_with_values.end());
 	return (values);
 }

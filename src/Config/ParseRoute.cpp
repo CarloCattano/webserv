@@ -31,38 +31,62 @@ void    set_allowed_methods(Route &route, std::vector<std::string> key_with_valu
     }
 }
 
+void parse_location(int value_count, std::vector<std::string> &values, Route &route)
+{
+	if (value_count < 2 || value_count > 3 || values[value_count - 1] != "{")
+		throw std::runtime_error("Bad route format on first line.");
+	if (value_count == 3)
+		route.matching_style = values[0];
+	route.location = values[value_count - 2];
+}
+
+void parse_redirection(std::vector<std::string> &values, int value_count, Route &route)
+{
+	HttpRedirection redirection(values[value_count - 1]);
+	if (value_count == 2)
+		redirection.code = values[0];
+	route.redirections.push_back(redirection);
+}
+
+void parse_param(std::vector<std::string> &values, Route &route)
+{
+	Fastcgi_Param param(values[0], values[1]);
+	route.fastcgi_params.push_back(param);
+}
+
 int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i) {
 	Route						route;
 	std::vector<std::string> 	key_with_values;
-	int							size;
+    std::string                 key;
+	std::vector<std::string> 	values;
+	int							value_count;
 
 	// i = iterate_to_first_server_line(str, i);
 	while (str[i] && str[i] != '}') {
 		key_with_values = convert_server_line_2_vector(str, i);
-		size = key_with_values.size();
+        key = key_with_values[0];
+        values = extract_values(key_with_values);
+		value_count = values.size();
 
-		if (key_with_values[0] == "location") {
-			if (size < 3 || size > 4 || key_with_values[size - 1] != "{")
-				throw std::runtime_error("Bad route format on first line.");
-			if (size == 4)
-				route.matching_style = key_with_values[1];
-			route.location = key_with_values[size - 2];
-		}
-		else if (key_with_values[0] == "root" && size == 2)
-			route.root = key_with_values[1];
-		else if (key_with_values[0] == "return" && size >= 2 && size <= 3) {
-			HttpRedirection redirection(key_with_values[size - 1]);
-			if (size == 3) {
-				redirection.code = key_with_values[1];
-			}
-			route.redirections.push_back(redirection);
-		}
-		else if (key_with_values[0] == "autoindex" && size == 2 && toLowerCase(key_with_values[1]) == "true")
+		if (key == "location")
+			parse_location(value_count, values, route);
+		else if (key == "root" && value_count == 1)
+			route.root = values[0];
+		else if (key == "return" && value_count >= 1 && value_count <= 2)
+			parse_redirection(values, value_count, route);
+		else if (key == "autoindex" && value_count == 1 && toLowerCase(values[0]) == "true")
 			route.autoindex = true;
-		else if (key_with_values[0] == "index" && size >= 2)
-			route.index_files = get_values(key_with_values);
-		else if (key_with_values[0] == "deny" || key_with_values[0] == "allow")
+		else if (key == "index" && value_count >= 1)
+			route.index_files = values;
+		else if (key == "deny" || key == "allow")
             set_allowed_methods(route, key_with_values);
+		else if (key == "fastcgi_pass" && value_count == 1)
+			route.fastcgi_pass = values[0];
+		else if (key == "fastcgi_index" && value_count == 1)
+			route.fastcgi_index = values[0];
+		else if (key == "fastcgi_param" && value_count == 2)
+			parse_param(key_with_values, route);
+
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')
@@ -70,3 +94,5 @@ int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i) {
 	virtual_server.routes.push_back(route);
 	return (i);
 }
+
+
