@@ -8,28 +8,29 @@ Config::~Config()
 {
 }
 
+void parse_listen(int size, Virtual_Server_Config &virtual_server, std::vector<std::string> &key_with_values)
+{
+	if (size >= 2)
+		virtual_server.port = atoi(key_with_values[1].c_str());
+	if (size >= 3 && key_with_values[2] == "default")
+		virtual_server.default_server = true;
+	else
+		virtual_server.default_server = false;
+}
+
 void parse_key_with_values(Virtual_Server_Config &virtual_server, std::string str, int i) {
 	std::vector<std::string> key_with_values = convert_server_line_2_vector(str, i);
 	int	size = key_with_values.size();
 	std::string	key = key_with_values[0];
 
-	if (key == "listen") {
-		if (size >= 2)
-			virtual_server.port = atoi(key_with_values[1].c_str());
-		if (size >= 3 && key_with_values[2] == "default")
-			virtual_server.default_server = true;
-		else
-			virtual_server.default_server = false;
-	}
-	else if (key == "server_name") {
-		virtual_server.server_names = get_values(key_with_values);
-	}
-	else if (key == "error_page") {
-		virtual_server.error_pages = get_values(key_with_values);
-	}
-	else if (key == "client_max_body_size" && size >= 2) {
+	if (key == "listen")
+		parse_listen(size, virtual_server, key_with_values);
+	else if (key == "server_name")
+		virtual_server.server_names = extract_values(key_with_values);
+	else if (key == "error_page")
+		virtual_server.error_pages = extract_values(key_with_values);
+	else if (key == "client_max_body_size" && size >= 2)
 		virtual_server.client_max_body_size = key_with_values[1];
-	}
 }
 
 Virtual_Server_Config get_virtual_server_obj(std::string str, int i) {

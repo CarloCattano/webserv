@@ -90,7 +90,7 @@ int	iterate_to_next_server_line(std::string str, int i);
 std::vector<std::string>	convert_server_line_2_vector(std::string str, int i);
 int	iterate_to_first_server_line(std::string str, int i);
 template<typename T>
-std::vector<T> get_values(std::vector<T> key_with_values) {
+std::vector<T> extract_values(std::vector<T> key_with_values) {
 	std::vector<T> values(key_with_values.begin() + 1, key_with_values.end());
 	return (values);
 }
