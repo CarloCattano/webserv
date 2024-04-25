@@ -1,11 +1,16 @@
 #include "Server.hpp"
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <string>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
+#include "../Cgi/Cgi.hpp"
 #include "../Utils/utils.hpp"
-#include "Cgi.hpp"
 
 const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
@@ -13,12 +18,73 @@ const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
+std::size_t extract_content_length(const char *request)
+{
+	const char *content_length_header = strstr(request, "Content-Length:");
+	if (content_length_header != NULL) {
+		// Skip the "Content-Length:" prefix
+		content_length_header += strlen("Content-Length:");
+		// Convert the value to size_t
+		return std::strtoul(content_length_header, NULL, 10);
+	}
+	// If Content-Length header is not found or invalid, return 0
+	return 0;
+}
+
+std::string extract_filename_from_request(const char *request)
+{
+	const char *filename_field = strstr(request, "filename=");
+	if (filename_field != NULL) {
+		const char *filename_start = filename_field + strlen("filename=");
+		const char *filename_end = strstr(filename_start, "\r\n");
+		if (filename_end != NULL) {
+			std::string filename(filename_start, filename_end - filename_start);
+			return filename;
+		}
+	}
+	return "";
+}
+
+bool is_file_upload_request(const char *request)
+{
+	const char *content_type_header = strstr(request, "Content-Type:");
+	if (content_type_header != NULL) {
+		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
+		if (multipart_form_data != NULL) {
+			return true;
+		}
+	}
+	return false;
+}
+
+enum HttpMethod { GET, POST, DELETE, UNKNOWN };
+
+HttpMethod get_http_method(const char *request)
+{
+	// Find the first space in the request line
+	const char *first_space = strchr(request, ' ');
+	if (first_space != NULL) {
+		// Extract the HTTP method from the request line
+		std::string method(request, first_space - request);
+		if (method == "GET") {
+			return GET;
+		}
+		else if (method == "POST") {
+			return POST;
+		}
+		else if (method == "DELETE") {
+			return DELETE;
+		}
+	}
+	return UNKNOWN; // Unable to determine HTTP method
+}
+
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
-	start();
+	Server::start();
 }
 
 void Server::stop(int signal)
@@ -28,9 +94,9 @@ void Server::stop(int signal)
 	exit(0);
 }
 
-// takes care of the signal when a child process is terminated
-// and the parent process is not waiting for it
-// so it doesn't become a zombie process
+/* takes care of the signal when a child process is terminated
+	and the parent process is not waiting for it
+	so it doesn't become a zombie process */
 
 void handleSigchild(int sig)
 {
@@ -60,6 +126,8 @@ void Server::start_listen()
 
 	if (listen(_socket_fd, BACKLOG) == -1)
 		throw ListenErrorException();
+
+	std::cout << "Server started at http://" << _ip_address << ":" << _port << std::endl;
 }
 
 void Server::await_connections()
@@ -81,6 +149,7 @@ void Server::await_connections()
 
 	while (1) {
 		struct epoll_event events[MAX_EVENTS];
+
 		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 
 		if (num_events == -1) {
@@ -96,7 +165,7 @@ void Server::await_connections()
 					continue;
 				}
 
-				ev.events = EPOLLIN | EPOLLET; // Add client socket to epoll
+				ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -117,13 +186,12 @@ void Server::await_connections()
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
-				else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+				else if (events[i].events & EPOLLOUT) {
+					handle_write(client_fd);
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
-				else if (events[i].events & EPOLLOUT) {
-					// ready to write
-					// TODO implement
+				else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
@@ -143,7 +211,7 @@ void Server::start()
 	await_connections();
 }
 
-void Server::handle_request(int client_fd)
+void Server::handle_write(int client_fd)
 {
 	char buffer[BUFFER_SIZE];
 	if (client_fd == -1) {
@@ -158,6 +226,46 @@ void Server::handle_request(int client_fd)
 		return;
 	}
 
+	std::string request(buffer);
+
+	if (is_file_upload_request(buffer)) {
+		FileUploader uploader;
+		std::size_t content_length = extract_content_length(buffer);
+		std::cout << "Content length: " << content_length << std::endl;
+		std::string filename = extract_filename_from_request(buffer);
+
+		// we must extract the first part of the request body in between the boundary
+		// to pass it to the file upload which will further extract the file content
+		// but the first part of the request body is not in the buffer if we dont read it
+
+		std::string content = extract_content_body(request.c_str());
+
+		std::cout << "Content:\n" << content << std::endl;
+		std::cout << "---------END OF CONTENT---------" << std::endl;
+
+		uploader.handle_file_upload(client_fd, filename, content_length, content.c_str());
+	}
+	close(client_fd);
+}
+
+void Server::handle_request(int client_fd)
+{
+	char buffer[BUFFER_SIZE];
+	if (client_fd == -1) {
+		perror("client_fd");
+		return;
+	}
+
+	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		return;
+	}
+
+	if (size == -1) {
+		perror("recv");
+		return;
+	}
+
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
@@ -166,22 +274,15 @@ void Server::handle_request(int client_fd)
 	std::cout << buffer << std::endl;
 
 	if (requested_file_path.find(".py") != std::string::npos) {
-		// TODO check if file exists and we are allowed to execute it
-		//      from the config file
-		// TODO check if the file is executable provided by config only
+		int forked = fork();
 
-		pid_t pid = fork();
-
-		if (pid == -1) {
+		if (forked == -1) {
 			perror("fork");
-			return;
+			exit(EXIT_FAILURE);
 		}
 
-		if (pid == 0) {
-			close(_socket_fd); // Close the listening socket in the child process
-
+		if (forked == 0) {
 			Cgi cgi;
-
 			std::string cgi_response = cgi.run(CGI_BIN);
 
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
@@ -190,19 +291,15 @@ void Server::handle_request(int client_fd)
 
 			send(client_fd, response.c_str(), response.size(), 0);
 			close(client_fd);
-			exit(0); // Exit the child process
+			exit(0);
 		}
 		else {
-			// Close the client socket in the parent process and continue accepting connections
 			close(client_fd);
+			return;
 		}
 	}
-	else if (file_content.empty()) {
-		std::string errResponse = "HTTP/1.1 404 Not Found\r\n\r\n";
-		send(client_fd, errResponse.c_str(), errResponse.size(), 0);
-		close(client_fd);
-	}
-	else {
+	else { // Handle static file request
+		   // TODO filter http type
 		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 

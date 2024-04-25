@@ -1,12 +1,6 @@
 #pragma once
-#include <fstream>
-#include <iostream>
 #include <map>
-#include <sstream>
-#include <stdexcept>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -23,3 +17,7 @@ std::string readFileToString(const std::string &filename);
 std::string intToString(int value);
 std::string extract_requested_file_path(const char *buffer);
 std::string get_current_dir();
+std::string extract_body(const char *buffer);
+std::string extract_boundary(const char *buffer);
+std::string extract_content_body(const char *buffer);
+std::string extract_request_header(const char *buffer);

@@ -1,12 +1,11 @@
 #include "Cgi.hpp"
-#include <csignal>
 #include <cstdlib>
 #include <sys/wait.h>
 #include "utils.hpp"
 // include for execve
+#include <iostream>
 #include <string.h>
 #include <unistd.h>
-
 Cgi::Cgi()
 {
 }
