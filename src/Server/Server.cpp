@@ -16,7 +16,7 @@ const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
 
-std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
+std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
 std::size_t extract_content_length(const char *request)
 {
@@ -284,6 +284,8 @@ void Server::handle_request(int client_fd)
 		if (forked == 0) {
 			Cgi cgi;
 			std::string cgi_response = cgi.run(CGI_BIN);
+
+			std::cout << content_type << "\n CONTENT TYPE -------\n " << std::endl;
 
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +

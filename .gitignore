@@ -1,4 +1,4 @@
-./website/uploads/*
+./website/upload/*
 .cache
 .vscode
 .idea
