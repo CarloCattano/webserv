@@ -24,6 +24,7 @@ def generate_html():
     greeting = get_greeting()
 
     html_content = f"""
+    <!doctype html>
     <html>
     <head>
         <title>Greetings</title>
