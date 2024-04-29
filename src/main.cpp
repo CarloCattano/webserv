@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
 	try {
 		Config config(argv[1]);
-		Server server("1234", config.get_virtual_servers()[0].port);
+		Server server("localhost", config.get_virtual_servers()[0].port);
 	}
 	catch (std::exception &e) {
 		Error("ERROR : " << e.what());
