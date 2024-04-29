@@ -220,15 +220,14 @@ void Server::handle_write(int client_fd)
 	}
 
 	int size = recv(client_fd, buffer, BUFFER_SIZE, 0);
-
-	if (size == -1) {
-		perror("recv");
-		return;
-	}
-
-	std::string request(buffer);
-
 	if (is_file_upload_request(buffer)) {
+		if (size == -1) {
+			perror("recv");
+			return;
+		}
+
+		std::string request(buffer);
+
 		FileUploader uploader;
 		std::size_t content_length = extract_content_length(buffer);
 		std::cout << "Content length: " << content_length << std::endl;
@@ -285,7 +284,7 @@ void Server::handle_request(int client_fd)
 			Cgi cgi;
 			std::string cgi_response = cgi.run(CGI_BIN);
 
-			std::cout << content_type << "\n CONTENT TYPE -------\n " << std::endl;
+			// TODO return 200 if all ok with the cgi , 500 if error etc
 
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
 				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
@@ -300,13 +299,27 @@ void Server::handle_request(int client_fd)
 			return;
 		}
 	}
-	else { // Handle static file request
-		   // TODO filter http type
-		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-			"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
+	else { // Handle static file  GET request
+		   // TODO handle response code
+		   // check permissions for a certain file access
 
-		send(client_fd, response.c_str(), response.size(), 0);
-		close(client_fd);
+		// enum HttpMethod { GET, POST, DELETE, UNKNOWN }; check if the request is a GET request
+		if (get_http_method(buffer) == GET) {
+			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+				"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
+				file_content;
+
+			std::cout << "Response:\n" << std::endl;
+			std::cout << response << std::endl;
+
+			send(client_fd, response.c_str(), response.size(), 0);
+			close(client_fd);
+		}
+		if (get_http_method(buffer) == DELETE) {
+			// TODO implement deleting an uploaded file
+		}
+
+		// TODO autoindex=false  show files in directory
 	}
 }
 
