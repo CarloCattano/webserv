@@ -1,15 +1,36 @@
 #include "utils.hpp"
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
-// getcwd include
-#include <cerrno>
+#include <string>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 std::map<std::string, std::string> content_types;
+
+HttpMethod get_http_method(const char *request)
+{
+	// Find the first space in the request line
+	const char *first_space = strchr(request, ' ');
+	if (first_space != NULL) {
+		// Extract the HTTP method from the request line
+		std::string method(request, first_space - request);
+		if (method == "GET") {
+			return GET;
+		}
+		else if (method == "POST") {
+			return POST;
+		}
+		else if (method == "DELETE") {
+			return DELETE;
+		}
+	}
+	return UNKNOWN; // Unable to determine HTTP method
+}
 
 std::string getContentType(const std::string &filename)
 {
@@ -54,6 +75,45 @@ std::string extract_requested_file_path(const char *buffer)
 	/* return "/index.html"; */
 
 	return path;
+}
+
+std::size_t extract_content_length(const char *request)
+{
+	const char *content_length_header = strstr(request, "Content-Length:");
+	if (content_length_header != NULL) {
+		// Skip the "Content-Length:" prefix
+		content_length_header += strlen("Content-Length:");
+		// Convert the value to size_t
+		return std::strtoul(content_length_header, NULL, 10);
+	}
+	// If Content-Length header is not found or invalid, return 0
+	return 0;
+}
+
+std::string extract_filename_from_request(const char *request)
+{
+	const char *filename_field = strstr(request, "filename=");
+	if (filename_field != NULL) {
+		const char *filename_start = filename_field + strlen("filename=");
+		const char *filename_end = strstr(filename_start, "\r\n");
+		if (filename_end != NULL) {
+			std::string filename(filename_start, filename_end - filename_start);
+			return filename;
+		}
+	}
+	return "";
+}
+
+bool is_file_upload_request(const char *request)
+{
+	const char *content_type_header = strstr(request, "Content-Type:");
+	if (content_type_header != NULL) {
+		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
+		if (multipart_form_data != NULL) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // get the path of the folder from where the server is run
