@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <fcntl.h>
 #include <signal.h>
@@ -16,7 +17,7 @@
 const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
-const bool autoindex = true; // TODO load from config
+const bool autoindex = false; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
@@ -329,9 +330,10 @@ void Server::handle_request(int client_fd)
 					intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
 				send(client_fd, response.c_str(), response.size(), 0);
 			}
+			else
+				handle_file_request(client_fd, requested_file_path);
 		}
-		else if (get_http_method(buffer) == GET) {
-			std::cout << "Requested file: " << full_path << std::endl;
+		else if (get_http_method(buffer) == GET && autoindex == true) {
 			if (autoindex == true) {
 				if (requested_file_path == "/")
 					requested_file_path = "/index.html";

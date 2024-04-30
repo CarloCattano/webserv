@@ -1,11 +1,22 @@
 # WEBSERV
  by ccattano bmacmaho jalbers
 
-BUG - there is zombie processes after the cgi is done running
+## Current open fronts:
+- [ ] Parsing implementation (See TODO tags)
+- [ ] Request handling
 
- ```bash
- make re
- or 
- make run
- ```
- * make will not remake at the moment since there are no objects yet
+- [ ] Response handling
+- [ ] Cluster management
+
+- [ ] File Upload 
+- [ ] Directory listing
+
+## Many hardcoded values such as:
+- [ ] Port number
+- [ ] Server root
+- [ ] Server name
+- [ ] autoindex
+- [ ] cgi paths
+- [ ] server website root
+- [ ] server website index
+
