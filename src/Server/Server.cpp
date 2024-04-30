@@ -85,7 +85,7 @@ void Server::await_connections()
 		exit(EXIT_FAILURE);
 	}
 
-	while (1) {
+	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
 		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
@@ -182,11 +182,11 @@ void Server::handle_file_request(int client_fd, const std::string &file_path)
 	std::string file_content = readFileToString(full_path);
 	std::string content_type = getContentType(file_path);
 
-	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+	std::string response = "HTTP/1.1 200 OK\r\n";
+	response += "Content-Type: " + content_type +
 		"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 	send(client_fd, response.c_str(), response.size(), 0);
-	close(client_fd);
 }
 
 void Server::handle_static_request(int client_fd,
@@ -202,9 +202,10 @@ void Server::handle_static_request(int client_fd,
 			std::string dir_list = generateDirectoryListing(full_path);
 
 			// Send HTTP response with the directory listing
-			std::string response =
-				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-				intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
+			std::string response = "HTTP/1.1 200 OK\r\n";
+			response +=
+				"Content-Type: text/html\r\nContent-Length: " + intToString(dir_list.size()) +
+				"\r\n\r\n" + dir_list;
 			send(client_fd, response.c_str(), response.size(), 0);
 		}
 		else {
@@ -252,7 +253,6 @@ void Server::handle_write(int client_fd)
 
 		uploader.handle_file_upload(client_fd, filename, content_length, content.c_str());
 	}
-	close(client_fd);
 }
 
 void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_path)
@@ -260,7 +260,6 @@ void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_pat
 	int forked = fork();
 	if (forked == -1) {
 		perror("fork");
-		close(client_fd);
 		return;
 	}
 
@@ -269,8 +268,10 @@ void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_pat
 		std::string cgi_response = cgi.run(cgi_script_path);
 
 		// Construct HTTP response
-		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-			intToString(cgi_response.length()) + "\r\n\r\n" + cgi_response;
+		std::string response = "HTTP/1.1 200 OK\r\n";
+		response +=
+			"Content-Type: text/html\r\nContent-Length: " + intToString(cgi_response.length()) +
+			"\r\n\r\n" + cgi_response + "\r\n";
 
 		// Send response to client
 		send(client_fd, response.c_str(), response.size(), 0);
