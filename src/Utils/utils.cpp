@@ -153,8 +153,8 @@ std::string generateDirectoryListing(const std::string &path)
 			html << "<li><a href=\"" << entryName << "/\">" << entryName << "/</a></li>";
 		}
 		else {
-			// It's a file, just display the name
-			html << "<li>" << entryName << "</li>";
+			// It's a file, create a link to download the file
+			html << "<li><a href=\"" << entryName << "\" download>" << entryName << "</a></li>";
 		}
 	}
 
