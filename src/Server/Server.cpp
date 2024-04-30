@@ -179,25 +179,30 @@ void Server::handle_request(int client_fd)
 
 void Server::handle_delete(int client_fd, std::string full_path, std::string file_path)
 {
-	// remove the first 4 chars from requested_file_path
+	// remove the first 4 chars from requested_file_path "ETE "
 	full_path += file_path.substr(4);
 
-	// check that file exists // TODO dont allow to delete dirs or arbitrary files
+	std::string response = "HTTP/1.1 ";
+
+	// TODO check if full_path is a folder or an html file and dont remove it if so
+
 	int ret = std::remove(full_path.c_str());
 	if (ret != 0) {
 		perror("remove");
 		// TODO send error code
+		response += "404 not found\r\n";
 	}
 	else {
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
-		std::string response = "http/1.1 200 ok\r\n";
-		send(client_fd, response.c_str(), response.size(), 0);
+		response += "200 ok\r\n";
 	}
+	send(client_fd, response.c_str(), response.size(), 0);
 }
 
 void Server::handle_file_request(int client_fd, const std::string &file_path)
 {
-	std::string full_path = "website" + file_path;
+	std::string full_path =
+		"website" + file_path; // TODO use config root folder for corresponding server
 	std::string file_content = readFileToString(full_path);
 	std::string content_type = getContentType(file_path);
 
