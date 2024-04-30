@@ -34,8 +34,14 @@ int main(int argc, char *argv[])
 		config_file = "server.conf";
 		std::cout << "Using default configuration file: " << config_file << std::endl;
 	}
-	else
+	else {
 		config_file = argv[1];
+
+		if (config_file == "" || config_file.empty()) {
+			std::cerr << "Invalid configuration file" << std::endl;
+			return 1;
+		}
+	}
 
 	Config config(config_file);
 	Server server("localhost", config.get_virtual_servers()[0].port);
