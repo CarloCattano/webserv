@@ -1,27 +1,30 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "../Utils/FileUpload.hpp"
+#include <string>
 #include <arpa/inet.h>
 #include <poll.h>
-#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "../Utils/FileUpload.hpp"
 
 class Server {
-  private:
+private:
 	std::string _ip_address;
 	struct sockaddr_in _server_address;
 	int _port;
 	int _socket_fd;
 
+	void handle_file_request(int client_fd, const std::string &file_path);
+
 	void handle_request(int fd);
 	void handle_write(int fd);
+
 	static void stop(int signal);
 
 	FileUploader uploader;
 
-  public:
+public:
 	Server(std::string ip_address, int port);
 	~Server();
 
@@ -30,23 +33,35 @@ class Server {
 	void await_connections();
 
 	class BindErrorException : public std::exception {
-	  public:
-		virtual const char *what() const throw() { return ("Bind error"); }
+	public:
+		virtual const char *what() const throw()
+		{
+			return ("Bind error");
+		}
 	};
 
 	class SocketErrorException : public std::exception {
-	  public:
-		virtual const char *what() const throw() { return ("Socket error"); }
+	public:
+		virtual const char *what() const throw()
+		{
+			return ("Socket error");
+		}
 	};
 
 	class ListenErrorException : public std::exception {
-	  public:
-		virtual const char *what() const throw() { return ("Listen error"); }
+	public:
+		virtual const char *what() const throw()
+		{
+			return ("Listen error");
+		}
 	};
 
 	class InvalidPortException : public std::exception {
-	  public:
-		virtual const char *what() const throw() { return ("Invalid port"); }
+	public:
+		virtual const char *what() const throw()
+		{
+			return ("Invalid port");
+		}
 	};
 };
 #endif
