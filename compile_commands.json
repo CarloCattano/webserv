@@ -112,6 +112,46 @@
       "-I./src/Config",
       "-I./src/Utils",
       "-o",
+      "src/Config/UtilsConfig.o",
+      "src/Config/UtilsConfig.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Config/UtilsConfig.cpp",
+    "output": "/home/carlo/42/webserv/src/Config/UtilsConfig.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Config/ParseRoute.o",
+      "src/Config/ParseRoute.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Config/ParseRoute.cpp",
+    "output": "/home/carlo/42/webserv/src/Config/ParseRoute.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
       "src/Utils/FileUpload.o",
       "src/Utils/FileUpload.cpp"
     ],
