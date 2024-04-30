@@ -20,8 +20,7 @@ const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
 const bool autoindex = false; // TODO load from config
 
-std::string CGI_BIN =
-	get_current_dir() + "/website/cgi-bin/" + "infinite_loop.py"; // TODO load from config
+std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
