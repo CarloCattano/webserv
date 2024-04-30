@@ -20,6 +20,10 @@ private:
 	void handle_request(int fd);
 	void handle_write(int fd);
 
+	void handle_cgi_request(int client_fd, const std::string &cgi_script_path);
+	void handle_static_request(int client_fd,
+							   const std::string &requested_file_path,
+							   const char *buffer);
 	static void stop(int signal);
 
 	FileUploader uploader;

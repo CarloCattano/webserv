@@ -21,67 +21,6 @@ const bool autoindex = false; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
-std::size_t extract_content_length(const char *request)
-{
-	const char *content_length_header = strstr(request, "Content-Length:");
-	if (content_length_header != NULL) {
-		// Skip the "Content-Length:" prefix
-		content_length_header += strlen("Content-Length:");
-		// Convert the value to size_t
-		return std::strtoul(content_length_header, NULL, 10);
-	}
-	// If Content-Length header is not found or invalid, return 0
-	return 0;
-}
-
-std::string extract_filename_from_request(const char *request)
-{
-	const char *filename_field = strstr(request, "filename=");
-	if (filename_field != NULL) {
-		const char *filename_start = filename_field + strlen("filename=");
-		const char *filename_end = strstr(filename_start, "\r\n");
-		if (filename_end != NULL) {
-			std::string filename(filename_start, filename_end - filename_start);
-			return filename;
-		}
-	}
-	return "";
-}
-
-bool is_file_upload_request(const char *request)
-{
-	const char *content_type_header = strstr(request, "Content-Type:");
-	if (content_type_header != NULL) {
-		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
-		if (multipart_form_data != NULL) {
-			return true;
-		}
-	}
-	return false;
-}
-
-enum HttpMethod { GET, POST, DELETE, UNKNOWN };
-
-HttpMethod get_http_method(const char *request)
-{
-	// Find the first space in the request line
-	const char *first_space = strchr(request, ' ');
-	if (first_space != NULL) {
-		// Extract the HTTP method from the request line
-		std::string method(request, first_space - request);
-		if (method == "GET") {
-			return GET;
-		}
-		else if (method == "POST") {
-			return POST;
-		}
-		else if (method == "DELETE") {
-			return DELETE;
-		}
-	}
-	return UNKNOWN; // Unable to determine HTTP method
-}
-
 Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
 {
 	_server_address.sin_family = AF_INET;
@@ -90,17 +29,13 @@ Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _por
 	Server::start();
 }
 
-void Server::stop(int signal)
+Server::~Server()
 {
-	(void)signal;
-	log("\nServer stopped");
-	exit(0);
+	close(_socket_fd);
 }
-
 /* takes care of the signal when a child process is terminated
 	and the parent process is not waiting for it
 	so it doesn't become a zombie process */
-
 void handleSigchild(int sig)
 {
 	(void)sig;
@@ -203,15 +138,42 @@ void Server::await_connections()
 	}
 }
 
-void Server::start()
+void Server::handle_request(int client_fd)
 {
-	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
-		perror("signal(SIGCHLD) error");
+	char buffer[BUFFER_SIZE];
+	if (client_fd == -1) {
+		perror("client_fd");
+		return;
+	}
 
-	signal(SIGINT, stop);
+	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
+	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		return;
+	}
 
-	start_listen();
-	await_connections();
+	if (size == -1) {
+		perror("recv");
+		return;
+	}
+
+	HttpMethod reqType = get_http_method(buffer);
+
+	std::string requested_file_path = extract_requested_file_path(buffer);
+	std::string file_content = readFileToString("website" + requested_file_path);
+	std::string content_type = getContentType(requested_file_path);
+
+	if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
+		handle_cgi_request(client_fd, CGI_BIN); // TODO load CGI_BIN from config
+	}
+	else if (reqType == GET) {
+		/* TODO's handle response code */
+		/*        check permissions for a certain file access */
+		handle_static_request(client_fd, requested_file_path, buffer);
+	}
+
+	if (reqType == DELETE) {
+		// TODO implement deleting an uploaded file
+	}
 }
 
 void Server::handle_file_request(int client_fd, const std::string &file_path)
@@ -224,6 +186,41 @@ void Server::handle_file_request(int client_fd, const std::string &file_path)
 		"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 	send(client_fd, response.c_str(), response.size(), 0);
+	close(client_fd);
+}
+
+void Server::handle_static_request(int client_fd,
+								   const std::string &requested_file_path,
+								   const char *buffer)
+{
+	std::string full_path = "website" + requested_file_path;
+	struct stat path_stat;
+
+	if (get_http_method(buffer) == GET && autoindex == false) {
+		if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
+			// It's a directory, generate directory listing for the requested path
+			std::string dir_list = generateDirectoryListing(full_path);
+
+			// Send HTTP response with the directory listing
+			std::string response =
+				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
+				intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
+			send(client_fd, response.c_str(), response.size(), 0);
+		}
+		else {
+			handle_file_request(client_fd, requested_file_path);
+		}
+	}
+	else if (get_http_method(buffer) == GET && autoindex == true) {
+		// forward to index.html if autoindex is enabled
+		if (autoindex == true && requested_file_path == "/")
+			handle_file_request(client_fd, "/index.html");
+		else
+			handle_file_request(client_fd, requested_file_path);
+	}
+	if (get_http_method(buffer) == DELETE) {
+		// TODO implement deleting an uploaded file
+	}
 }
 
 void Server::handle_write(int client_fd)
@@ -258,95 +255,47 @@ void Server::handle_write(int client_fd)
 	close(client_fd);
 }
 
-void Server::handle_request(int client_fd)
+void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_path)
 {
-	char buffer[BUFFER_SIZE];
-	if (client_fd == -1) {
-		perror("client_fd");
+	int forked = fork();
+	if (forked == -1) {
+		perror("fork");
+		close(client_fd);
 		return;
 	}
 
-	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-	if (size == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	if (forked == 0) {
+		Cgi cgi;
+		std::string cgi_response = cgi.run(cgi_script_path);
+
+		// Construct HTTP response
+		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
+			intToString(cgi_response.length()) + "\r\n\r\n" + cgi_response;
+
+		// Send response to client
+		send(client_fd, response.c_str(), response.size(), 0);
+		exit(0);
+	}
+	else {
+		close(client_fd);
 		return;
-	}
-
-	if (size == -1) {
-		perror("recv");
-		return;
-	}
-
-	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString("website" + requested_file_path);
-	std::string content_type = getContentType(requested_file_path);
-
-	/* std::cout << "Raw Request: " << std::endl; */
-	/* std::cout << buffer << std::endl; */
-
-	if (requested_file_path.find(".py") != std::string::npos) {
-		int forked = fork();
-
-		if (forked == -1) {
-			perror("fork");
-			exit(EXIT_FAILURE);
-		}
-
-		if (forked == 0) {
-			Cgi cgi;
-			std::string cgi_response = cgi.run(CGI_BIN);
-
-			// TODO return 200 if all ok with the cgi , 500 if error etc
-
-			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
-				cgi_response.c_str();
-
-			send(client_fd, response.c_str(), response.size(), 0);
-			close(client_fd);
-			exit(0);
-		}
-		else {
-			close(client_fd);
-			return;
-		}
-	}
-	else { // Handle static file  GET request
-		   // TODO handle response code
-		   // check permissions for a certain file access
-
-		std::string full_path =
-			"website" + requested_file_path; // TODO load from config the allowed paths
-
-		struct stat path_stat;
-
-		if (get_http_method(buffer) == GET && autoindex == false) {
-			if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
-				// It's a directory, generate directory listing for the requested path
-				std::string dir_list = generateDirectoryListing(full_path);
-
-				// Send HTTP response with the directory listing
-				std::string response =
-					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-					intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
-				send(client_fd, response.c_str(), response.size(), 0);
-			}
-			else
-				handle_file_request(client_fd, requested_file_path);
-		}
-		else if (get_http_method(buffer) == GET && autoindex == true) {
-			if (autoindex == true) {
-				if (requested_file_path == "/")
-					requested_file_path = "/index.html";
-			}
-			handle_file_request(client_fd, requested_file_path);
-		}
-		if (get_http_method(buffer) == DELETE) {
-			// TODO implement deleting an uploaded file
-		}
 	}
 }
 
-Server::~Server()
+void Server::stop(int signal)
 {
-	close(_socket_fd);
+	(void)signal;
+	log("\nServer stopped");
+	exit(0);
+}
+
+void Server::start()
+{
+	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
+		perror("signal(SIGCHLD) error");
+
+	signal(SIGINT, stop);
+
+	start_listen();
+	await_connections();
 }

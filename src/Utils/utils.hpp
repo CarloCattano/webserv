@@ -22,3 +22,10 @@ std::string extract_boundary(const char *buffer);
 std::string extract_content_body(const char *buffer);
 std::string extract_request_header(const char *buffer);
 std::string generateDirectoryListing(const std::string &path);
+
+bool is_file_upload_request(const char *request);
+std::string extract_filename_from_request(const char *request);
+std::size_t extract_content_length(const char *request);
+
+enum HttpMethod { GET, POST, DELETE, UNKNOWN };
+HttpMethod get_http_method(const char *buffer);
