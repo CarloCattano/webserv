@@ -24,6 +24,8 @@ private:
 	void handle_static_request(int client_fd,
 							   const std::string &requested_file_path,
 							   const char *buffer);
+	void handle_delete(int client_fd, std::string full_path, std::string file_path);
+
 	static void stop(int signal);
 
 	FileUploader uploader;
