@@ -224,6 +224,41 @@ void Server::handle_file_request(int client_fd, const std::string &file_path)
 		"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
 
 	send(client_fd, response.c_str(), response.size(), 0);
+	close(client_fd);
+}
+
+void Server::handle_static_request(int client_fd,
+								   const std::string &requested_file_path,
+								   const char *buffer)
+{
+	std::string full_path = "website" + requested_file_path;
+	struct stat path_stat;
+
+	if (get_http_method(buffer) == GET && autoindex == false) {
+		if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
+			// It's a directory, generate directory listing for the requested path
+			std::string dir_list = generateDirectoryListing(full_path);
+
+			// Send HTTP response with the directory listing
+			std::string response =
+				"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
+				intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
+			send(client_fd, response.c_str(), response.size(), 0);
+		}
+		else {
+			handle_file_request(client_fd, requested_file_path);
+		}
+	}
+	else if (get_http_method(buffer) == GET && autoindex == true) {
+		// forward to index.html if autoindex is enabled
+		if (autoindex == true && requested_file_path == "/")
+			handle_file_request(client_fd, "/index.html");
+		else
+			handle_file_request(client_fd, requested_file_path);
+	}
+	if (get_http_method(buffer) == DELETE) {
+		// TODO implement deleting an uploaded file
+	}
 }
 
 void Server::handle_write(int client_fd)
@@ -258,6 +293,33 @@ void Server::handle_write(int client_fd)
 	close(client_fd);
 }
 
+void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_path)
+{
+	int forked = fork();
+	if (forked == -1) {
+		perror("fork");
+		close(client_fd);
+		return;
+	}
+
+	if (forked == 0) {
+		Cgi cgi;
+		std::string cgi_response = cgi.run(cgi_script_path);
+
+		// Construct HTTP response
+		std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
+			intToString(cgi_response.length()) + "\r\n\r\n" + cgi_response;
+
+		// Send response to client
+		send(client_fd, response.c_str(), response.size(), 0);
+		exit(0);
+	}
+	else {
+		close(client_fd);
+		return;
+	}
+}
+
 void Server::handle_request(int client_fd)
 {
 	char buffer[BUFFER_SIZE];
@@ -280,69 +342,17 @@ void Server::handle_request(int client_fd)
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
 
-	/* std::cout << "Raw Request: " << std::endl; */
-	/* std::cout << buffer << std::endl; */
-
 	if (requested_file_path.find(".py") != std::string::npos) {
-		int forked = fork();
-
-		if (forked == -1) {
-			perror("fork");
-			exit(EXIT_FAILURE);
-		}
-
-		if (forked == 0) {
-			Cgi cgi;
-			std::string cgi_response = cgi.run(CGI_BIN);
-
-			// TODO return 200 if all ok with the cgi , 500 if error etc
-
-			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-				"\r\nContent-Length: " + intToString(cgi_response.length()) + "\r\n\r\n" +
-				cgi_response.c_str();
-
-			send(client_fd, response.c_str(), response.size(), 0);
-			close(client_fd);
-			exit(0);
-		}
-		else {
-			close(client_fd);
-			return;
-		}
+		handle_cgi_request(client_fd, CGI_BIN); // TODO load CGI_BIN from config
 	}
-	else { // Handle static file  GET request
-		   // TODO handle response code
-		   // check permissions for a certain file access
+	else {
+		/* TODO's handle response code */
+		/* check permissions for a certain file access */
+		handle_static_request(client_fd, requested_file_path, buffer);
+	}
 
-		std::string full_path =
-			"website" + requested_file_path; // TODO load from config the allowed paths
-
-		struct stat path_stat;
-
-		if (get_http_method(buffer) == GET && autoindex == false) {
-			if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
-				// It's a directory, generate directory listing for the requested path
-				std::string dir_list = generateDirectoryListing(full_path);
-
-				// Send HTTP response with the directory listing
-				std::string response =
-					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
-					intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
-				send(client_fd, response.c_str(), response.size(), 0);
-			}
-			else
-				handle_file_request(client_fd, requested_file_path);
-		}
-		else if (get_http_method(buffer) == GET && autoindex == true) {
-			if (autoindex == true) {
-				if (requested_file_path == "/")
-					requested_file_path = "/index.html";
-			}
-			handle_file_request(client_fd, requested_file_path);
-		}
-		if (get_http_method(buffer) == DELETE) {
-			// TODO implement deleting an uploaded file
-		}
+	if (get_http_method(buffer) == DELETE) {
+		// TODO implement deleting an uploaded file
 	}
 }
 
