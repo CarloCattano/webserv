@@ -85,7 +85,7 @@ void Server::await_connections()
 		exit(EXIT_FAILURE);
 	}
 
-	while (1) {
+	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
 		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);

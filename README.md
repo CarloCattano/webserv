@@ -10,6 +10,12 @@
 
 - [ ] File Upload 
 - [ ] Directory listing
+- [ ] take cgi script name and execute it if it exists in the associated directory ( currently hardcoded to either hello.py or test.py)
+
+
+## weird bugs:
+    - [ ] `curl -X POST localhost:4222/hello.py` fails sometimes, with perror recv: bad file descriptor
+    
 
 ## Many hardcoded values such as:
 - [ ] Port number
