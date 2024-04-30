@@ -5,6 +5,8 @@
 #include <sstream>
 // getcwd include
 #include <cerrno>
+#include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 std::map<std::string, std::string> content_types;
@@ -48,8 +50,8 @@ std::string extract_requested_file_path(const char *buffer)
 	size_t end = request.find("HTTP/1.1") - 1;
 	std::string path = request.substr(start, end - start);
 
-	if (path == "/")
-		return "/index.html";
+	/* if (path == "/") */
+	/* return "/index.html"; */
 
 	return path;
 }
@@ -118,4 +120,47 @@ std::string extract_content_body(const char *buffer)
 	/* 	} */
 
 	return body;
+}
+
+std::string generateDirectoryListing(const std::string &path)
+{
+	std::stringstream html;
+	html << "<html><head><title>Directory Listing</title></head><body><h1>Directory "
+			"Listing</h1><ul>";
+
+	// Add "../" entry
+	html << "<li><a href=\"../\">../</a></li>";
+
+	// Open the directory
+	DIR *dir = opendir(path.c_str());
+	if (dir == NULL) {
+		html << "<p>Error opening directory " << path << "</p>";
+		html << "</ul></body></html>";
+		return html.str();
+	}
+
+	// Read directory entries
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL) {
+		std::string entryName = entry->d_name;
+		// Exclude the current directory "." and any other directories starting with "."
+		if (entryName == "." || entryName[0] == '.')
+			continue;
+		std::string fullPath = path + "/" + entryName;
+		struct stat entry_stat;
+		if (stat(fullPath.c_str(), &entry_stat) == 0 && S_ISDIR(entry_stat.st_mode)) {
+			// It's a directory, create a hyperlink to navigate into the folder
+			html << "<li><a href=\"" << entryName << "/\">" << entryName << "/</a></li>";
+		}
+		else {
+			// It's a file, just display the name
+			html << "<li>" << entryName << "</li>";
+		}
+	}
+
+	// Close the directory
+	closedir(dir);
+
+	html << "</ul></body></html>";
+	return html.str();
 }

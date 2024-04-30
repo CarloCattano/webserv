@@ -21,3 +21,4 @@ std::string extract_body(const char *buffer);
 std::string extract_boundary(const char *buffer);
 std::string extract_content_body(const char *buffer);
 std::string extract_request_header(const char *buffer);
+std::string generateDirectoryListing(const std::string &path);

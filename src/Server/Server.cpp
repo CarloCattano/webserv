@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <sys/epoll.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include "../Cgi/Cgi.hpp"
 #include "../Utils/utils.hpp"
@@ -15,6 +16,7 @@
 const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
+const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
@@ -211,6 +213,18 @@ void Server::start()
 	await_connections();
 }
 
+void Server::handle_file_request(int client_fd, const std::string &file_path)
+{
+	std::string full_path = "website" + file_path;
+	std::string file_content = readFileToString(full_path);
+	std::string content_type = getContentType(file_path);
+
+	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
+		"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
+
+	send(client_fd, response.c_str(), response.size(), 0);
+}
+
 void Server::handle_write(int client_fd)
 {
 	char buffer[BUFFER_SIZE];
@@ -230,7 +244,6 @@ void Server::handle_write(int client_fd)
 
 		FileUploader uploader;
 		std::size_t content_length = extract_content_length(buffer);
-		std::cout << "Content length: " << content_length << std::endl;
 		std::string filename = extract_filename_from_request(buffer);
 
 		// we must extract the first part of the request body in between the boundary
@@ -238,9 +251,6 @@ void Server::handle_write(int client_fd)
 		// but the first part of the request body is not in the buffer if we dont read it
 
 		std::string content = extract_content_body(request.c_str());
-
-		std::cout << "Content:\n" << content << std::endl;
-		std::cout << "---------END OF CONTENT---------" << std::endl;
 
 		uploader.handle_file_upload(client_fd, filename, content_length, content.c_str());
 	}
@@ -303,23 +313,34 @@ void Server::handle_request(int client_fd)
 		   // TODO handle response code
 		   // check permissions for a certain file access
 
-		// enum HttpMethod { GET, POST, DELETE, UNKNOWN }; check if the request is a GET request
-		if (get_http_method(buffer) == GET) {
-			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: " + content_type +
-				"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" +
-				file_content;
+		std::string full_path =
+			"website" + requested_file_path; // TODO load from config the allowed paths
 
-			std::cout << "Response:\n" << std::endl;
-			std::cout << response << std::endl;
+		struct stat path_stat;
 
-			send(client_fd, response.c_str(), response.size(), 0);
-			close(client_fd);
+		if (get_http_method(buffer) == GET && autoindex == false) {
+			if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
+				// It's a directory, generate directory listing for the requested path
+				std::string dir_list = generateDirectoryListing(full_path);
+
+				// Send HTTP response with the directory listing
+				std::string response =
+					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " +
+					intToString(dir_list.size()) + "\r\n\r\n" + dir_list;
+				send(client_fd, response.c_str(), response.size(), 0);
+			}
+		}
+		else if (get_http_method(buffer) == GET) {
+			std::cout << "Requested file: " << full_path << std::endl;
+			if (autoindex == true) {
+				if (requested_file_path == "/")
+					requested_file_path = "/index.html";
+			}
+			handle_file_request(client_fd, requested_file_path);
 		}
 		if (get_http_method(buffer) == DELETE) {
 			// TODO implement deleting an uploaded file
 		}
-
-		// TODO autoindex=false  show files in directory
 	}
 }
 
