@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include <cerrno>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -161,6 +162,7 @@ void Server::handle_request(int client_fd)
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString("website" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
+	std::string full_path = "website/";
 
 	if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
 		handle_cgi_request(client_fd, CGI_BIN); // TODO load CGI_BIN from config
@@ -170,15 +172,37 @@ void Server::handle_request(int client_fd)
 		/*        check permissions for a certain file access */
 		handle_static_request(client_fd, requested_file_path, buffer);
 	}
-
-	if (reqType == DELETE) {
-		// TODO implement deleting an uploaded file
+	else if (reqType == DELETE) {
+		handle_delete(client_fd, full_path, requested_file_path);
 	}
+}
+
+void Server::handle_delete(int client_fd, std::string full_path, std::string file_path)
+{
+	// remove the first 4 chars from requested_file_path "ETE "
+	full_path += file_path.substr(4);
+
+	std::string response = "HTTP/1.1 ";
+
+	// TODO check if full_path is a folder or an html file and dont remove it if so
+
+	int ret = std::remove(full_path.c_str());
+	if (ret != 0) {
+		perror("remove");
+		// TODO send error code
+		response += "404 not found\r\n";
+	}
+	else {
+		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
+		response += "200 ok\r\n";
+	}
+	send(client_fd, response.c_str(), response.size(), 0);
 }
 
 void Server::handle_file_request(int client_fd, const std::string &file_path)
 {
-	std::string full_path = "website" + file_path;
+	std::string full_path =
+		"website" + file_path; // TODO use config root folder for corresponding server
 	std::string file_content = readFileToString(full_path);
 	std::string content_type = getContentType(file_path);
 
@@ -218,9 +242,6 @@ void Server::handle_static_request(int client_fd,
 			handle_file_request(client_fd, "/index.html");
 		else
 			handle_file_request(client_fd, requested_file_path);
-	}
-	if (get_http_method(buffer) == DELETE) {
-		// TODO implement deleting an uploaded file
 	}
 }
 
