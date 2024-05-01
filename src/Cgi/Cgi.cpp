@@ -1,8 +1,10 @@
 #include "Cgi.hpp"
 #include <cstdlib>
+#include <sys/wait.h>
+#include "utils.hpp"
+// include for execve
 #include <iostream>
 #include <string.h>
-#include <sys/wait.h>
 #include <unistd.h>
 Cgi::Cgi()
 {
@@ -42,7 +44,7 @@ std::string relativePath(std::string path)
 
 std::string runCommand(const std::string &scriptPath)
 {
-	const int TIMEOUT_SECONDS = 10;
+	const int TIMEOUT_SECONDS = 20;
 
 	if (scriptPath.empty()) {
 		throw std::invalid_argument("Empty script path");
@@ -69,6 +71,8 @@ std::string runCommand(const std::string &scriptPath)
 			exit(EXIT_FAILURE);
 		}
 
+		alarm(TIMEOUT_SECONDS);
+
 		char pyBin[] = "/usr/bin/python3";
 
 		char *av[] = { pyBin, strdup(scriptPath.c_str()), NULL };
@@ -85,28 +89,6 @@ std::string runCommand(const std::string &scriptPath)
 		char buffer[1024]; // output from the child process
 		std::string result;
 		ssize_t bytes_read;
-
-		fd_set read_fds;
-		FD_ZERO(&read_fds);
-		FD_SET(pipe_fd[0], &read_fds);
-
-		timeval timeout;
-		timeout.tv_sec = TIMEOUT_SECONDS;
-		timeout.tv_usec = 0;
-
-		int ready = select(pipe_fd[0] + 1, &read_fds, NULL, NULL, &timeout);
-		if (ready == -1) {
-			std::cerr << "Error in select()" << std::endl;
-			close(pipe_fd[0]);
-			exit(EXIT_FAILURE);
-		}
-		else if (ready == 0) {
-			// Timeout
-			std::cerr << "Timeout occurred while waiting for child process" << std::endl;
-			close(pipe_fd[0]);
-			return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nTimeout "
-				   "occurred while waiting for CGI script";
-		}
 
 		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
 			result.append(buffer, bytes_read);
