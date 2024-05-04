@@ -1,4 +1,4 @@
-SRCS = src/main.cpp src/Utils/utils.cpp src/Cgi/Cgi.cpp src/Server/Server.cpp src/Config/Config.cpp
+SRCS = src/main.cpp src/Utils/utils.cpp src/Cgi/Cgi.cpp src/Server/Server.cpp src/Config/Config.cpp src/Config/UtilsConfig.cpp src/Config/ParseRoute.cpp src/Utils/FileUpload.cpp
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98
 OBJS = $(SRCS:.cpp=.o)
@@ -8,7 +8,7 @@ INC = -I./src/Cgi -I./src/Server -I./src/Config -I./src/Utils
 
 all: $(NAME)
 
-$(NAME): $(OBJS) 
+$(NAME): $(OBJS)
 	$(CXX) $(OBJS) $(CXXFLAGS) $(INC) -o $(NAME)
 
 %.o: %.cpp
@@ -19,11 +19,11 @@ run : all
 	./$(NAME) server.conf
 
 clean:
-	rm -rf $(OBJS) 
+	rm -rf $(OBJS)
 
 fclean: clean
 	rm -rf $(NAME)
-		
+
 re: fclean all
 
 .PHONY: all clean fclean re

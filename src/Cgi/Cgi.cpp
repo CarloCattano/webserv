@@ -1,9 +1,11 @@
 #include "Cgi.hpp"
-#include <csignal>
 #include <cstdlib>
 #include <sys/wait.h>
 #include "utils.hpp"
-
+// include for execve
+#include <iostream>
+#include <string.h>
+#include <unistd.h>
 Cgi::Cgi()
 {
 }
@@ -27,8 +29,10 @@ Cgi::Cgi(const Cgi &src)
 
 std::string relativePath(std::string path)
 {
+	// add main folder abs path
+	std::string mainFolder = "/home/carlo/42/webserv/";
 	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
-	std::string result = prefix + path;
+	std::string result = mainFolder + prefix + path;
 	return result;
 }
 
@@ -58,10 +62,10 @@ std::string runCommand(const std::string &scriptPath)
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0) {		   // Child process
-		close(pipe_fd[0]); // Close the read end of the pipe
+	if (pid == 0) {
+		close(pipe_fd[0]); // Close read
 
-		// Redirect stdout to the write end of the pipe
+		// stdout to write
 		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
 			std::cerr << "Failed to redirect stdout" << std::endl;
 			exit(EXIT_FAILURE);
@@ -69,15 +73,20 @@ std::string runCommand(const std::string &scriptPath)
 
 		alarm(TIMEOUT_SECONDS);
 
-		if (execl("/usr/bin/python3", "python3", relativePath(scriptPath).c_str(), NULL) == -1) {
+		char pyBin[] = "/usr/bin/python3";
+
+		char *av[] = { pyBin, strdup(scriptPath.c_str()), NULL };
+
+		if (execve(pyBin, av, NULL) == -1) {
 			std::cerr << "Failed to execute Python script" << std::endl;
 			exit(EXIT_FAILURE);
 		}
+		exit(EXIT_SUCCESS);
 	}
 	else {
 		close(pipe_fd[1]);
 
-		char buffer[128]; // output from the child process
+		char buffer[1024]; // output from the child process
 		std::string result;
 		ssize_t bytes_read;
 
@@ -88,11 +97,9 @@ std::string runCommand(const std::string &scriptPath)
 		close(pipe_fd[0]);
 
 		int status;
-		waitpid(pid, &status, 0); // blocks until the child process exits
 
-		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-			std::cerr << "Child process failed" << std::endl;
-			exit(EXIT_FAILURE);
+		while (waitpid(pid, &status, WNOHANG) == 0) {
+			continue;
 		}
 
 		return result;

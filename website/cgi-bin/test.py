@@ -1,5 +1,3 @@
-# python cgi test script with loop
-
 import time
 import os
 
@@ -12,12 +10,10 @@ for i in range(10):
     print(f"<title>Counting to 10</title>")
     print(f"</head>")
     print(f"<body>")
-    print(f"<h1>Counting to 10</h1>")
     print(f"<hr>")
     print(f"<p>{i}</p>")
     print(f"<hr>")
     print(f"</body>")
     print(f"</html>")
-    time.sleep(0.2)
+    time.sleep(0.3)
 
-# end of script
