@@ -228,3 +228,15 @@ std::string generateDirectoryListing(const std::string &path)
 	html << "</ul></body></html>";
 	return html.str();
 }
+
+void populateContentTypes()
+{
+	content_types[".html"] = "text/html";
+	content_types[".php"] = "text/html";
+	content_types[".css"] = "text/css";
+	content_types[".jpg"] = "image/jpeg";
+	content_types[".jpeg"] = "image/jpeg";
+	content_types[".png"] = "image/png";
+	content_types[".gif"] = "image/gif";
+	content_types[".py"] = "text/html";
+}
