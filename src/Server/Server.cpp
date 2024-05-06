@@ -58,7 +58,7 @@ void Server::start_listen()
 	int opt = 1;
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
 
-	fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
+	/* fcntl(_socket_fd, F_SETFL, O_NONBLOCK); */
 
 	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
 		throw BindErrorException();
@@ -89,7 +89,7 @@ void Server::await_connections()
 	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
-		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 20);
 
 		if (num_events == -1) {
 			continue;
@@ -132,6 +132,7 @@ void Server::await_connections()
 				}
 				else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					log("Client disconnected");
 					close(client_fd);
 				}
 			}
@@ -287,6 +288,7 @@ void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_pat
 	if (forked == 0) {
 		Cgi cgi;
 		std::string cgi_response = cgi.run(cgi_script_path);
+		// TODO : detect exit status of the script and send the appropriate response
 
 		// Construct HTTP response
 		std::string response = "HTTP/1.1 200 OK\r\n";
@@ -294,7 +296,6 @@ void Server::handle_cgi_request(int client_fd, const std::string &cgi_script_pat
 			"Content-Type: text/html\r\nContent-Length: " + intToString(cgi_response.length()) +
 			"\r\n\r\n" + cgi_response + "\r\n";
 
-		// Send response to client
 		send(client_fd, response.c_str(), response.size(), 0);
 		exit(0);
 	}
