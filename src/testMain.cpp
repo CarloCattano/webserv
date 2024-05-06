@@ -15,8 +15,8 @@ int main () {
 	populateContentTypes();
     std::vector<Server> servers;
 
-    servers.push_back(Server(8080, inet_addr(std::string("127.0.0.1").data())));
-    servers.push_back(Server(8081, inet_addr(std::string("127.0.0.2").data())));
+    servers.push_back(Server(4222, "localhost"));
+    servers.push_back(Server(8081, "0.0.0.0"));
 
     ServerCluster   cluster(servers);
 

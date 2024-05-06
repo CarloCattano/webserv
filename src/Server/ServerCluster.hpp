@@ -14,6 +14,7 @@ class ServerCluster {
 
 	public:
 		ServerCluster(std::vector<Server> servers);
+		~ServerCluster();
 
 		void		setupCluster();
 		void		await_connections();
