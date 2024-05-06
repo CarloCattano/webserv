@@ -54,11 +54,7 @@ void    ServerCluster::await_connections()
 	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
-        std::cout << "blablabla" << std::endl;
 		int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
-
-        std::cout << "Num events: " << num_events << std::endl;
-
 		if (num_events == -1) {
 			exit(EXIT_FAILURE);
 		}
@@ -84,7 +80,6 @@ void    ServerCluster::await_connections()
 				}
 			}
 			else {
-                std::cout << "do we get here?" << std::endl;
 				// message from existing client
 				int client_fd = events[i].data.fd;
 				if (client_fd == -1) {
