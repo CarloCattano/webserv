@@ -18,7 +18,7 @@ const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
 const bool autoindex = true; // TODO load from config
 
-std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
+std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
 ServerCluster::ServerCluster()
 {
@@ -31,7 +31,6 @@ void ServerCluster::setupCluster()
 {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1) {
-		perror("epoll_create1");
 		perror("epoll_create1");
 	}
 
@@ -69,9 +68,11 @@ void ServerCluster::await_connections()
 			if (_server_map.count(events[i].data.fd)) {
 				int client_fd = accept(events[i].data.fd, NULL, NULL);
 
+				// if the client_fd is -1, then the accept failed
+				// and we should continue to the next event
 				if (client_fd == -1) {
 					perror("accept");
-					continue;
+					continue; // continue to the next event
 				}
 
 				struct epoll_event ev;
