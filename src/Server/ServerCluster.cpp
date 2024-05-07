@@ -33,7 +33,7 @@ void ServerCluster::setupCluster()
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1) {
 		perror("epoll_create1");
-		exit(EXIT_FAILURE);
+		perror("epoll_create1");
 	}
 
 	for (size_t i = 0; i < _servers.size(); i++) {
@@ -48,7 +48,6 @@ void ServerCluster::setupCluster()
 
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
 			perror("epoll_ctl");
-			exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -58,9 +57,9 @@ void ServerCluster::await_connections()
 	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
-		int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
+		int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 5);
 		if (num_events == -1) {
-			exit(EXIT_FAILURE);
+			perror("epoll_wait");
 		}
 
 		for (int i = 0; i < num_events; i++) {
@@ -79,7 +78,6 @@ void ServerCluster::await_connections()
 
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
 					perror("epoll_ctl");
-					exit(EXIT_FAILURE);
 				}
 			}
 			else {
@@ -87,7 +85,6 @@ void ServerCluster::await_connections()
 				int client_fd = events[i].data.fd;
 				if (client_fd == -1) {
 					perror("events[i].data.fd");
-					exit(EXIT_FAILURE);
 					continue;
 				}
 
@@ -152,10 +149,7 @@ void ServerCluster::handle_request(int client_fd)
 	else {
 		std::string response = "HTTP/1.1 404 Not Found\r\n";
 		send(client_fd, response.c_str(), response.size(), 0);
-		close(client_fd);
 	}
-
-	close(client_fd);
 }
 
 void ServerCluster::handle_delete(int client_fd, std::string full_path, std::string file_path)
@@ -280,6 +274,7 @@ void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_scr
 			// Send response to client
 			send(client_fd, response.c_str(), response.size(), 0);
 			close(client_fd);
+			exit(0);
 		}
 		else {
 			std::string response = "HTTP/1.1 500 Internal Server Error\r\n";

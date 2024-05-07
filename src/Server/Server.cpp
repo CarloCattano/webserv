@@ -33,8 +33,7 @@ void Server::setup()
 {
 	// NEED TO ADJUST EXITS
 	if ((_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-		exit(EXIT_FAILURE);
-
+		perror("socket");
 	int option_value = 1;
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));
 	fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
@@ -44,10 +43,9 @@ void Server::setup()
 	_server_address.sin_port = htons(_port);
 
 	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
-		exit(EXIT_FAILURE);
-
+		perror("bind");
 	if (listen(_socket_fd, BACKLOG) == -1)
-		exit(EXIT_FAILURE);
+		perror("listen");
 
 	std::cout << "Server started at http://" << _ip << ":" << _port << std::endl;
 }

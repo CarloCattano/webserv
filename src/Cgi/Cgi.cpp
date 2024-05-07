@@ -1,10 +1,8 @@
 #include "Cgi.hpp"
 #include <cstdlib>
-#include <sys/wait.h>
-#include "utils.hpp"
-// include for execve
 #include <iostream>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 Cgi::Cgi()
 {
@@ -45,7 +43,7 @@ std::string relativePath(std::string path)
 std::string runCommand(const std::string &scriptPath)
 {
 	const int TIMEOUT_SECONDS = 20;
-
+	std::string result = "";
 	if (scriptPath.empty()) {
 		throw std::invalid_argument("Empty script path");
 	}
@@ -87,7 +85,7 @@ std::string runCommand(const std::string &scriptPath)
 		close(pipe_fd[1]);
 
 		char buffer[1024]; // output from the child process
-		std::string result;
+
 		ssize_t bytes_read;
 
 		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
@@ -98,13 +96,16 @@ std::string runCommand(const std::string &scriptPath)
 
 		int status;
 
+		// waitpid is blocking the process, so we need to find a way to make it non-blocking
+		// we can use WNOHANG flag to make it non-blocking
+		// == 0 means that the child process is still running and we need to wait but we continue
+		// the loop
+		// != 0 means that the child process is done and we can return the result
 		while (waitpid(pid, &status, WNOHANG) == 0) {
 			continue;
 		}
-
-		return result;
 	}
-	return "";
+	return result;
 }
 
 std::string Cgi::run(const std::string &scriptPath)
