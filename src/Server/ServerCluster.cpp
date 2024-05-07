@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include "../Cgi/Cgi.hpp"
+#include "../Response/Response.hpp"
 #include "../Utils/utils.hpp"
 
 const int MAX_EVENTS = 100;
@@ -150,8 +151,12 @@ void ServerCluster::handle_request(int client_fd)
 
 	// no match for the request
 	else {
-		std::string response = "HTTP/1.1 404 Not Found\r\n";
-		send(client_fd, response.c_str(), response.size(), 0);
+		Response response;
+		response.setStatusCode(404);
+		response.setHeader("Connection", "keep-alive");
+		response.setHeader("Content-Type", "text/html");
+		response.setHeader("Content-Length", "0");
+		response.respond(client_fd);
 	}
 }
 
@@ -184,11 +189,14 @@ void ServerCluster::handle_file_request(int client_fd, const std::string &file_p
 	std::string file_content = readFileToString(full_path);
 	std::string content_type = getContentType(file_path);
 
-	std::string response = "HTTP/1.1 200 OK\r\n";
-	response += "Content-Type: " + content_type +
-		"\r\nContent-Length: " + intToString(file_content.length()) + "\r\n\r\n" + file_content;
+	Response response;
 
-	send(client_fd, response.c_str(), response.size(), 0);
+	response.setStatusCode(200);
+	response.setHeader("Connection", "keep-alive");
+	response.setHeader("Content-Type", content_type);
+	response.setHeader("Content-Length", intToString(file_content.length()));
+	response.setBody(file_content);
+	response.respond(client_fd);
 }
 
 void ServerCluster::handle_static_request(int client_fd,
@@ -200,17 +208,19 @@ void ServerCluster::handle_static_request(int client_fd,
 
 	HttpMethod reqType = get_http_method(buffer);
 
+	Response response;
+
 	if (reqType == GET && autoindex == false) {
 		if (stat(full_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
 			// It's a directory, generate directory listing for the requested path
 			std::string dir_list = generateDirectoryListing(full_path);
 
-			// Send HTTP response with the directory listing
-			std::string response = "HTTP/1.1 200 OK\r\n";
-			response +=
-				"Content-Type: text/html\r\nContent-Length: " + intToString(dir_list.size()) +
-				"\r\n\r\n" + dir_list;
-			send(client_fd, response.c_str(), response.size(), 0);
+			response.setStatusCode(200);
+			response.setHeader("Connection", "keep-alive");
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Content-Length", intToString(dir_list.size()));
+			response.setBody(dir_list);
+			response.respond(client_fd);
 		}
 		else {
 			handle_file_request(client_fd, requested_file_path);
@@ -258,6 +268,8 @@ void ServerCluster::handle_write(int client_fd)
 
 void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_script_path)
 {
+	Response response;
+
 	int forked = fork();
 	if (forked == -1) {
 		perror("fork");
@@ -269,19 +281,21 @@ void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_scr
 		std::string cgi_response = cgi.run(cgi_script_path);
 
 		if (!cgi_response.empty()) {
-			// Construct HTTP response
-			std::string response = "HTTP/1.1 200 OK\r\n";
-			response += "Content-Type: text/html\r\n";
-			response += "Content-Length: " + intToString(cgi_response.length()) + "\r\n\r\n";
-			response += cgi_response;
-			// Send response to client
-			send(client_fd, response.c_str(), response.size(), 0);
+			response.setStatusCode(200);
+			response.setHeader("Connection", "keep-alive");
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Content-Length", intToString(cgi_response.length()));
+			response.setBody(cgi_response);
+			response.respond(client_fd);
 			close(client_fd);
 			exit(0);
 		}
 		else {
-			std::string response = "HTTP/1.1 500 Internal Server Error\r\n";
-			send(client_fd, response.c_str(), response.size(), 0);
+			response.setStatusCode(500);
+			response.setHeader("Connection", "keep-alive");
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Content-Length", "0");
+			response.respond(client_fd);
 		}
 	}
 }
