@@ -8,8 +8,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "./Utils/utils.hpp"
-#include "Config.hpp"
-#include "Server.hpp"
+#include "./Config/Config.hpp"
+#include "./Server/Server.hpp"
 
 void populateContentTypes()
 {

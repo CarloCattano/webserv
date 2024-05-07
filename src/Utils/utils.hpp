@@ -27,5 +27,7 @@ bool is_file_upload_request(const char *request);
 std::string extract_filename_from_request(const char *request);
 std::size_t extract_content_length(const char *request);
 
+void populateContentTypes();
+
 enum HttpMethod { GET, POST, DELETE, UNKNOWN };
 HttpMethod get_http_method(const char *buffer);
