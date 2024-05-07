@@ -13,7 +13,6 @@ def send_curl_request(url):
 def send_concurrent_requests(url, num_requests):
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_requests) as executor:
         executor.map(send_curl_request, [url] * num_requests)
-        time.sleep(0.25)
 
 # Main function
 def main():

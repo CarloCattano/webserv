@@ -1,17 +1,13 @@
 #include "./Server.hpp"
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <ostream>
 #include <string>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/stat.h>
-#include "./ServerCluster.hpp"
 
 const int BACKLOG = 100;
 

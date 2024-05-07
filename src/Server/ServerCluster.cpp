@@ -1,5 +1,4 @@
 #include "./ServerCluster.hpp"
-#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -17,7 +16,7 @@
 
 const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
-const bool autoindex = false; // TODO load from config
+const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "test.py"; // TODO load from config
 
@@ -57,14 +56,17 @@ void ServerCluster::await_connections()
 	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
-		int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 5);
+		int num_events;
+
+		do {
+			num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 10);
+		} while (num_events == -1);
 		if (num_events == -1) {
 			perror("epoll_wait");
 		}
 
 		for (int i = 0; i < num_events; i++) {
 			if (_server_map.count(events[i].data.fd)) {
-				// std::cout << events[i].data.fd << std::endl;
 				int client_fd = accept(events[i].data.fd, NULL, NULL);
 
 				if (client_fd == -1) {
@@ -73,7 +75,7 @@ void ServerCluster::await_connections()
 				}
 
 				struct epoll_event ev;
-				ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
+				ev.events = EPOLLIN | EPOLLOUT; //| EPOLLERR | EPOLLHUP;
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -93,15 +95,15 @@ void ServerCluster::await_connections()
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
-				else if (events[i].events & EPOLLOUT) {
-					handle_write(client_fd);
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-					close(client_fd);
-				}
-				else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-					close(client_fd);
-				}
+				/* else if (events[i].events & EPOLLOUT) { */
+				/* 	handle_write(client_fd); */
+				/* 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
+				/* 	close(client_fd); */
+				/* } */
+				/* else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) { */
+				/* 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
+				/* 	close(client_fd); */
+				/* } */
 			}
 		}
 	}
