@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include "./ServerCluster.hpp"
 
-const int BACKLOG = 20;
+const int BACKLOG = 100;
 
 Server::Server()
 {
