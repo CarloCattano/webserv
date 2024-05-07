@@ -18,7 +18,7 @@
 const int MAX_EVENTS = 100;
 const int BACKLOG = 20;
 const int BUFFER_SIZE = 1024;
-const bool autoindex = false; // TODO load from config
+const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
@@ -72,31 +72,45 @@ void Server::start_listen()
 	std::cout << "Server started at http://" << _host_name << ":" << _port << std::endl;
 }
 
-void Server::await_connections()
+int	Server::create_epoll_instance()
 {
 	int epoll_fd = epoll_create1(0);
 	if (epoll_fd == -1) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
+	return (epoll_fd);
+}
 
+struct epoll_event Server::create_epoll_event_structure()
+{
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = _socket_fd;
+	return (ev);
+}
 
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _socket_fd, &ev) == -1) {
+int add_fd_to_epoll_instance(int epoll_fd, int event, int new_fd, epoll_event* ev) {
+	if (epoll_ctl(epoll_fd, event, new_fd, ev) == -1) {
 		perror("epoll_ctl");
 		exit(EXIT_FAILURE);
 	}
+	return (0);
+}
+
+void Server::await_connections()
+{
+	int 				epoll_fd = create_epoll_instance();
+	struct epoll_event 	ev = create_epoll_event_structure();
+
+	add_fd_to_epoll_instance(epoll_fd, EPOLL_CTL_ADD, _socket_fd, &ev);
 
 	while (1) { // TODO add a flag to run the server
 		struct epoll_event events[MAX_EVENTS];
 
 		int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-
-		if (num_events == -1) {
+		if (num_events == -1)
 			continue;
-		}
 
 		for (int i = 0; i < num_events; ++i) {
 			if (events[i].data.fd == _socket_fd) {
@@ -110,10 +124,7 @@ void Server::await_connections()
 				ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
 				ev.data.fd = client_fd;
 
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-					perror("epoll_ctl");
-					exit(EXIT_FAILURE);
-				}
+				add_fd_to_epoll_instance(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
 			}
 			else {
 				// message from existing client

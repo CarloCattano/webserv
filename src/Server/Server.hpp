@@ -27,6 +27,9 @@ private:
 							   const char *buffer);
 	void handle_delete(int client_fd, std::string full_path, std::string file_path);
 
+	int	create_epoll_instance();
+	struct epoll_event create_epoll_event_structure();
+
 	static void stop(int signal);
 
 	FileUploader uploader;
