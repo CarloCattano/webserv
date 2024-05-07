@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "./Utils/utils.hpp"
-#include "Config.hpp"
 #include "Server.hpp"
 
 void populateContentTypes()
@@ -44,7 +43,7 @@ int main(int argc, char *argv[])
 	}
 
 	Config config(config_file);
-	Server server("localhost", config.get_virtual_servers()[0].port);
+	Server server(config.get_virtual_servers()[0]);
 
 	return 0;
 }

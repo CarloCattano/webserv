@@ -7,13 +7,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "../Utils/FileUpload.hpp"
+#include "Config.hpp"
 
 class Server {
 private:
-	std::string _ip_address;
-	struct sockaddr_in _server_address;
-	int _port;
-	int _socket_fd;
+	std::string			_host_name;
+	int 				_port;
+	struct sockaddr_in 	_server_address;
+	int 				_socket_fd;
 
 	void handle_file_request(int client_fd, const std::string &file_path);
 
@@ -31,7 +32,7 @@ private:
 	FileUploader uploader;
 
 public:
-	Server(std::string ip_address, int port);
+	Server(const Virtual_Server_Config& server_config);
 	~Server();
 
 	void start();

@@ -22,8 +22,11 @@ const bool autoindex = false; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
-Server::Server(std::string ip_address, int port) : _ip_address(ip_address), _port(port)
+// Server::Server(std::string host_name, int port) : _host_name(host_name), _port(port)
+Server::Server(const Virtual_Server_Config& server_config)
 {
+	_host_name = server_config.server_names[0];
+	_port = server_config.port;
 	_server_address.sin_family = AF_INET;
 	_server_address.sin_addr.s_addr = INADDR_ANY;
 	_server_address.sin_port = htons(_port);
@@ -66,7 +69,7 @@ void Server::start_listen()
 	if (listen(_socket_fd, BACKLOG) == -1)
 		throw ListenErrorException();
 
-	std::cout << "Server started at http://" << _ip_address << ":" << _port << std::endl;
+	std::cout << "Server started at http://" << _host_name << ":" << _port << std::endl;
 }
 
 void Server::await_connections()
