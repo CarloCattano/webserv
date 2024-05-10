@@ -1,12 +1,34 @@
 #ifndef RESPONSE_HPP
-# define RESPONSE_HPP
+#define RESPONSE_HPP
+
+#include <sstream>
+#include <string>
 
 class Response {
+private:
+	std::ostringstream responseStream;
+
 public:
 	Response();
 	~Response();
 
-private:
+	void setStatusCode(int statusCode);
+
+	void setHeader(const std::string &key, const std::string &value);
+
+	void setContentType(const std::string &contentType);
+
+	void setContentLength(int contentLength);
+
+	void setBody(const std::string &body);
+
+	std::string str() const;
+
+	// response size
+	int getSize() const;
+
+	// response send
+	void respond(int clientSocket) const;
 };
 
 #endif
