@@ -32,8 +32,24 @@ HttpMethod get_http_method(const char *request)
 	return UNKNOWN; // Unable to determine HTTP method
 }
 
+
+void populateContentTypes(std::map<std::string, std::string> &content_types)
+{
+	content_types[".html"] = "text/html";
+	content_types[".php"] = "text/html";
+	content_types[".css"] = "text/css";
+	content_types[".jpg"] = "image/jpeg";
+	content_types[".jpeg"] = "image/jpeg";
+	content_types[".png"] = "image/png";
+	content_types[".gif"] = "image/gif";
+	content_types[".py"] = "text/html";
+}
+
 std::string getContentType(const std::string &filename)
 {
+	std::map<std::string, std::string> content_types;
+	populateContentTypes(content_types);
+
 	size_t dotPos = filename.find_last_of('.');
 	if (dotPos != std::string::npos) {
 		std::string extension = filename.substr(dotPos);
@@ -229,14 +245,3 @@ std::string generateDirectoryListing(const std::string &path)
 	return html.str();
 }
 
-void populateContentTypes()
-{
-	content_types[".html"] = "text/html";
-	content_types[".php"] = "text/html";
-	content_types[".css"] = "text/css";
-	content_types[".jpg"] = "image/jpeg";
-	content_types[".jpeg"] = "image/jpeg";
-	content_types[".png"] = "image/png";
-	content_types[".gif"] = "image/gif";
-	content_types[".py"] = "text/html";
-}

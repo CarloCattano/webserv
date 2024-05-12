@@ -21,11 +21,9 @@ const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
 
-ServerCluster::ServerCluster()
-{
-}
-ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers)
-{
+ServerCluster::ServerCluster() {}
+ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
+	this->setupCluster();
 }
 
 void ServerCluster::setupCluster()
@@ -41,13 +39,32 @@ void ServerCluster::setupCluster()
 
 		_server_map[socket_fd] = _servers[i];
 
-		struct epoll_event ev;
-		ev.events = EPOLLIN;
-		ev.data.fd = socket_fd;
+        struct epoll_event ev;
+        ev.events = EPOLLIN;
+        ev.data.fd = socket_fd;
+    
+        if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
+            perror("epoll_ctl");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
-			perror("epoll_ctl");
-		}
+void	ServerCluster::new_connection(int fd) {
+	int client_fd = accept(fd, NULL, NULL);
+
+	if (client_fd == -1) {
+		perror("accept");
+		exit(EXIT_FAILURE);
+	}
+
+	struct epoll_event ev;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
+	ev.data.fd = client_fd;
+
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
+		perror("epoll_ctl");
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -85,7 +102,6 @@ void ServerCluster::await_connections()
 				}
 			}
 			else {
-				// message from existing client
 				int client_fd = events[i].data.fd;
 				if (client_fd == -1) {
 					perror("events[i].data.fd");

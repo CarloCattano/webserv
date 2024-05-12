@@ -10,8 +10,6 @@
 #define log(msg) std::cout << YELLOW << msg << RESET << std::endl
 #define Error(msg) std::cerr << RED << msg << RESET << std::endl
 
-extern std::map<std::string, std::string> content_types;
-
 std::string getContentType(const std::string &filename);
 std::string readFileToString(const std::string &filename);
 std::string intToString(int value);
@@ -27,7 +25,7 @@ bool is_file_upload_request(const char *request);
 std::string extract_filename_from_request(const char *request);
 std::size_t extract_content_length(const char *request);
 
-void populateContentTypes();
+void populateContentTypes(std::map<std::string, std::string> &content_types);
 
 enum HttpMethod { GET, POST, DELETE, UNKNOWN };
 HttpMethod get_http_method(const char *buffer);
