@@ -9,6 +9,7 @@ class Server {
 		in_addr_t			_host;
 		int					_port;
 		std::string			_ip;
+
 		int					_socket_fd;
 		struct sockaddr_in	_server_address;
 
