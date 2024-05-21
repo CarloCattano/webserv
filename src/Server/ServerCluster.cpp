@@ -24,6 +24,7 @@ std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // T
 ServerCluster::ServerCluster()
 {
 }
+
 ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers)
 {
 }

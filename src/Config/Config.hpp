@@ -1,91 +1,88 @@
-#include <string>
-#include <vector>
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <sstream>
+#pragma once
 
-struct HttpRedirection {
-	std::string	code;
-	std::string	url;
+#include "Server.hpp"
 
-	HttpRedirection(std::string url)
-		: code("302"), url(url) {}
-};
+// struct HttpRedirection {
+// 	std::string	code;
+// 	std::string	url;
 
-struct Method {
-	bool	is_allowed;
-	bool	can_be_edited;
+// 	HttpRedirection(std::string url)
+// 		: code("302"), url(url) {}
+// };
 
-	Method()
-		: is_allowed(true), can_be_edited(true) {}
-};
+// struct Method {
+// 	bool	is_allowed;
+// 	bool	can_be_edited;
 
-struct Fastcgi_Param {
-	std::string key;
-	std::string value;
+// 	Method()
+// 		: is_allowed(true), can_be_edited(true) {}
+// };
 
-	Fastcgi_Param(std::string key, std::string value)
-		: key(key), value(value) {}
-};
+// struct Fastcgi_Param {
+// 	std::string key;
+// 	std::string value;
 
-struct Route {
-	std::string						location;
-	std::string						matching_style;
-	std::string						root;
-	std::vector<HttpRedirection>	redirections;
-	bool							autoindex;
-	std::vector<std::string>		index_files;
-	Method							POST;
-	Method							GET;
-	std::string						fastcgi_pass;
-	std::string						fastcgi_index;
-	std::vector<Fastcgi_Param>		fastcgi_params;
+// 	Fastcgi_Param(std::string key, std::string value)
+// 		: key(key), value(value) {}
+// };
 
-	Route()
-		: location(""), matching_style(""), root(""), autoindex(false), fastcgi_pass(""), fastcgi_index("") {
-		redirections = std::vector<HttpRedirection>();
-		index_files = std::vector<std::string>();
-		fastcgi_params = std::vector<Fastcgi_Param>();
-	}
-};
+// struct Route {
+// 	std::string						location;
+// 	std::string						matching_style;
+// 	std::string						root;
+// 	std::vector<HttpRedirection>	redirections;
+// 	bool							autoindex;
+// 	std::vector<std::string>		index_files;
+// 	Method							POST;
+// 	Method							GET;
+// 	std::string						fastcgi_pass;
+// 	std::string						fastcgi_index;
+// 	std::vector<Fastcgi_Param>		fastcgi_params;
 
-struct Virtual_Server_Config {
-	unsigned int				port;
-	bool						default_server;
-	std::vector<std::string>	server_names;
-	std::vector<std::string>	error_pages;
-	std::string					client_max_body_size;
-	std::vector<Route>			routes;
+// 	Route()
+// 		: location(""), matching_style(""), root(""), autoindex(false), fastcgi_pass(""), fastcgi_index("") {
+// 		redirections = std::vector<HttpRedirection>();
+// 		index_files = std::vector<std::string>();
+// 		fastcgi_params = std::vector<Fastcgi_Param>();
+// 	}
+// };
 
-	Virtual_Server_Config()
-		: port(0), default_server(false), client_max_body_size("") {
-		server_names = std::vector<std::string>();
-		error_pages = std::vector<std::string>();
-		routes = std::vector<Route>();
-	}
-};
+// struct Virtual_Server_Config {
+// 	unsigned int				port;
+// 	bool						default_server;
+// 	std::vector<std::string>	server_names;
+// 	std::vector<std::string>	error_pages;
+// 	std::string					client_max_body_size;
+// 	std::vector<Route>			routes;
+
+// 	Virtual_Server_Config()
+// 		: port(0), default_server(false), client_max_body_size("") {
+// 		server_names = std::vector<std::string>();
+// 		error_pages = std::vector<std::string>();
+// 		routes = std::vector<Route>();
+// 	}
+// };
 
 class Config {
-public:
-	Config();
-	~Config();
-	Config(const std::string filename);
-	std::vector<Virtual_Server_Config> get_virtual_servers();
+	private:
+		std::string 						_filename;
+		std::vector<Server>					_servers;
+		// Server				default_server;
 
-private:
-	std::string 						filename;
-	std::vector<Virtual_Server_Config> virtual_servers;
-	Virtual_Server_Config default_server;
+	public:
+		Config();
+		~Config();
+		Config(const std::string filename);
+		std::vector<Server> get_servers();
 };
 
 std::string get_file_content(const std::string &filename);
 bool is_whitespace_char(char c);
-void print_server_obj(Virtual_Server_Config obj, int i);
+void print_server_obj(Server obj, int i);
 template <typename T>
 void    print_vector(T vector);
 std::string toLowerCase(std::string str);
-int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i);
+int	parse_route(Server &server, std::string str, int i);
 int	iterate_to_next_server_line(std::string str, int i);
 std::vector<std::string>	convert_server_line_2_vector(std::string str, int i);
 int	iterate_to_first_server_line(std::string str, int i);

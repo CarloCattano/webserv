@@ -8,26 +8,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "./Utils/utils.hpp"
+// #include "./Server/Server.hpp"
 #include "./Config/Config.hpp"
-#include "./Server/Server.hpp"
-
-void populateContentTypes()
-{
-	content_types[".html"] = "text/html";
-	content_types[".php"] = "text/html";
-	content_types[".css"] = "text/css";
-	content_types[".jpg"] = "image/jpeg";
-	content_types[".jpeg"] = "image/jpeg";
-	content_types[".png"] = "image/png";
-	content_types[".gif"] = "image/gif";
-	content_types[".py"] = "text/html";
-}
+#include "./Server/ServerCluster.hpp"
 
 int main(int argc, char *argv[])
 {
-	populateContentTypes();
-
+	std::vector<Server> servers;
 	std::string config_file = "";
+
+	populateContentTypes();
 
 	if (argv[1] == NULL || argc != 2) {
 		// use default config file as per the project requirement
@@ -44,7 +34,13 @@ int main(int argc, char *argv[])
 	}
 
 	Config config(config_file);
-	Server server(config.get_virtual_servers()[0]);
+
+	// servers = config.get_servers();
+	// ServerCluster cluster(servers);
+
+	// cluster.setupCluster();
+	// cluster.start();
+
 
 	return 0;
 }
