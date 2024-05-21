@@ -19,7 +19,8 @@ const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
 const bool autoindex = true; // TODO load from config
 
-std::string CGI_BIN = get_current_dir() + "/website/cgi-bin/" + "hello.py"; // TODO load from config
+std::string CGI_BIN =
+	get_current_dir() + "/www/website1/cgi-bin/" + "hello.py"; // TODO load from config
 
 ServerCluster::ServerCluster() {}
 ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
@@ -39,11 +40,10 @@ void ServerCluster::setupCluster()
 
 		_server_map[socket_fd] = _servers[i];
 
-        struct epoll_event ev;
-        ev.events = EPOLLIN;
-        ev.data.fd = socket_fd;
-    
-        if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
+		struct epoll_event ev;
+		ev.events = EPOLLIN | EPOLLOUT;
+		ev.data.fd = socket_fd;    
+    if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
             perror("epoll_ctl");
             exit(EXIT_FAILURE);
         }
@@ -76,7 +76,7 @@ void ServerCluster::await_connections()
 		int num_events;
 
 		do {
-			num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 10);
+			num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		} while (num_events == -1);
 		if (num_events == -1) {
 			perror("epoll_wait");
@@ -94,7 +94,8 @@ void ServerCluster::await_connections()
 				}
 
 				struct epoll_event ev;
-				ev.events = EPOLLIN | EPOLLOUT; //| EPOLLERR | EPOLLHUP;
+				ev.events = EPOLLIN; // TODO Need to change this to epollctl mod for
+									 // write event when needed
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -108,20 +109,19 @@ void ServerCluster::await_connections()
 					continue;
 				}
 
-				if (events[i].events & EPOLLIN) {
-					handle_request(client_fd);
+				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
-				/* else if (events[i].events & EPOLLOUT) { */
-				/* 	handle_write(client_fd); */
-				/* 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
-				/* 	close(client_fd); */
-				/* } */
-				/* else if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) { */
-				/* 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
-				/* 	close(client_fd); */
-				/* } */
+				if (events[i].events & EPOLLIN) {
+					handle_request(client_fd);
+					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+				}
+				else if (events[i].events & EPOLLOUT) {
+					handle_write(client_fd);
+					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+				}
+				close(client_fd);
 			}
 		}
 	}
@@ -149,9 +149,9 @@ void ServerCluster::handle_request(int client_fd)
 	HttpMethod reqType = get_http_method(buffer);
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString("website" + requested_file_path);
+	std::string file_content = readFileToString("www/website1" + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
-	std::string full_path = "website/";
+	std::string full_path = "www/website1/";
 
 	if (reqType == GET) {
 		/* TODO's handle response code */
@@ -201,7 +201,7 @@ void ServerCluster::handle_delete(int client_fd, std::string full_path, std::str
 void ServerCluster::handle_file_request(int client_fd, const std::string &file_path)
 {
 	std::string full_path =
-		"website" + file_path; // TODO use config root folder for corresponding server
+		"www/website1" + file_path; // TODO use config root folder for corresponding server
 	std::string file_content = readFileToString(full_path);
 	std::string content_type = getContentType(file_path);
 
@@ -219,7 +219,7 @@ void ServerCluster::handle_static_request(int client_fd,
 										  const std::string &requested_file_path,
 										  const char *buffer)
 {
-	std::string full_path = "website" + requested_file_path;
+	std::string full_path = "www/website1" + requested_file_path;
 	struct stat path_stat;
 
 	HttpMethod reqType = get_http_method(buffer);
