@@ -22,8 +22,11 @@ const bool autoindex = true; // TODO load from config
 std::string CGI_BIN =
 	get_current_dir() + "/www/website1/cgi-bin/" + "hello.py"; // TODO load from config
 
-ServerCluster::ServerCluster() {}
-ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
+ServerCluster::ServerCluster()
+{
+}
+ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers)
+{
 	this->setupCluster();
 }
 
@@ -42,15 +45,16 @@ void ServerCluster::setupCluster()
 
 		struct epoll_event ev;
 		ev.events = EPOLLIN | EPOLLOUT;
-		ev.data.fd = socket_fd;    
-    if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
-            perror("epoll_ctl");
-            exit(EXIT_FAILURE);
-        }
-    }
+		ev.data.fd = socket_fd;
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
+			perror("epoll_ctl");
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
-void	ServerCluster::new_connection(int fd) {
+void ServerCluster::new_connection(int fd)
+{
 	int client_fd = accept(fd, NULL, NULL);
 
 	if (client_fd == -1) {
