@@ -35,11 +35,11 @@ int main(int argc, char *argv[])
 
 	Config config(config_file);
 
-	// servers = config.get_servers();
-	// ServerCluster cluster(servers);
+	servers = config.get_servers();
+	ServerCluster cluster(servers);
 
-	// cluster.setupCluster();
-	// cluster.start();
+	cluster.setupCluster();
+	cluster.start();
 
 
 	return 0;

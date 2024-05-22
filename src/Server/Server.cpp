@@ -17,7 +17,7 @@ Server::Server()
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
 
-	Server::setup();
+	// Server::setup();
 }
 
 Server::Server(unsigned int port, std::string server_name)

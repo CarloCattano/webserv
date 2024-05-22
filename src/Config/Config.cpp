@@ -53,18 +53,17 @@ Server get_server_obj(std::string str, int i) {
 Config::Config(const std::string filename)
 {
 	Server		server_obj;
-	// std::string	file_content = get_file_content(filename);
-	(void)filename;
-	// std::cout << file_content << std::endl;
+	std::string	file_content = get_file_content(filename);
 
-	// size_t index = file_content.find("server");
-	// while (index != std::string::npos) {
-	// 	server_obj = get_server_obj(file_content, index + 6);
-	// 	print_server_obj(server_obj, index);
-	// 	this->_servers.push_back(server_obj);
-	// 	while (file_content[index] && file_content[index] != '}') {index++;}
-	// 	index = file_content.find("server", index);
-	// }
+	size_t index = file_content.find("server");
+	while (index != std::string::npos) {
+		server_obj = get_server_obj(file_content, index + 6);
+		server_obj.setup();
+		print_server_obj(server_obj);
+		this->_servers.push_back(server_obj);
+		while (file_content[index] && file_content[index] != '}') {index++;}
+		index = file_content.find("server", index);
+	}
 	// set default server
 }
 

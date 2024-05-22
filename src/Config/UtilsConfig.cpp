@@ -75,9 +75,9 @@ void	print_server_routes(std::vector<Route> routes) {
     std::cout << std::endl;
 }
 
-void	print_server_obj(Server obj, int i)
+void	print_server_obj(Server obj)
 {
-	std::cout << GREEN << "SERVER_OBJ " << i << RESET << std::endl;
+	std::cout << GREEN << "SERVER_OBJ " << RESET << std::endl;
     if (obj._port)
         std::cout << "\tPort: " << obj._port << std::endl;
     if (obj._server_names.size() > 0) {
