@@ -8,19 +8,12 @@
 
 #define BUFFER_SIZE 1024
 
-FileUploader::FileUploader()
-{
-}
+FileUploader::FileUploader() {}
 
-FileUploader::~FileUploader()
-{
-}
+FileUploader::~FileUploader() {}
 
-void FileUploader::handle_file_upload(int client_fd,
-									  const std::string &filename,
-									  int file_size,
-									  const char *start)
-{
+void FileUploader::handle_file_upload(int client_fd, const std::string &filename, int file_size,
+									  const char *start) {
 	char buffer[BUFFER_SIZE];
 
 	ssize_t total_bytes_received = 0; // Total bytes received from the client
@@ -30,8 +23,7 @@ void FileUploader::handle_file_upload(int client_fd,
 
 	if (filename[0] == '"' && filename[filename.size() - 1] == '"') {
 		cleanFile = filename.substr(1, filename.size() - 2);
-	}
-	else {
+	} else {
 		cleanFile = filename;
 	}
 
@@ -56,16 +48,13 @@ void FileUploader::handle_file_upload(int client_fd,
 				return;
 			}
 			total_bytes_received += bytes_written;
-		}
-		else if (bytes_received == 0) {
+		} else if (bytes_received == 0) {
 			break;
-		}
-		else {
+		} else {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				usleep(1000); // Sleep for 1 millisecond
 				continue;
-			}
-			else {
+			} else {
 				perror("recv");
 				break;
 			}

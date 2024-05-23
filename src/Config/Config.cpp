@@ -1,15 +1,11 @@
 #include "Config.hpp"
+#include <stdlib.h>
 
-Config::Config()
-{
-}
+Config::Config() {}
 
-Config::~Config()
-{
-}
+Config::~Config() {}
 
-void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values)
-{
+void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values) {
 	if (size >= 2)
 		server._port = atoi(key_with_values[1].c_str());
 	if (size >= 3 && key_with_values[2] == "default")
@@ -20,8 +16,8 @@ void parse_listen(int size, Server &server, std::vector<std::string> &key_with_v
 
 void parse_key_with_values(Server &server, std::string str, int i) {
 	std::vector<std::string> key_with_values = convert_server_line_2_vector(str, i);
-	int	size = key_with_values.size();
-	std::string	key = key_with_values[0];
+	int size = key_with_values.size();
+	std::string key = key_with_values[0];
 
 	if (key == "listen")
 		parse_listen(size, server, key_with_values);
@@ -34,7 +30,7 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 }
 
 Server get_server_obj(std::string str, int i) {
-	Server	server;
+	Server server;
 
 	i = iterate_to_first_server_line(str, i);
 	while (str[i] && str[i] != '}') {
@@ -50,10 +46,9 @@ Server get_server_obj(std::string str, int i) {
 	return (server);
 }
 
-Config::Config(const std::string filename)
-{
-	Server		server_obj;
-	std::string	file_content = get_file_content(filename);
+Config::Config(const std::string filename) {
+	Server server_obj;
+	std::string file_content = get_file_content(filename);
 
 	size_t index = file_content.find("server");
 	while (index != std::string::npos) {
@@ -61,13 +56,12 @@ Config::Config(const std::string filename)
 		server_obj.setup();
 		print_server_obj(server_obj);
 		this->_servers.push_back(server_obj);
-		while (file_content[index] && file_content[index] != '}') {index++;}
+		while (file_content[index] && file_content[index] != '}') {
+			index++;
+		}
 		index = file_content.find("server", index);
 	}
 	// set default server
 }
 
-std::vector<Server> Config::get_servers()
-{
-	return (this->_servers);
-}
+std::vector<Server> Config::get_servers() { return (this->_servers); }

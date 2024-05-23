@@ -3,12 +3,18 @@ import concurrent.futures
 import time
 import sys
 
+
+# keep track of each request number 
+request_number = 0
+
 def send_curl_request(url):
     start_time = time.time()
     response = requests.post(url)
     end_time = time.time()
     response_time = end_time - start_time
-    print(f"Response at {time.strftime('%H:%M:%S')} took {response_time:.2f} seconds")
+    global request_number
+    request_number += 1
+    print(f"Response at {time.strftime('%H:%M:%S')} took {response_time:.2f} seconds" + f" with status code {response.status_code}" + f" for request number {request_number}")
 
 def send_concurrent_requests(url, num_requests):
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_requests) as executor:
