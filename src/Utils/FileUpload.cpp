@@ -28,7 +28,7 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 	}
 
 	// prepend path to cleanFile
-	cleanFile = "./website/upload/" + cleanFile;
+	cleanFile = "./www/website1/upload/" + cleanFile;
 
 	int outfile = open(cleanFile.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
 	if (outfile == -1) {

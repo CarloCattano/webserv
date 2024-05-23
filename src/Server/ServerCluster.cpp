@@ -2,23 +2,18 @@
 #include "../Cgi/Cgi.hpp"
 #include "../Response/Response.hpp"
 #include "../Utils/utils.hpp"
+#include <cstdio>
+#include <fcntl.h>
 #include <iostream>
-#include <ostream>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-// std remove
-#include <cstdio>
-
-// perror include
-#include <stdio.h>
-// exit include
-#include <stdlib.h>
-
-const int MAX_EVENTS = 100;
+const int MAX_EVENTS = 42;
 const int BUFFER_SIZE = 1024;
 const bool autoindex = true; // TODO load from config
 
@@ -39,35 +34,16 @@ void ServerCluster::setupCluster() {
 
 	for (size_t i = 0; i < _servers.size(); i++) {
 		int socket_fd = _servers[i].getSocketFd();
-		// std::cout << socket_fd << std::endl;
 
 		_server_map[socket_fd] = _servers[i];
 
 		struct epoll_event ev;
-		ev.events = EPOLLIN | EPOLLOUT;
+		ev.events = EPOLLIN;
 		ev.data.fd = socket_fd;
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
 			perror("epoll_ctl");
 			exit(EXIT_FAILURE);
 		}
-	}
-}
-
-void ServerCluster::new_connection(int fd) {
-	int client_fd = accept(fd, NULL, NULL);
-
-	if (client_fd == -1) {
-		perror("accept");
-		exit(EXIT_FAILURE);
-	}
-
-	struct epoll_event ev;
-	ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
-	ev.data.fd = client_fd;
-
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
-		exit(EXIT_FAILURE);
 	}
 }
 
@@ -96,8 +72,8 @@ void ServerCluster::await_connections() {
 				}
 
 				struct epoll_event ev;
-				ev.events = EPOLLIN; // TODO Need to change this to epollctl mod for
-									 // write event when needed
+				ev.events = EPOLLIN | EPOLLOUT; // TODO Need to change this to epollctl mod for
+				// write event when needed
 				ev.data.fd = client_fd;
 
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -113,17 +89,37 @@ void ServerCluster::await_connections() {
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
+					continue;
 				}
 				if (events[i].events & EPOLLIN) {
+					std::cout << "EPOLLIN" << std::endl;
 					handle_request(client_fd);
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-				} else if (events[i].events & EPOLLOUT) {
+					close(client_fd);
+				}
+				if (events[i].events & EPOLLOUT) {
+					std::cout << "EPOLLOUT" << std::endl;
 					handle_write(client_fd);
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					close(client_fd);
 				}
-				close(client_fd);
 			}
 		}
+	}
+}
+
+void ServerCluster::switch_poll(int client_fd, uint32_t events) {
+	struct epoll_event ev;
+	ev.events = events;
+	ev.data.fd = client_fd;
+
+	if (client_fd == -1) {
+		perror("client_fd");
+		return;
+	}
+
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) == -1) {
+		perror("epoll_ctl");
 	}
 }
 
@@ -135,6 +131,7 @@ void ServerCluster::handle_request(int client_fd) {
 		return;
 	}
 
+	switch_poll(client_fd, EPOLLIN);
 	int size = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
 	if (size == -1) {
 		return;
@@ -197,19 +194,18 @@ void ServerCluster::handle_file_request(int client_fd, const std::string &file_p
 	std::string content_type = getContentType(file_path);
 
 	Response response;
-
-	// NOT FOUND TODO : error page for 404
 	if (file_content.empty()) {
 		response.ErrorResponse(client_fd, 404);
 		return;
 	}
-
+	switch_poll(client_fd, EPOLLOUT);
 	response.setStatusCode(200);
 	response.setHeader("Connection", "keep-alive");
 	response.setHeader("Content-Type", content_type);
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
-	response.respond(client_fd);
+	response.respond(client_fd, _epoll_fd);
+	switch_poll(client_fd, EPOLLIN);
 }
 
 void ServerCluster::handle_static_request(int client_fd, const std::string &requested_file_path,
@@ -218,6 +214,8 @@ void ServerCluster::handle_static_request(int client_fd, const std::string &requ
 	struct stat path_stat;
 
 	HttpMethod reqType = get_http_method(buffer);
+
+	switch_poll(client_fd, EPOLLOUT);
 
 	Response response;
 
@@ -231,7 +229,7 @@ void ServerCluster::handle_static_request(int client_fd, const std::string &requ
 			response.setHeader("Content-Type", "text/html");
 			response.setHeader("Content-Length", intToString(dir_list.size()));
 			response.setBody(dir_list);
-			response.respond(client_fd);
+			response.respond(client_fd, _epoll_fd);
 		} else {
 			handle_file_request(client_fd, requested_file_path);
 		}
@@ -270,12 +268,16 @@ void ServerCluster::handle_write(int client_fd) {
 
 		std::string content = extract_content_body(request.c_str());
 
+		switch_poll(client_fd, EPOLLIN);
 		uploader.handle_file_upload(client_fd, filename, content_length, content.c_str());
+		// TODO - craft a response to the client
 	}
 }
 
 void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_script_path) {
+
 	Response response;
+	switch_poll(client_fd, EPOLLOUT);
 
 	int forked = fork();
 	if (forked == -1) {
@@ -293,13 +295,14 @@ void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_scr
 			response.setHeader("Content-Type", "text/html");
 			response.setHeader("Content-Length", intToString(cgi_response.length()));
 			response.setBody(cgi_response);
-			response.respond(client_fd);
+			response.respond(client_fd, _epoll_fd);
 			close(client_fd);
 			exit(0);
 		} else {
 			response.ErrorResponse(client_fd, 500);
 		}
 	}
+	switch_poll(client_fd, EPOLLIN);
 }
 
 void ServerCluster::stop(int signal) {

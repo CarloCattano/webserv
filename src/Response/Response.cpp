@@ -1,5 +1,8 @@
 #include "./Response.hpp"
+#include <iostream>
+#include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 Response::Response() {
 	// Initialize the response with default values
@@ -78,10 +81,27 @@ void Response::ErrorResponse(int clientSocket, int statusCode) {
 	response.setHeader("Connection", "keep-alive");
 	response.setHeader("Content-Type", "text/html");
 	response.setHeader("Content-Length", "0");
-	response.respond(clientSocket);
+	response.respond(clientSocket, -1);
 }
 
-void Response::respond(int clientSocket) const {
+void Response::respond(int clientSocket, int _epoll_fd) const {
+
 	std::string response = responseStream.str();
-	send(clientSocket, response.c_str(), response.length(), 0);
+	ssize_t retsize = send(clientSocket, response.c_str(), response.length(), 0);
+	if (retsize == -1) {
+		std::cout << "Error sending response" << std::endl;
+	}
+
+	if (static_cast<size_t>(retsize) == response.size()) {
+		struct epoll_event ev;
+		ev.events = EPOLLIN;
+		ev.data.fd = clientSocket;
+
+		if (clientSocket == -1) {
+			return;
+		}
+
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientSocket, &ev) == -1) {
+		}
+	}
 }
