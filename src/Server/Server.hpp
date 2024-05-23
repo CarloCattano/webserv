@@ -84,25 +84,3 @@ class Server {
 		// 	return inet_addr(_server_names[0].data());
 		// };
 };
-
-// class Server {
-// 	private:
-// 		in_addr_t			_host;
-// 		int					_port;
-// 		std::string			_ip;
-// 		int					_socket_fd;
-// 		struct sockaddr_in	_server_address;
-
-// 	public:
-// 		Server(unsigned int port, std::string host);
-// 		Server(Virtual_Server_Config &config);
-// 		Server();
-// 		~Server();
-
-// 		void setup();
-
-// 		int	getSocketFd();
-// 		in_addr_t getHost() {
-// 			return _host;
-// 		};
-// };
