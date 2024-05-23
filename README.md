@@ -18,7 +18,7 @@
     - [ ] `curl -X POST localhost:4222/hello.py` fails sometimes, with perror recv: bad file descriptor
     
 
-## Many hardcoded values such as:
+### Many hardcoded values such as:
 - [ ] Port number
 - [ ] Server root
 - [ ] Server name

@@ -43,6 +43,7 @@ struct Route {
 	std::vector<HttpRedirection>	redirections;
 	bool							autoindex;
 	std::vector<std::string>		index_files;
+	// TO-DO add delete
 	Method							POST;
 	Method							GET;
 	std::string						fastcgi_pass;
