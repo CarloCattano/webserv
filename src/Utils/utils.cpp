@@ -32,9 +32,10 @@ HttpMethod get_http_method(const char *request)
 	return UNKNOWN; // Unable to determine HTTP method
 }
 
-
-void populateContentTypes(std::map<std::string, std::string> &content_types)
+std::map<std::string, std::string> getAllContentTypes()
 {
+	std::map<std::string, std::string> content_types;
+	
 	content_types[".html"] = "text/html";
 	content_types[".php"] = "text/html";
 	content_types[".css"] = "text/css";
@@ -43,12 +44,14 @@ void populateContentTypes(std::map<std::string, std::string> &content_types)
 	content_types[".png"] = "image/png";
 	content_types[".gif"] = "image/gif";
 	content_types[".py"] = "text/html";
+
+	return (content_types);
 }
 
 std::string getContentType(const std::string &filename)
 {
 	std::map<std::string, std::string> content_types;
-	populateContentTypes(content_types);
+	content_types = getAllContentTypes();
 
 	size_t dotPos = filename.find_last_of('.');
 	if (dotPos != std::string::npos) {

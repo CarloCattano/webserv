@@ -25,6 +25,7 @@ std::string CGI_BIN =
 ServerCluster::ServerCluster()
 {
 }
+
 ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers)
 {
 	this->setupCluster();
@@ -39,7 +40,7 @@ void ServerCluster::setupCluster()
 
 	for (size_t i = 0; i < _servers.size(); i++) {
 		int socket_fd = _servers[i].getSocketFd();
-		std::cout << socket_fd << std::endl;
+		// std::cout << socket_fd << std::endl;
 
 		_server_map[socket_fd] = _servers[i];
 

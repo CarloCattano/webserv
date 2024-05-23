@@ -54,7 +54,7 @@ void parse_param(std::vector<std::string> &values, Route &route)
 	route.fastcgi_params.push_back(param);
 }
 
-int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i) {
+int	parse_route(Server &virtual_server, std::string str, int i) {
 	Route						route;
 	std::vector<std::string> 	key_with_values;
     std::string                 key;
@@ -91,7 +91,7 @@ int	parse_route(Virtual_Server_Config &virtual_server, std::string str, int i) {
 	}
 	if (str[i] == '}')
 		i++;
-	virtual_server.routes.push_back(route);
+	virtual_server._routes.push_back(route);
 	return (i);
 }
 
