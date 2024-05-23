@@ -1,19 +1,16 @@
 #include "utils.hpp"
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <sstream>
-#include <string>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 std::map<std::string, std::string> content_types;
 
-HttpMethod get_http_method(const char *request)
-{
+HttpMethod get_http_method(const char *request) {
 	// Find the first space in the request line
 	const char *first_space = strchr(request, ' ');
 	if (first_space != NULL) {
@@ -21,21 +18,18 @@ HttpMethod get_http_method(const char *request)
 		std::string method(request, first_space - request);
 		if (method == "GET") {
 			return GET;
-		}
-		else if (method == "POST") {
+		} else if (method == "POST") {
 			return POST;
-		}
-		else if (method == "DELETE") {
+		} else if (method == "DELETE") {
 			return DELETE;
 		}
 	}
 	return UNKNOWN; // Unable to determine HTTP method
 }
 
-std::map<std::string, std::string> getAllContentTypes()
-{
+std::map<std::string, std::string> getAllContentTypes() {
 	std::map<std::string, std::string> content_types;
-	
+
 	content_types[".html"] = "text/html";
 	content_types[".php"] = "text/html";
 	content_types[".css"] = "text/css";
@@ -48,8 +42,7 @@ std::map<std::string, std::string> getAllContentTypes()
 	return (content_types);
 }
 
-std::string getContentType(const std::string &filename)
-{
+std::string getContentType(const std::string &filename) {
 	std::map<std::string, std::string> content_types;
 	content_types = getAllContentTypes();
 
@@ -63,8 +56,7 @@ std::string getContentType(const std::string &filename)
 	return "text/plain";
 }
 
-std::string readFileToString(const std::string &filename)
-{
+std::string readFileToString(const std::string &filename) {
 	std::ifstream file(filename.c_str());
 
 	if (file == 0) {
@@ -76,15 +68,13 @@ std::string readFileToString(const std::string &filename)
 	return buffer.str();
 }
 
-std::string intToString(int value)
-{
+std::string intToString(int value) {
 	std::stringstream ss;
 	ss << value;
 	return ss.str();
 }
 
-std::string extract_requested_file_path(const char *buffer)
-{
+std::string extract_requested_file_path(const char *buffer) {
 	std::string request(buffer);
 	size_t start = request.find("GET") + 4;
 	size_t end = request.find("HTTP/1.1") - 1;
@@ -96,8 +86,7 @@ std::string extract_requested_file_path(const char *buffer)
 	return path;
 }
 
-std::size_t extract_content_length(const char *request)
-{
+std::size_t extract_content_length(const char *request) {
 	const char *content_length_header = strstr(request, "Content-Length:");
 	if (content_length_header != NULL) {
 		// Skip the "Content-Length:" prefix
@@ -109,8 +98,7 @@ std::size_t extract_content_length(const char *request)
 	return 0;
 }
 
-std::string extract_filename_from_request(const char *request)
-{
+std::string extract_filename_from_request(const char *request) {
 	const char *filename_field = strstr(request, "filename=");
 	if (filename_field != NULL) {
 		const char *filename_start = filename_field + strlen("filename=");
@@ -123,8 +111,7 @@ std::string extract_filename_from_request(const char *request)
 	return "";
 }
 
-bool is_file_upload_request(const char *request)
-{
+bool is_file_upload_request(const char *request) {
 	const char *content_type_header = strstr(request, "Content-Type:");
 	if (content_type_header != NULL) {
 		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
@@ -136,8 +123,7 @@ bool is_file_upload_request(const char *request)
 }
 
 // get the path of the folder from where the server is run
-std::string get_current_dir()
-{
+std::string get_current_dir() {
 	char cwd[1024];
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		return std::string(cwd);
@@ -145,8 +131,7 @@ std::string get_current_dir()
 		return "";
 }
 
-std::string extract_boundary(const char *buffer)
-{
+std::string extract_boundary(const char *buffer) {
 	std::string request(buffer);
 	size_t start = request.find("boundary=") + 9;
 	size_t end = request.find("\r\n") - 1;
@@ -156,8 +141,7 @@ std::string extract_boundary(const char *buffer)
 }
 
 // extract request header
-std::string extract_request_header(const char *buffer)
-{
+std::string extract_request_header(const char *buffer) {
 	std::string request(buffer);
 	size_t end = request.find("\r\n\r\n") + 4;
 	std::string header = request.substr(0, end);
@@ -165,8 +149,7 @@ std::string extract_request_header(const char *buffer)
 }
 
 // extract request body
-std::string extract_content_body(const char *buffer)
-{
+std::string extract_content_body(const char *buffer) {
 	std::string request(buffer);
 	size_t start = request.find("\r\n\r\n") + 4; // +4 to skip the \r\n\r\n
 	std::string body = request.substr(start);
@@ -201,8 +184,7 @@ std::string extract_content_body(const char *buffer)
 	return body;
 }
 
-std::string generateDirectoryListing(const std::string &path)
-{
+std::string generateDirectoryListing(const std::string &path) {
 	std::stringstream html;
 	html << "<html><head><title>Directory Listing</title></head><body><h1>Directory "
 			"Listing</h1><ul>";
@@ -230,12 +212,10 @@ std::string generateDirectoryListing(const std::string &path)
 		if (stat(fullPath.c_str(), &entry_stat) == 0 && S_ISDIR(entry_stat.st_mode)) {
 			// It's a directory, create a hyperlink to navigate into the folder
 			html << "<li><a href=\"" << entryName << "/\">" << entryName << "/</a></li>";
-		}
-		else {
+		} else {
 			if (entryName.find(".html") == std::string::npos) {
 				html << "<li><a href=\"" << entryName << "\" download>" << entryName << "</a></li>";
-			}
-			else {
+			} else {
 				html << "<li><a href=\"" << entryName << "\">" << entryName << "</a></li>";
 			}
 		}
@@ -247,4 +227,3 @@ std::string generateDirectoryListing(const std::string &path)
 	html << "</ul></body></html>";
 	return html.str();
 }
-

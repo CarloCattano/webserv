@@ -2,18 +2,21 @@
 #include "../Cgi/Cgi.hpp"
 #include "../Response/Response.hpp"
 #include "../Utils/utils.hpp"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fcntl.h>
 #include <iostream>
 #include <ostream>
 #include <signal.h>
-#include <stdio.h>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+// std remove
+#include <cstdio>
+
+// perror include
+#include <stdio.h>
+// exit include
+#include <stdlib.h>
 
 const int MAX_EVENTS = 100;
 const int BUFFER_SIZE = 1024;
