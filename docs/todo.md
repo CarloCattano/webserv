@@ -33,3 +33,16 @@ make: *** [Makefile:19: run] Aborted (core dumped)
 * fix hardcoded path extraction from the request
 
 
+
+### Updated TO-DO
+
+ * Localhost server name not working
+
+ * Handle multiple servernames (its an array)
+
+ * Update all TODO comments left in code
+
+ * Move autoindex to server level instead of route
+
+ * 
+

@@ -75,23 +75,23 @@ void	print_server_routes(std::vector<Route> routes) {
     std::cout << std::endl;
 }
 
-void	print_server_obj(Virtual_Server_Config obj, int i)
+void	print_server_obj(Server obj)
 {
-	std::cout << GREEN << "SERVER_OBJ " << i << RESET << std::endl;
-    if (obj.port)
-        std::cout << "\tPort: " << obj.port << std::endl;
-    if (obj.server_names.size() > 0) {
+	std::cout << GREEN << "SERVER_OBJ " << RESET << std::endl;
+    if (obj._port)
+        std::cout << "\tPort: " << obj._port << std::endl;
+    if (obj._server_names.size() > 0) {
         std::cout << "\tServer names: ";
-        print_vector(obj.server_names);
+        print_vector(obj._server_names);
     }
-    if (obj.error_pages.size() > 0) {
+    if (obj._error_pages.size() > 0) {
         std::cout << "\tError pages: ";
-        print_vector(obj.error_pages);
+        print_vector(obj._error_pages);
     }
-    if (obj.client_max_body_size.size() > 0)
-        std::cout << "\tClientMaxBodySize " << obj.client_max_body_size << std::endl;
-    if (obj.routes.size() > 0)
-        print_server_routes(obj.routes);
+    if (obj._client_max_body_size.size() > 0)
+        std::cout << "\tClientMaxBodySize " << obj._client_max_body_size << std::endl;
+    if (obj._routes.size() > 0)
+        print_server_routes(obj._routes);
     std::cout << std::endl;
 }
 
