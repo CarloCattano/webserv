@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	std::vector<Server> servers;
 	std::string config_file = "";
 
-	populateContentTypes();
+	// populateContentTypes();
 
 	if (argv[1] == NULL || argc != 2) {
 		// use default config file as per the project requirement
