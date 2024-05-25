@@ -70,7 +70,7 @@ class Server {
 		std::vector<std::string>	_error_pages;
 		std::string					_client_max_body_size;
 		std::vector<Route>			_routes;
-
+		bool						_autoindex;
 		int							_socket_fd;
 		struct sockaddr_in			_server_address;
 		Server();

@@ -31,6 +31,8 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 		server._error_pages = extract_values(key_with_values);
 	else if (key == "client_max_body_size" && size >= 2)
 		server._client_max_body_size = key_with_values[1];
+	else if (key == "autoindex" && size >= 2 && key_with_values[1] == "true")
+		server._autoindex = true;
 }
 
 Server get_server_obj(std::string str, int i) {

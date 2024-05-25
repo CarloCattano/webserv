@@ -88,6 +88,7 @@ void	print_server_obj(Server obj)
         std::cout << "\tError pages: ";
         print_vector(obj._error_pages);
     }
+    std::cout << "\tAutoIndex: " << obj._autoindex << std::endl;
     if (obj._client_max_body_size.size() > 0)
         std::cout << "\tClientMaxBodySize " << obj._client_max_body_size << std::endl;
     if (obj._routes.size() > 0)

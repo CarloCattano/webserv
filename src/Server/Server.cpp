@@ -12,7 +12,7 @@
 const int BACKLOG = 100;
 
 Server::Server()
-	: _port(0), _default_server(false), _client_max_body_size("") {
+	: _port(0), _default_server(false), _client_max_body_size(""), _autoindex(false) {
 	_server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
