@@ -18,7 +18,7 @@ const int BUFFER_SIZE = 1024;
 const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN =
-	get_current_dir() + "/www/website1/cgi-bin/" + "hello.py"; // TODO load from config
+	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
 
 ServerCluster::ServerCluster() {}
 
@@ -72,7 +72,8 @@ void ServerCluster::await_connections() {
 				}
 
 				struct epoll_event ev;
-				ev.events = EPOLLIN | EPOLLOUT; // TODO Need to change this to epollctl mod for
+				ev.events = EPOLLIN; // TODO Need to change this to epollctl mod for
+
 				// write event when needed
 				ev.data.fd = client_fd;
 
@@ -92,17 +93,17 @@ void ServerCluster::await_connections() {
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
-					std::cout << "EPOLLIN" << std::endl;
 					handle_request(client_fd);
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-					close(client_fd);
+					/* epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
+					/* close(client_fd); */
 				}
 				if (events[i].events & EPOLLOUT) {
-					std::cout << "EPOLLOUT" << std::endl;
 					handle_write(client_fd);
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-					close(client_fd);
+					/* epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); */
+					/* close(client_fd); */
 				}
+				close(client_fd);
+				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 			}
 		}
 	}
@@ -185,6 +186,7 @@ void ServerCluster::handle_delete(int client_fd, std::string full_path, std::str
 		response += "200 ok\r\n";
 	}
 	send(client_fd, response.c_str(), response.size(), 0);
+	// TODO - check return value of send
 }
 
 void ServerCluster::handle_file_request(int client_fd, const std::string &file_path) {
@@ -205,7 +207,6 @@ void ServerCluster::handle_file_request(int client_fd, const std::string &file_p
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
 	response.respond(client_fd, _epoll_fd);
-	switch_poll(client_fd, EPOLLIN);
 }
 
 void ServerCluster::handle_static_request(int client_fd, const std::string &requested_file_path,
@@ -300,6 +301,7 @@ void ServerCluster::handle_cgi_request(int client_fd, const std::string &cgi_scr
 			exit(0);
 		} else {
 			response.ErrorResponse(client_fd, 500);
+			exit(0);
 		}
 	}
 	switch_poll(client_fd, EPOLLIN);

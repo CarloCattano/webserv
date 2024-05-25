@@ -2,6 +2,8 @@
  by ccattano bmacmaho jalbers
 
 ## Current open fronts:
+- [ ] Check client max body size
+
 - [ ] Parsing implementation (See TODO tags)
 - [ ] Request handling
 
