@@ -22,3 +22,7 @@
 - [ ] cgi paths
 - [ ] server website root
 - [ ] server website index
+
+
+### Double check:
+    - [ ] wrong path or dir requested

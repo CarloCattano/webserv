@@ -143,6 +143,9 @@ void ServerCluster::handle_request(int client_fd) {
 		return;
 	}
 
+	// check content lentgh
+	/* std::size_t content_length = extract_content_length(buffer); */
+
 	HttpMethod reqType = get_http_method(buffer);
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
