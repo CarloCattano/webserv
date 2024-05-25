@@ -79,21 +79,22 @@ void print_server_routes(std::vector<Route> routes) {
 
 void print_server_obj(Server obj) {
 	std::cout << GREEN << "SERVER_OBJ " << RESET << std::endl;
-	if (obj._port)
-		std::cout << "\tPort: " << obj._port << std::endl;
-	if (obj._server_names.size() > 0) {
-		std::cout << "\tServer names: ";
-		print_vector(obj._server_names);
-	}
-	if (obj._error_pages.size() > 0) {
-		std::cout << "\tError pages: ";
-		print_vector(obj._error_pages);
-	}
-	if (obj._client_max_body_size.size() > 0)
-		std::cout << "\tClientMaxBodySize " << obj._client_max_body_size << std::endl;
-	if (obj._routes.size() > 0)
-		print_server_routes(obj._routes);
-	std::cout << std::endl;
+    if (obj._port)
+        std::cout << "\tPort: " << obj._port << std::endl;
+    if (obj._server_names.size() > 0) {
+        std::cout << "\tServer names: ";
+        print_vector(obj._server_names);
+    }
+    if (obj._error_pages.size() > 0) {
+        std::cout << "\tError pages: ";
+        print_vector(obj._error_pages);
+    }
+    std::cout << "\tAutoIndex: " << obj._autoindex << std::endl;
+    if (obj._client_max_body_size.size() > 0)
+        std::cout << "\tClientMaxBodySize " << obj._client_max_body_size << std::endl;
+    if (obj._routes.size() > 0)
+        print_server_routes(obj._routes);
+    std::cout << std::endl;
 }
 
 std::string toLowerCase(std::string str) {
