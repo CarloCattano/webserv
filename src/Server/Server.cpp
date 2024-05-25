@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <sys/socket.h>
 
-Server::Server() : _port(0), _default_server(false), _client_max_body_size("") {
+Server::Server()
+	: _port(0), _default_server(false), _client_max_body_size(""), _autoindex(false) {
 	_server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();

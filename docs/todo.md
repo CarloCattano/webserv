@@ -42,7 +42,7 @@ make: *** [Makefile:19: run] Aborted (core dumped)
 
  * Update all TODO comments left in code
 
- * Move autoindex to server level instead of route
+ * Use autoindex setting on server level
 
  * 
 

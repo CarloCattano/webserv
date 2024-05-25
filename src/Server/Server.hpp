@@ -54,19 +54,20 @@ struct Route {
 // to-do server only uses first server name
 // Everything is public atm
 class Server {
-  private:
-  public:
-	unsigned int _port;
-	bool _default_server;
-	std::vector<std::string> _server_names;
-	std::vector<std::string> _error_pages;
-	std::string _client_max_body_size;
-	std::vector<Route> _routes;
+	private:
 
-	int _socket_fd;
-	struct sockaddr_in _server_address;
-	Server();
-	Server(unsigned int port, std::string host);
+	public:
+		unsigned int				_port;
+		bool						_default_server;
+		std::vector<std::string>	_server_names;
+		std::vector<std::string>	_error_pages;
+		std::string					_client_max_body_size;
+		std::vector<Route>			_routes;
+		bool						_autoindex;
+		int							_socket_fd;
+		struct sockaddr_in			_server_address;
+		Server();
+		Server(unsigned int port, std::string host);
 
 	~Server();
 	void setup();
