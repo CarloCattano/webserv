@@ -30,7 +30,7 @@ class Response {
 	int getSize() const;
 
 	// response send
-	void respond(int clientSocket) const;
+	void respond(int clientSocket, int _epoll_fd) const;
 };
 
 #endif

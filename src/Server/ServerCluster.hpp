@@ -31,4 +31,5 @@ class ServerCluster {
 	void handle_delete(int client_fd, std::string full_path, std::string file_path);
 
 	FileUploader uploader;
+	void switch_poll(int client_fd, uint32_t events);
 };

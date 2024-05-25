@@ -3,10 +3,8 @@
 #include <fcntl.h>
 #include <iostream>
 #include <ostream>
-// include for perror
 #include <stdio.h>
-
-const int BACKLOG = 100;
+#include <sys/socket.h>
 
 Server::Server() : _port(0), _default_server(false), _client_max_body_size("") {
 	_server_names = std::vector<std::string>();
@@ -40,7 +38,7 @@ void Server::setup() {
 
 	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
 		perror("bind");
-	if (listen(_socket_fd, BACKLOG) == -1)
+	if (listen(_socket_fd, SOMAXCONN) == -1)
 		perror("listen");
 
 	std::cout << "Server started at http://" << _server_names[0] << ":" << _port << std::endl;
