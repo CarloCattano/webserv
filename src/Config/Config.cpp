@@ -1,5 +1,6 @@
 #include "Config.hpp"
 #include <stdlib.h>
+#include <iostream>
 
 Config::Config() {}
 
@@ -49,6 +50,9 @@ Server get_server_obj(std::string str, int i) {
 }
 
 Config::Config(const std::string filename) {
+	if (filename == "")
+		throw std::runtime_error("No filename provided");
+
 	Server server_obj;
 	std::string file_content = get_file_content(filename);
 
@@ -63,7 +67,6 @@ Config::Config(const std::string filename) {
 		}
 		index = file_content.find("server", index);
 	}
-	// set default server
 }
 
 std::vector<Server> Config::get_servers() { return (this->_servers); }
