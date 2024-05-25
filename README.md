@@ -26,3 +26,4 @@
 
 ### Double check:
     - [ ] wrong path or dir requested
+    - Config max body size string or int or gb or mb or kb

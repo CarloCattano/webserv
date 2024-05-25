@@ -15,7 +15,6 @@
 
 const int MAX_EVENTS = 42;
 const int BUFFER_SIZE = 1024;
-// const bool autoindex = true; // TODO load from config
 
 std::string CGI_BIN =
 	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
@@ -46,8 +45,7 @@ void ServerCluster::setupCluster() {
 	}
 }
 
-int ServerCluster::accept_new_connection(int server_fd)
-{
+int ServerCluster::accept_new_connection(int server_fd) {
 	int client_fd = accept(server_fd, NULL, NULL);
 
 	if (client_fd == -1) {
@@ -57,8 +55,7 @@ int ServerCluster::accept_new_connection(int server_fd)
 	return (client_fd);
 }
 
-void ServerCluster::add_client_fd_to_epoll(int client_fd)
-{
+void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	struct epoll_event ev;
 
 	ev.events = EPOLLIN;
@@ -70,26 +67,24 @@ void ServerCluster::add_client_fd_to_epoll(int client_fd)
 	}
 }
 
-void ServerCluster::handle_new_client_connection(int server_fd)
-{
+void ServerCluster::handle_new_client_connection(int server_fd) {
 	int client_fd = accept_new_connection(server_fd);
 	add_client_fd_to_epoll(client_fd);
 	_client_fd_to_server_map[client_fd] = _server_map[server_fd];
 }
 
-void ServerCluster::await_connections()
-{
-	struct epoll_event	events[MAX_EVENTS];
-	int					num_events;
-	
+void ServerCluster::await_connections() {
+	struct epoll_event events[MAX_EVENTS];
+	int num_events;
+
 	while (1) { // TODO add a flag to run the server
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
 
 		for (int i = 0; i < num_events; i++) {
-			
-			int		event_fd = events[i].data.fd;
+
+			int event_fd = events[i].data.fd;
 			if (event_fd == -1) {
 				perror("events[i].data.fd");
 				continue;
@@ -97,8 +92,7 @@ void ServerCluster::await_connections()
 
 			if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
-			}
-			else {
+			} else {
 				int client_fd = event_fd;
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
@@ -133,9 +127,8 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	}
 }
 
-void ServerCluster::handle_request(int client_fd)
-{
-	char	buffer[BUFFER_SIZE];
+void ServerCluster::handle_request(int client_fd) {
+	char buffer[BUFFER_SIZE];
 
 	if (client_fd == -1) {
 		perror("client_fd");
@@ -154,7 +147,19 @@ void ServerCluster::handle_request(int client_fd)
 	}
 
 	// check content lentgh
-	/* std::size_t content_length = extract_content_length(buffer); */
+	std::size_t content_length = extract_content_length(buffer);
+	// TODO get the Server configs in another place in the object
+	Server *server = get_server_by_client_fd(client_fd);
+
+	if (!server)
+		return;
+	// ----------------------------------------------------------
+
+	if (static_cast<int>(content_length) > std::atoi(server->_client_max_body_size.c_str())) {
+		Response response;
+		response.ErrorResponse(client_fd, 413);
+		return;
+	}
 
 	HttpMethod reqType = get_http_method(buffer);
 
@@ -170,20 +175,18 @@ void ServerCluster::handle_request(int client_fd)
 	}
 	if (reqType == DELETE) {
 		handle_delete_request(client_fd, full_path, requested_file_path);
-	}
-	else if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
+	} else if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
 		handle_cgi_request(client_fd, CGI_BIN); // TODO load CGI_BIN from config
 	}
 
-	// no match for the request
 	else {
 		Response response;
 		response.ErrorResponse(client_fd, 405);
 	}
 }
 
-void ServerCluster::handle_delete_request(int client_fd, std::string full_path, std::string file_path)
-{
+void ServerCluster::handle_delete_request(int client_fd, std::string full_path,
+										  std::string file_path) {
 	// remove the first 4 chars from requested_file_path "ETE "
 	full_path += file_path.substr(4);
 
@@ -224,8 +227,7 @@ void ServerCluster::handle_file_request(int client_fd, const std::string &file_p
 	response.respond(client_fd, _epoll_fd);
 }
 
-Server *ServerCluster::get_server_by_client_fd(int client_fd)
-{
+Server *ServerCluster::get_server_by_client_fd(int client_fd) {
 	if (!_client_fd_to_server_map.count(client_fd)) {
 		perror("No matching server for client fd");
 		return NULL;
@@ -233,8 +235,7 @@ Server *ServerCluster::get_server_by_client_fd(int client_fd)
 	return (&_client_fd_to_server_map[client_fd]);
 }
 
-void ServerCluster::handle_get_request(int client_fd, const std::string &requested_file_path)
-{
+void ServerCluster::handle_get_request(int client_fd, const std::string &requested_file_path) {
 	Server *server = get_server_by_client_fd(client_fd);
 	if (!server)
 		return;
@@ -262,8 +263,7 @@ void ServerCluster::handle_get_request(int client_fd, const std::string &request
 		} else {
 			handle_file_request(client_fd, requested_file_path);
 		}
-	}
-	else {
+	} else {
 		// forward to index.html if autoindex is enabled
 		if (requested_file_path == "/")
 			handle_file_request(client_fd, "/index.html");

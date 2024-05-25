@@ -26,6 +26,8 @@ std::string Response::getStatusMessage(int statusCode) {
 		return "Not Found";
 	case 405:
 		return "Method Not Allowed";
+	case 413:
+		return "Payload Too Large";
 	case 500:
 		return "Internal Server Error";
 	case 502:
@@ -103,7 +105,18 @@ void Response::respond(int clientSocket, int _epoll_fd) const {
 
 	if (static_cast<size_t>(retsize) == response.size()) {
 		struct epoll_event ev;
-		ev.events = EPOLLIN;
+		ev.events = EPOLLIN; /* 	Cgi cgi; */
+							 /* 	std::string cgi_response = cgi.run(cgi_script_path); */
+
+		/* 	if (!cgi_response.empty()) { */
+		/* 		response.setStatusCode(200); */
+		/* 		response.setHeader("Connection", "keep-alive"); */
+		/* 		response.setHeader("Content-Type", "text/html"); */
+		/* 		response.setHeader("Content-Length", intToString(cgi_response.length())); */
+		/* 		response.setBody(cgi_response); */
+		/* 		response.respond(client_fd, _epoll_fd); */
+		/* 		close(client_fd); */
+
 		ev.data.fd = clientSocket;
 
 		if (clientSocket == -1) {
