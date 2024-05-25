@@ -9,7 +9,7 @@ def test():
     try:
         response = requests.get('http://'+ sys.argv[2], timeout=5)
         #time of response
-        print(response.status_code, response.elapsed.total_seconds())
+        print(response.status_code, response.elapsed.total_seconds().__round__(2))
     except Exception as e:
         print(e)
 
@@ -24,7 +24,7 @@ def main():
     for i in range(arg1):
         t = threading.Thread(target=test)
         threads.append(t)
-        time.sleep(0.2)
+        # time.sleep(0.2)
         t.start()
 
     for t in threads:

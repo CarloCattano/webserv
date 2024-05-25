@@ -5,10 +5,10 @@
 #include <string>
 
 class Response {
-private:
+  private:
 	std::ostringstream responseStream;
 
-public:
+  public:
 	Response();
 	~Response();
 
@@ -22,13 +22,15 @@ public:
 
 	void setBody(const std::string &body);
 
+	void ErrorResponse(int clientSocket, int statusCode);
+
 	std::string str() const;
 
 	// response size
 	int getSize() const;
 
 	// response send
-	void respond(int clientSocket) const;
+	void respond(int clientSocket, int _epoll_fd) const;
 };
 
 #endif

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <map>
-#include <vector>
 #include "./Server.hpp"
+#include <map>
 
 class ServerCluster {
-private:
+  private:
 	std::vector<Server> _servers;
 	std::map<int, Server> _server_map;
 	// To-Do delete entry if client closed
@@ -15,7 +14,7 @@ private:
 
 	ServerCluster();
 
-public:
+  public:
 	ServerCluster(std::vector<Server> servers);
 	~ServerCluster();
 
@@ -40,6 +39,6 @@ public:
 
 
 
-
 	FileUploader uploader;
+	void switch_poll(int client_fd, uint32_t events);
 };
