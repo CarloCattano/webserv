@@ -50,14 +50,6 @@ void FileUploader::handle_file_upload(int client_fd, const std::string &filename
 			total_bytes_received += bytes_written;
 		} else if (bytes_received == 0) {
 			break;
-		} else {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				usleep(1000); // Sleep for 1 millisecond
-				continue;
-			} else {
-				perror("recv");
-				break;
-			}
 		}
 	}
 	// TODO , check the real file size and compare it with the file_size to

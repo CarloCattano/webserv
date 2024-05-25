@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 	servers = config.get_servers();
 	ServerCluster cluster(servers);
 
-	cluster.setupCluster();
+	/* cluster.setupCluster(); */
 	cluster.start();
 
 	return 0;
