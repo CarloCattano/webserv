@@ -13,6 +13,7 @@ class Response {
 	~Response();
 
 	void setStatusCode(int statusCode);
+	std::string getStatusMessage(int statusCode);
 
 	void setHeader(const std::string &key, const std::string &value);
 
