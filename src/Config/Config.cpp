@@ -1,5 +1,6 @@
 #include "Config.hpp"
 #include <stdlib.h>
+#include <iostream>
 
 Config::Config() {}
 
@@ -7,11 +8,8 @@ Config::~Config() {}
 
 void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values) {
 	if (size >= 2)
-		server._port = atoi(key_with_values[1].c_str());
-	if (size >= 3 && key_with_values[2] == "default")
-		server._default_server = true;
-	else
-		server._default_server = false;
+		server.setPort(atoi(key_with_values[1].c_str()));
+	server.setDefaultServer(size >= 3 && key_with_values[2] == "default" ? true : false);
 }
 
 void parse_key_with_values(Server &server, std::string str, int i) {
@@ -22,13 +20,13 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 	if (key == "listen")
 		parse_listen(size, server, key_with_values);
 	else if (key == "server_name")
-		server._server_names = extract_values(key_with_values);
+		server.setServerNames(extract_values(key_with_values));
 	else if (key == "error_page")
-		server._error_pages = extract_values(key_with_values);
+		server.setErrorPages(extract_values(key_with_values));
 	else if (key == "client_max_body_size" && size >= 2)
-		server._client_max_body_size = key_with_values[1];
+		server.setClientMaxBodySize(key_with_values[1]);
 	else if (key == "autoindex" && size >= 2 && key_with_values[1] == "true")
-		server._autoindex = true;
+		server.setAutoindex(true);
 }
 
 Server get_server_obj(std::string str, int i) {
@@ -49,6 +47,9 @@ Server get_server_obj(std::string str, int i) {
 }
 
 Config::Config(const std::string filename) {
+	if (filename == "")
+		throw std::runtime_error("No filename provided");
+
 	Server server_obj;
 	std::string file_content = get_file_content(filename);
 
@@ -63,7 +64,6 @@ Config::Config(const std::string filename) {
 		}
 		index = file_content.find("server", index);
 	}
-	// set default server
 }
 
 std::vector<Server> Config::get_servers() { return (this->_servers); }

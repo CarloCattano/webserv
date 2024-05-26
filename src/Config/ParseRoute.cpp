@@ -91,7 +91,8 @@ int	parse_route(Server &virtual_server, std::string str, int i) {
 	}
 	if (str[i] == '}')
 		i++;
-	virtual_server._routes.push_back(route);
+	
+	virtual_server.addRoute(route);
 	return (i);
 }
 

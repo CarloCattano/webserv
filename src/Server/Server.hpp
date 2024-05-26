@@ -55,8 +55,6 @@ struct Route {
 // Everything is public atm
 class Server {
 	private:
-
-	public:
 		unsigned int				_port;
 		bool						_default_server;
 		std::vector<std::string>	_server_names;
@@ -66,14 +64,36 @@ class Server {
 		bool						_autoindex;
 		int							_socket_fd;
 		struct sockaddr_in			_server_address;
+
+	public:
 		Server();
 		Server(unsigned int port, std::string host);
+		Server(const Server &server);
+		Server &operator=(const Server &server);
+		~Server();
 
-	~Server();
-	void setup();
-	int getSocketFd();
+		unsigned int getPort();
+		bool getDefaultServer();
+		std::vector<std::string> getServerNames();
+		std::vector<std::string> getErrorPages();
+		std::string getClientMaxBodySize();
+		std::vector<Route> getRoutes();
+		bool getAutoindex();
+		int getSocketFd();
+		struct sockaddr_in getServerAddress();
 
-	// in_addr_t getServerName() {
-	// 	return inet_addr(_server_names[0].data());
-	// };
+		//setters
+		void setPort(unsigned int port);
+		void setDefaultServer(bool default_server);
+		void setServerNames(std::vector<std::string> server_names);
+		void setErrorPages(std::vector<std::string> error_pages);
+		void setClientMaxBodySize(std::string client_max_body_size);
+		void setRoutes(std::vector<Route> routes);
+		void addRoute(Route route);
+		void setAutoindex(bool autoindex);
+		void setSocketFd(int socket_fd);
+		void setServerAddress(struct sockaddr_in server_address);
+
+		void setup();
+
 };

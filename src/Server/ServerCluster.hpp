@@ -2,20 +2,22 @@
 
 #include "./Server.hpp"
 #include <map>
+#include "../Response/Response.hpp"
 
 struct Client
 {
-	int		fd;
-	Server	*server;
+	int			fd;
+	Server		*server;
+	Response	*response;
 };
 
 
 class ServerCluster {
   private:
-	std::vector<Server> _servers;
-	std::map<int, Server> _server_map;
+	std::vector<Server>		_servers;
+	std::map<int, Server>	_server_map;
 	// To-Do delete entry if client closed
-	std::map<int, Server> _client_fd_to_server_map;
+	std::map<int, Server>	_client_fd_to_server_map;
 
 	int _epoll_fd;
 
@@ -25,11 +27,11 @@ class ServerCluster {
 	ServerCluster(std::vector<Server> servers);
 	~ServerCluster();
 
-	void setupCluster();
-	void await_connections();
-	void setup();
-	void start();
-	static void stop(int signal);
+	void			setupCluster();
+	void			await_connections();
+	void			setup();
+	void			start();
+	static void		stop(int signal);
 
 	void			new_connection(int fd);
 	void			handle_file_request(const Client &client, const std::string &file_path);

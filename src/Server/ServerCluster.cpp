@@ -168,7 +168,7 @@ void ServerCluster::handle_request(const Client &client) {
 	// ----------------------------------------------------------
 
 	if (static_cast<int>(content_length) >
-		std::atoi(client.server->_client_max_body_size.c_str())) {
+		std::atoi(client.server->getClientMaxBodySize().c_str())) {
 		Response response;
 		response.ErrorResponse(client.fd, 413);
 		return;
@@ -252,7 +252,7 @@ void ServerCluster::handle_get_request(const Client &client,
 
 	Response response;
 
-	if (client.server->_autoindex == false && stat(full_path.c_str(), &path_stat) == 0 &&
+	if (client.server->getAutoindex() == false && stat(full_path.c_str(), &path_stat) == 0 &&
 		S_ISDIR(path_stat.st_mode)) {
 		// It's a directory, generate directory listing for the requested path
 		std::string dir_list = generateDirectoryListing(full_path);
