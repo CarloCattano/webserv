@@ -1,4 +1,6 @@
+
 #include "./Response.hpp"
+#include "../Utils/utils.hpp"
 #include <iostream>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -14,39 +16,35 @@ Response::Response() {
 
 Response::~Response() {}
 
+std::string Response::getStatusMessage(int statusCode) {
+	switch (statusCode) {
+	case 200:
+		return "OK";
+	case 400:
+		return "Bad Request";
+	case 404:
+		return "Not Found";
+	case 405:
+		return "Method Not Allowed";
+	case 413:
+		return "Payload Too Large";
+	case 500:
+		return "Internal Server Error";
+	case 502:
+		return "Bad Gateway";
+	case 504:
+		return "Gateway Timeout";
+	// Add other status codes as needed
+	default:
+		return "Unknown";
+	}
+}
+
 void Response::setStatusCode(int statusCode) {
 	// Set the HTTP status code
 	responseStream.seekp(9);
 	responseStream << statusCode;
-	responseStream << " ";
-	switch (statusCode) {
-	case 200:
-		responseStream << "OK";
-		break;
-	case 400:
-		responseStream << "Bad Request";
-		break;
-	case 404:
-		responseStream << "Not Found";
-		break;
-	case 405:
-		responseStream << "Method Not Allowed";
-		break;
-	case 500:
-		responseStream << "Internal Server Error";
-		break;
-	case 502:
-		responseStream << "Bad Gateway";
-		break;
-	case 504:
-		responseStream << "Gateway Timeout";
-		break;
-	// Add other status codes as needed
-	default:
-		responseStream << "Unknown";
-		break;
-	}
-	responseStream << "\r\n";
+	responseStream << " " << getStatusMessage(statusCode) << "\r\n";
 }
 
 void Response::setHeader(const std::string &key, const std::string &value) {
@@ -76,16 +74,29 @@ std::string Response::str() const { return responseStream.str(); }
 int Response::getSize() const { return responseStream.str().length(); }
 
 void Response::ErrorResponse(int clientSocket, int statusCode) {
-	Response response;
-	response.setStatusCode(statusCode);
-	response.setHeader("Connection", "keep-alive");
-	response.setHeader("Content-Type", "text/html");
-	response.setHeader("Content-Length", "0");
-	response.respond(clientSocket, -1);
+	std::string errorMessage = getStatusMessage(statusCode);
+
+	// Set the status code
+	setStatusCode(statusCode);
+
+	// Create an HTML error page with the corresponding error message
+	std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
+							"</title></head>"
+							"<body><h1>Error " +
+							intToString(statusCode) +
+							"</h1>"
+							"<p>" +
+							errorMessage + "</p></body></html>";
+
+	// Set the headers and body
+	setHeader("Content-Type", "text/html");
+	setBody(errorPage);
+
+	// Send the response
+	respond(clientSocket, -1); // assuming -1 for epoll fd as we are not modifying epoll events here
 }
 
 void Response::respond(int clientSocket, int _epoll_fd) const {
-
 	std::string response = responseStream.str();
 	ssize_t retsize = send(clientSocket, response.c_str(), response.length(), 0);
 	if (retsize == -1) {
@@ -94,7 +105,18 @@ void Response::respond(int clientSocket, int _epoll_fd) const {
 
 	if (static_cast<size_t>(retsize) == response.size()) {
 		struct epoll_event ev;
-		ev.events = EPOLLIN;
+		ev.events = EPOLLIN; /* 	Cgi cgi; */
+							 /* 	std::string cgi_response = cgi.run(cgi_script_path); */
+
+		/* 	if (!cgi_response.empty()) { */
+		/* 		response.setStatusCode(200); */
+		/* 		response.setHeader("Connection", "keep-alive"); */
+		/* 		response.setHeader("Content-Type", "text/html"); */
+		/* 		response.setHeader("Content-Length", intToString(cgi_response.length())); */
+		/* 		response.setBody(cgi_response); */
+		/* 		response.respond(client_fd, _epoll_fd); */
+		/* 		close(client_fd); */
+
 		ev.data.fd = clientSocket;
 
 		if (clientSocket == -1) {
