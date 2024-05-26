@@ -59,15 +59,15 @@ class Server {
 		bool						_default_server;
 		std::vector<std::string>	_server_names;
 		std::vector<std::string>	_error_pages;
-		std::string					_client_max_body_size;
+		long long					_client_max_body_size;
 		std::vector<Route>			_routes;
 		bool						_autoindex;
+		std::string					_root;
 		int							_socket_fd;
 		struct sockaddr_in			_server_address;
 
 	public:
 		Server();
-		Server(unsigned int port, std::string host);
 		Server(const Server &server);
 		Server &operator=(const Server &server);
 		~Server();
@@ -76,23 +76,25 @@ class Server {
 		bool getDefaultServer();
 		std::vector<std::string> getServerNames();
 		std::vector<std::string> getErrorPages();
-		std::string getClientMaxBodySize();
+		long long getClientMaxBodySize();
 		std::vector<Route> getRoutes();
 		bool getAutoindex();
 		int getSocketFd();
 		struct sockaddr_in getServerAddress();
+		std::string getRoot();
 
 		//setters
 		void setPort(unsigned int port);
 		void setDefaultServer(bool default_server);
 		void setServerNames(std::vector<std::string> server_names);
 		void setErrorPages(std::vector<std::string> error_pages);
-		void setClientMaxBodySize(std::string client_max_body_size);
+		void setClientMaxBodySize(long long client_max_body_size);
 		void setRoutes(std::vector<Route> routes);
 		void addRoute(Route route);
 		void setAutoindex(bool autoindex);
 		void setSocketFd(int socket_fd);
 		void setServerAddress(struct sockaddr_in server_address);
+		void setRoot(std::string root);
 
 		void setup();
 

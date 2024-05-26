@@ -167,8 +167,7 @@ void ServerCluster::handle_request(const Client &client) {
 
 	// ----------------------------------------------------------
 
-	if (static_cast<int>(content_length) >
-		std::atoi(client.server->getClientMaxBodySize().c_str())) {
+	if (static_cast<long long>(content_length) > client.server->getClientMaxBodySize()) {
 		Response response;
 		response.ErrorResponse(client.fd, 413);
 		return;
