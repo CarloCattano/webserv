@@ -109,14 +109,17 @@ void ServerCluster::await_connections() {
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
+					log("Error or hangup");
 					close(client.fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
+					log("Handling request");
 					handle_request(client);
 				}
 				if (events[i].events & EPOLLOUT) {
-					handle_write(client);
+					log("Handling write");
+					/* handle_write(client); */
 				}
 				close(client.fd);
 				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
@@ -148,7 +151,6 @@ void ServerCluster::handle_request(const Client &client) {
 		return;
 	}
 
-	switch_poll(client.fd, EPOLLIN);
 	int size = recv(client.fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
 	if (size == -1) {
 		return;
