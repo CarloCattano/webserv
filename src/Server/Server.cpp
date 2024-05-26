@@ -24,6 +24,26 @@ Server::Server(unsigned int port, std::string server_name) : _port(port) {
 	Server::setup();
 }
 
+Server::Server(const Server &server) {
+	*this = server;
+}
+
+//operator overload
+Server &Server::operator=(const Server &server) {
+	if (this == &server)
+		return *this;
+	_port = server._port;
+	_default_server = server._default_server;
+	_server_names = server._server_names;
+	_error_pages = server._error_pages;
+	_client_max_body_size = server._client_max_body_size;
+	_routes = server._routes;
+	_autoindex = server._autoindex;
+	_server_address = server._server_address;
+	_socket_fd = server._socket_fd;
+	return *this;
+}
+
 Server::~Server() {}
 
 void Server::setup() {
@@ -50,4 +70,44 @@ void Server::setup() {
 	std::cout << "Server started at http://" << _server_names[0] << ":" << _port << std::endl;
 }
 
+//getters
 int Server::getSocketFd() { return this->_socket_fd; }
+
+unsigned int Server::getPort() { return this->_port; }
+
+std::vector<Route> Server::getRoutes() { return this->_routes; }
+
+std::vector<std::string> Server::getServerNames() { return this->_server_names; }
+
+std::vector<std::string> Server::getErrorPages() { return this->_error_pages; }
+
+std::string Server::getClientMaxBodySize() { return this->_client_max_body_size; }
+
+struct sockaddr_in Server::getServerAddress() { return this->_server_address; }
+
+bool Server::getDefaultServer() { return this->_default_server; }
+
+bool Server::getAutoindex() { return this->_autoindex; }
+
+//setters
+void Server::setPort(unsigned int port) { this->_port = port; }
+
+void Server::setDefaultServer(bool default_server) { this->_default_server = default_server; }
+
+void Server::setServerNames(std::vector<std::string> server_names) { this->_server_names = server_names; }
+
+void Server::setErrorPages(std::vector<std::string> error_pages) { this->_error_pages = error_pages; }
+
+void Server::setClientMaxBodySize(std::string client_max_body_size) { this->_client_max_body_size = client_max_body_size; }
+
+void Server::setAutoindex(bool autoindex) { this->_autoindex = autoindex; }
+
+void Server::setSocketFd(int socket_fd) { this->_socket_fd = socket_fd; }
+
+void Server::setServerAddress(struct sockaddr_in server_address) { this->_server_address = server_address; }
+
+void Server::addRoute(Route route) { this->_routes.push_back(route); }
+
+void Server::setRoutes(std::vector<Route> routes) { this->_routes = routes; }
+
+
