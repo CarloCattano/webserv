@@ -14,7 +14,7 @@ def send_curl_request(url):
     response_time = end_time - start_time
     global request_number
     request_number += 1
-    print(f"Response at {time.strftime('%H:%M:%S')} took {response_time:.2f} seconds" + f" with status code {response.status_code}" + f" for request number {request_number}")
+    print(f"Response took {response_time:.2f} seconds" + f" STATUS:\t {response.status_code}" + f" {request_number}")
 
 def send_concurrent_requests(url, num_requests):
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_requests) as executor:
