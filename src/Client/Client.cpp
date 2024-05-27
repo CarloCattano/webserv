@@ -95,6 +95,7 @@ void Client::setRequestBody(std::string body) { this->request.body = body; }
 void Client::setResponseStatusCode(int statusCode) { this->response.statusCode = statusCode; }
 void Client::setResponseBody(std::string body) { this->response.body = body; }
 void Client::setResponseHeaders(std::map<std::string, std::string> headers) { this->response.headers = headers; }
+void Client::addResponseHeader(std::string key, std::string value) { this->response.headers[key] = value; }
 void Client::setResponseSize(int size) { this->response.size = size; }
 
 //response getters

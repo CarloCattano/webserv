@@ -30,7 +30,6 @@ class Client
         Response	response;
         size_t		sentBytes;
 
-
     public:
         Client();
         Client(int fd, Server *server, int epoll_fd);
@@ -38,6 +37,11 @@ class Client
         Client &operator=(const Client &client);
         ~Client();
 
+        void        parseRequest(std::string request);
+        std::string getErrorString(int code);
+        std::string responseToString();
+
+        //general getters and setters
         int			getFd() const;
         Server		*getServer() const;
         Request		getRequest() const;
@@ -52,9 +56,6 @@ class Client
         void    setEvent(epoll_event *event);
         void    setSentBytes(size_t sentBytes);
 
-        void        parseRequest(std::string request);
-        std::string getErrorString(int code);
-        std::string responseToString();
 
         //getters and setters for request
         void    setRequestMethod(std::string method);
@@ -80,6 +81,7 @@ class Client
         void    setResponseStatusCode(int statusCode);
         void    setResponseBody(std::string body);
         void    setResponseHeaders(std::map<std::string, std::string> headers);
+        void    addResponseHeader(std::string key, std::string value);
 
 };
 
