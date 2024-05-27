@@ -9,6 +9,7 @@ struct Request {
     std::string                         httpVersion;
     std::map<std::string, std::string>  headers;
     std::string                         body;
+    bool                                finishedReading;
 };
 
 struct Response
@@ -17,6 +18,7 @@ struct Response
 	int									statusCode;
 	std::map<std::string, std::string>	headers;
 	std::string 						body;
+    bool                                finishedSending;
 };
 
 class Client

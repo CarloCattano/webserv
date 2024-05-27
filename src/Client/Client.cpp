@@ -124,7 +124,6 @@ Client::Client(const Client &client) {
     *this = client;
 }
 
-//error string
 std::string Client::getErrorString(int statusCode) {
     switch (statusCode)
 	{
@@ -133,7 +132,7 @@ std::string Client::getErrorString(int statusCode) {
         case 101:
             return "Switching Protocols";
         case 102:
-            return "Processing"; // WebDAV; RFC 2518
+            return "Processing";
         case 103:
             return "Early Hints";
         case 200:
@@ -151,11 +150,11 @@ std::string Client::getErrorString(int statusCode) {
         case 206:
             return "Partial Content";
         case 207:
-            return "Multi-Status"; // WebDAV; RFC 4918
+            return "Multi-Status";
         case 208:
-            return "Already Reported"; // WebDAV; RFC 5842
+            return "Already Reported";
         case 226:
-            return "IM Used"; // HTTP Delta encoding; RFC 3229
+            return "IM Used";
         case 300:
             return "Multiple Choices";
         case 301:
@@ -195,43 +194,43 @@ std::string Client::getErrorString(int statusCode) {
         case 410:
             return "Gone";
         case 411:
-            return "Length Required"; // ✅in Parser.cpp
+            return "Length Required";
         case 412:
             return "Precondition Failed";
         case 413:
             return "Payload Too Large";
         case 414:
-            return "URI Too Long"; // not present in NGINX
+            return "URI Too Long";
         case 415:
-            return "Unsupported Media Type"; // ✅in Parser.cpp
+            return "Unsupported Media Type";
         case 416:
             return "Range Not Satisfiable";
         case 417:
             return "Expectation Failed";
         case 418:
-            return "I'm a teapot"; // RFC 2324, RFC 7168
+            return "I'm a teapot";
         case 421:
-            return "Misdirected Request"; // RFC 7540
+            return "Misdirected Request";
         case 422:
-            return "Unprocessable Entity"; // WebDAV; RFC 4918
+            return "Unprocessable Entity";
         case 423:
-            return "Locked"; // WebDAV; RFC 4918
+            return "Locked";
         case 424:
-            return "Failed Dependency"; // WebDAV; RFC 4918
+            return "Failed Dependency";
         case 425:
-            return "Too Early"; // RFC 8470
+            return "Too Early";
         case 426:
             return "Upgrade Required";
         case 428:
-            return "Precondition Required"; // RFC 6585
+            return "Precondition Required";
         case 429:
-            return "Too Many Requests"; // RFC 6585
+            return "Too Many Requests";
         case 431:
-            return "Request Header Fields Too Large"; // ✅in Server.cpp, RFC 6585
+            return "Request Header Fields Too Large";
         case 451:
-            return "Unavailable For Legal Reasons"; // RFC 7725
+            return "Unavailable For Legal Reasons";
         case 499:
-            return "Client Closed Request"; // nginx
+            return "Client Closed Request";
         case 500:
             return "Internal Server Error";
         case 501:
@@ -243,17 +242,17 @@ std::string Client::getErrorString(int statusCode) {
         case 504:
             return "Gateway Timeout";
         case 505:
-            return "HTTP Version Not Supported"; // ✅in Parser.cpp
+            return "HTTP Version Not Supported";
         case 506:
-            return "Variant Also Negotiates"; // RFC 2295
+            return "Variant Also Negotiates";
         case 507:
-            return "Insufficient Storage"; // WebDAV; RFC 4918
+            return "Insufficient Storage";
         case 508:
-            return "Loop Detected"; // WebDAV; RFC 5842
+            return "Loop Detected";
         case 510:
-            return "Not Extended"; // RFC 2774
+            return "Not Extended";
         case 511:
-            return "Network Authentication Required"; // RFC 6585
+            return "Network Authentication Required";
         default:
         {
             std::cerr << "Unassigned status code: " << statusCode << std::endl;
