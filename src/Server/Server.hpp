@@ -63,7 +63,6 @@ class Server {
 		std::vector<Route>			_routes;
 		bool						_autoindex;
 		int							_socket_fd;
-		struct sockaddr_in			_server_address;
 
 	public:
 		Server();

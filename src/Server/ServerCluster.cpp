@@ -1,6 +1,5 @@
 #include "./ServerCluster.hpp"
 #include "../Cgi/Cgi.hpp"
-#include "../Response/Response.hpp"
 #include "../Utils/utils.hpp"
 #include <cstdio>
 #include <fcntl.h>
@@ -14,30 +13,28 @@
 #include <sys/wait.h>
 
 const int MAX_EVENTS = 42;
-const int BUFFER_SIZE = 1024;
+// const int BUFFER_SIZE = 1024;
 
 std::string CGI_BIN =
 	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
 
 ServerCluster::ServerCluster() {}
 
-ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
-	this->setupCluster();
-}
+ServerCluster::ServerCluster(std::vector<Server> servers) {
 
-void ServerCluster::setupCluster() {
 	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd == -1) {
+	if (_epoll_fd == -1)
 		perror("epoll_create1");
-	}
-	for (size_t i = 0; i < _servers.size(); i++) {
-		int socket_fd = _servers[i].getSocketFd();
 
-		_server_map[socket_fd] = _servers[i];
+	for (size_t i = 0; i < servers.size(); i++) {
+		int socket_fd = servers[i].getSocketFd();
+
+		_server_map[socket_fd] = servers[i];
 
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_fd;
+	
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
 			perror("epoll_ctl");
 			exit(EXIT_FAILURE);
@@ -52,36 +49,18 @@ int ServerCluster::accept_new_connection(int server_fd) {
 		perror("accept");
 		exit(EXIT_FAILURE);
 	}
+
 	return (client_fd);
 }
 
-void ServerCluster::add_client_fd_to_epoll(int client_fd) {
-	struct epoll_event ev;
-
-	ev.events = EPOLLIN;
-	ev.data.fd = client_fd;
-
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
-		exit(EXIT_FAILURE);
-	}
-}
 
 void ServerCluster::handle_new_client_connection(int server_fd) {
+
 	int client_fd = accept_new_connection(server_fd);
-	add_client_fd_to_epoll(client_fd);
-	_client_fd_to_server_map[client_fd] = _server_map[server_fd];
-}
 
-Client ServerCluster::get_client_obj(const int &client_fd) {
-	Client client;
+	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
 
-	client.fd = client_fd;
-
-	if (!_client_fd_to_server_map.count(client_fd))
-		throw std::runtime_error("No matching server for client fd");
-	client.server = &_client_fd_to_server_map[client_fd];
-	return (client);
+	_client_map[client_fd] = *client;
 }
 
 void ServerCluster::await_connections() {
@@ -105,21 +84,20 @@ void ServerCluster::await_connections() {
 				handle_new_client_connection(event_fd);
 
 			} else {
-				Client client = get_client_obj(event_fd);
+				Client &client = _client_map[event_fd];
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
-					close(client.fd);
+					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
+					_client_map.erase(event_fd);
+					close(event_fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
 					handle_request(client);
 				}
 				if (events[i].events & EPOLLOUT) {
-					handle_write(client);
+					handle_response(client);
 				}
-				close(client.fd);
-				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
 			}
 		}
 	}
@@ -140,195 +118,85 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	}
 }
 
-void ServerCluster::handle_request(const Client &client) {
-	char buffer[BUFFER_SIZE];
+void ServerCluster::handle_request(Client &client) {
+	std::cout << "handle request" << std::endl;
+	// Response *response = &client.getResponse();
+	
+	// Request *request = &client.getRequest();
 
-	if (client.fd == -1) {
-		perror("client_fd");
-		return;
-	}
+	this->switch_poll(client.getFd(), EPOLLOUT);	
+	//get request
 
-	switch_poll(client.fd, EPOLLIN);
-	int size = recv(client.fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-	if (size == -1) {
-		return;
-	}
-
-	if (size == -1) {
-		perror("recv");
-		return;
-	}
-
-	// check content lentgh
-	std::size_t content_length = extract_content_length(buffer);
-	// TODO get the Server configs in another place in the object
-
-	// ----------------------------------------------------------
-
-	if (static_cast<int>(content_length) >
-		std::atoi(client.server->getClientMaxBodySize().c_str())) {
-		Response response;
-		response.ErrorResponse(client.fd, 413);
-		return;
-	}
-
-	HttpMethod reqType = get_http_method(buffer);
-
-	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString("www/website1" + requested_file_path);
-	std::string content_type = getContentType(requested_file_path);
-	std::string full_path = "www/website1/";
-
-	if (reqType == GET) {
-		/* TODO's handle response code */
-		/*        check permissions for a certain file access */
-		handle_get_request(client, requested_file_path);
-	}
-	if (reqType == DELETE) {
-		handle_delete_request(client, full_path, requested_file_path);
-	} else if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
-		handle_cgi_request(client, CGI_BIN); // TODO load CGI_BIN from config
-	}
-
-	else {
-		Response response;
-		response.ErrorResponse(client.fd, 405);
-	}
 }
 
-void ServerCluster::handle_delete_request(const Client &client, std::string full_path,
-										  std::string file_path) {
-	// remove the first 4 chars from requested_file_path "ETE "
-	full_path += file_path.substr(4);
+//handle response
+void ServerCluster::handle_response(Client &client) {
+	std::cout << "handle response" << std::endl;
+	Response response = client.getResponse();
+	
+	std::string response_string = client.responseToString();
+	client.setResponseSize(response_string.size());
+	client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 3, 0));
 
-	std::string response = "HTTP/1.1 ";
-
-	// TODO check if full_path is a folder or an html file and dont remove it if so
-
-	int ret = std::remove(full_path.c_str());
-	if (ret != 0) {
-		perror("remove");
-		// TODO send error code
-		response += "404 not found\r\n";
-	} else {
-		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
-		response += "200 ok\r\n";
+	if (client.getSentBytes() >= response_string.size()) {
+		std::cout << "response: \nsize: "<< client.getResponseSize() << "\n" << response_string << std::endl;
+		this->switch_poll(client.getFd(), EPOLLIN);
+		exit(69);
 	}
-	send(client.fd, response.c_str(), response.size(), 0);
-	// TODO - check return value of send
+
 }
 
-void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
-	std::string full_path =
-		"www/website1" + file_path; // TODO use config root folder for corresponding server
-	std::string file_content = readFileToString(full_path);
-	std::string content_type = getContentType(file_path);
+// void ServerCluster::handle_get_request(const Client &client,
+// 									   const std::string &requested_file_path) {
 
-	Response response;
-	if (file_content.empty()) {
-		response.ErrorResponse(client.fd, 404);
-		return;
-	}
-	switch_poll(client.fd, EPOLLOUT);
-	response.setStatusCode(200);
-	response.setHeader("Connection", "keep-alive");
-	response.setHeader("Content-Type", content_type);
-	response.setHeader("Content-Length", intToString(file_content.length()));
-	response.setBody(file_content);
-	response.respond(client.fd, _epoll_fd);
-}
+// 	switch_poll(client.fd, EPOLLOUT);
 
-void ServerCluster::handle_get_request(const Client &client,
-									   const std::string &requested_file_path) {
+// 	Response response;
 
-	std::string full_path = "www/website1" + requested_file_path;
-	struct stat path_stat;
+// 	if (client.server->getAutoindex() == false && stat(full_path.c_str(), &path_stat) == 0 &&
+// 		S_ISDIR(path_stat.st_mode)) {
+// 		// It's a directory, generate directory listing for the requested path
+// 		std::string dir_list = generateDirectoryListing(full_path);
 
-	// HttpMethod reqType = get_http_method(buffer);
+// 		response.setStatusCode(200);
+// 		response.addHeader("Content-Type", "text/html");
+// 		response.setBody(dir_list);
+// 	} else
+// 		handle_file_request(client,
+// 							requested_file_path == "/" ? "/index.html" : requested_file_path);
+// }
 
-	switch_poll(client.fd, EPOLLOUT);
 
-	Response response;
+// void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
 
-	if (client.server->getAutoindex() == false && stat(full_path.c_str(), &path_stat) == 0 &&
-		S_ISDIR(path_stat.st_mode)) {
-		// It's a directory, generate directory listing for the requested path
-		std::string dir_list = generateDirectoryListing(full_path);
+// 	Response response;
+// 	switch_poll(client.fd, EPOLLOUT);
 
-		response.setStatusCode(200);
-		response.setHeader("Connection", "keep-alive");
-		response.setHeader("Content-Type", "text/html");
-		response.setHeader("Content-Length", intToString(dir_list.size()));
-		response.setBody(dir_list);
-		response.respond(client.fd, _epoll_fd);
-	} else
-		handle_file_request(client,
-							requested_file_path == "/" ? "/index.html" : requested_file_path);
-}
+// 	int forked = fork();
+// 	if (forked == -1) {
+// 		perror("fork");
+// 		return;
+// 	}
 
-void ServerCluster::handle_write(const Client &client) {
-	char buffer[BUFFER_SIZE];
-	if (client.fd == -1) {
-		perror("client_fd");
-		return;
-	}
+// 	if (forked == 0) {
+// 		Cgi cgi;
+// 		std::string cgi_response = cgi.run(cgi_script_path);
 
-	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
-	if (is_file_upload_request(buffer)) {
-		if (size == -1) {
-			perror("recv");
-			return;
-		}
-
-		std::string request(buffer);
-
-		FileUploader uploader;
-		std::size_t content_length = extract_content_length(buffer);
-		std::string filename = extract_filename_from_request(buffer);
-
-		// we must extract the first part of the request body in between the boundary
-		// to pass it to the file upload which will further extract the file content
-		// but the first part of the request body is not in the buffer if we dont read it
-
-		std::string content = extract_content_body(request.c_str());
-
-		switch_poll(client.fd, EPOLLIN);
-		uploader.handle_file_upload(client.fd, filename, content_length, content.c_str());
-		// TODO - craft a response to the client
-	}
-}
-
-void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
-
-	Response response;
-	switch_poll(client.fd, EPOLLOUT);
-
-	int forked = fork();
-	if (forked == -1) {
-		perror("fork");
-		return;
-	}
-
-	if (forked == 0) {
-		Cgi cgi;
-		std::string cgi_response = cgi.run(cgi_script_path);
-
-		if (!cgi_response.empty()) {
-			response.setStatusCode(200);
-			response.setHeader("Connection", "keep-alive");
-			response.setHeader("Content-Type", "text/html");
-			response.setHeader("Content-Length", intToString(cgi_response.length()));
-			response.setBody(cgi_response);
-			response.respond(client.fd, _epoll_fd);
-			close(client.fd);
-			exit(0);
-		} else {
-			response.ErrorResponse(client.fd, 500);
-			exit(0);
-		}
-	}
-	switch_poll(client.fd, EPOLLIN);
-}
+// 		if (!cgi_response.empty()) {
+// 			response.setStatusCode(200);
+// 			response.setHeader("Connection", "keep-alive");
+// 			response.setHeader("Content-Type", "text/html");
+// 			response.setHeader("Content-Length", intToString(cgi_response.length()));
+// 			response.setBody(cgi_response);
+// 			response.respond(client.fd, _epoll_fd);
+// 			close(client.fd);
+// 			exit(0);
+// 		} else {
+// 			response.ErrorResponse(client.fd, 500);
+// 			exit(0);
+// 		}
+// 	}
+// }
 
 void ServerCluster::stop(int signal) {
 	(void)signal;
