@@ -16,9 +16,6 @@
 const int MAX_EVENTS = 42;
 const int BUFFER_SIZE = 1024;
 
-std::string CGI_BIN =
-	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
-
 ServerCluster::ServerCluster(std::vector<Server> &servers) : _servers(servers) {
 	this->setupCluster();
 }
@@ -141,6 +138,20 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	}
 }
 
+void ServerCluster::logConfig(const Client &client) {
+
+	log("Server configuration:");
+	log("Server port: " + intToString(client.server->getPort()));
+	log("Server root: " + client.server->getRoot());
+	log("Server autoindex: " +
+		static_cast<std::string>(client.server->getAutoindex() ? "on" : "off"));
+	log("Server default server: " +
+		static_cast<std::string>(client.server->getDefaultServer() ? "on" : "off"));
+	log("Server client max body size: " + intToString(client.server->getClientMaxBodySize()));
+	log("Server CGI path: " + client.server->getCgiPath());
+	log("Server CGI extension: " + client.server->getCgiExtension());
+}
+
 void ServerCluster::handle_request(const Client &client) {
 	char buffer[BUFFER_SIZE];
 
@@ -159,11 +170,9 @@ void ServerCluster::handle_request(const Client &client) {
 		return;
 	}
 
-	// check content lentgh
 	std::size_t content_length = extract_content_length(buffer);
-	// TODO get the Server configs in another place in the object
 
-	// ----------------------------------------------------------
+	logConfig(client);
 
 	if (static_cast<long long>(content_length) > client.server->getClientMaxBodySize()) {
 		Response response;
@@ -174,37 +183,33 @@ void ServerCluster::handle_request(const Client &client) {
 	HttpMethod reqType = get_http_method(buffer);
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString("www/website1" + requested_file_path);
+	std::string file_content = readFileToString(client.server->getRoot() + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
-	std::string full_path = "www/website1/";
+	std::string full_path = client.server->getRoot() + requested_file_path;
 
 	if (reqType == GET) {
 		/* TODO's handle response code */
 		/*        check permissions for a certain file access */
 		handle_get_request(client, requested_file_path);
-	}
-	if (reqType == DELETE) {
+	} else if (reqType == DELETE) {
 		handle_delete_request(client, full_path, requested_file_path);
-	} else if (requested_file_path.find(".py") != std::string::npos && reqType == POST) {
-		handle_cgi_request(client, CGI_BIN); // TODO load CGI_BIN from config
-	}
-
-	else {
-		Response response;
-		response.ErrorResponse(client.fd, 405);
+	} else if (requested_file_path.find(client.server->getCgiExtension()) != std::string::npos &&
+			   (reqType == POST || reqType == GET)) {
+		/* handle_cgi_request(client, client.server->getCgiPath()); */
+		log("Insert CGI handler here .....\n .... \n");
 	}
 }
 
 void ServerCluster::handle_delete_request(const Client &client, std::string full_path,
 										  std::string file_path) {
-	// remove the first 4 chars from requested_file_path "ETE "
-	full_path += file_path.substr(4);
 
+	full_path += file_path;
 	std::string response = "HTTP/1.1 ";
 
 	// TODO check if full_path is a folder or an html file and dont remove it if so
 
-	int ret = std::remove(full_path.c_str());
+	/* int ret = std::remove(full_path.c_str()); */
+	int ret = -1;
 	if (ret != 0) {
 		perror("remove");
 		// TODO send error code
@@ -218,16 +223,22 @@ void ServerCluster::handle_delete_request(const Client &client, std::string full
 }
 
 void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
-	std::string full_path =
-		"www/website1" + file_path; // TODO use config root folder for corresponding server
-	std::string file_content = readFileToString(full_path);
-	std::string content_type = getContentType(file_path);
+	std::string full_path = client.server->getRoot() + file_path;
+	std::string file_content = readFileToString("." + full_path);
+	std::string content_type = getContentType("." + file_path);
 
 	Response response;
+
 	if (file_content.empty()) {
 		response.ErrorResponse(client.fd, 404);
 		return;
 	}
+
+	if (full_path.find(client.server->getRoot()) == std::string::npos) {
+		response.ErrorResponse(client.fd, 403);
+		return;
+	}
+
 	switch_poll(client.fd, EPOLLOUT);
 	response.setStatusCode(200);
 	response.setHeader("Connection", "keep-alive");
@@ -240,10 +251,8 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 void ServerCluster::handle_get_request(const Client &client,
 									   const std::string &requested_file_path) {
 
-	std::string full_path = "www/website1" + requested_file_path;
+	std::string full_path = client.server->getRoot() + requested_file_path;
 	struct stat path_stat;
-
-	// HttpMethod reqType = get_http_method(buffer);
 
 	switch_poll(client.fd, EPOLLOUT);
 
@@ -299,34 +308,19 @@ void ServerCluster::handle_write(const Client &client) {
 
 void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
 
-	Response response;
-	switch_poll(client.fd, EPOLLOUT);
+	// build the path to the cgi script by looking at the request requested file path
+	// and compare against client.server->getCgiPath() to get verify that we have permission to
+	// execute the script
 
-	int forked = fork();
-	if (forked == -1) {
-		perror("fork");
+	char buffer[BUFFER_SIZE];
+	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
+	if (size == -1) {
+		perror("recv");
 		return;
 	}
 
-	if (forked == 0) {
-		Cgi cgi;
-		std::string cgi_response = cgi.run(cgi_script_path);
-
-		if (!cgi_response.empty()) {
-			response.setStatusCode(200);
-			response.setHeader("Connection", "keep-alive");
-			response.setHeader("Content-Type", "text/html");
-			response.setHeader("Content-Length", intToString(cgi_response.length()));
-			response.setBody(cgi_response);
-			response.respond(client.fd, _epoll_fd);
-			close(client.fd);
-			exit(0);
-		} else {
-			response.ErrorResponse(client.fd, 500);
-			exit(0);
-		}
-	}
-	switch_poll(client.fd, EPOLLIN);
+	std::string script_path = client.server->getRoot() + cgi_script_path;
+	log("script path: " + script_path);
 }
 
 void ServerCluster::stop(int signal) {
