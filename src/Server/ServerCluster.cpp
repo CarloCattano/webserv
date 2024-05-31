@@ -185,6 +185,9 @@ void ServerCluster::handle_request(const Client &client) {
 	std::string content_type = getContentType(requested_file_path);
 	std::string full_path = s_root + requested_file_path;
 
+	std::cout << "Requested file path: " << requested_file_path << std::endl;
+	std::cout << "Full path: " << full_path << std::endl;
+
 	if (reqType == GET) {
 		/* TODO's handle response code */
 		/*        check permissions for a certain file access */
@@ -273,43 +276,7 @@ void ServerCluster::handle_get_request(const Client &client,
 							requested_file_path == "/" ? "/index.html" : requested_file_path);
 }
 
-void ServerCluster::handle_write(const Client &client) {
-	char buffer[BUFFER_SIZE];
-	if (client.fd == -1) {
-		perror("client_fd");
-		return;
-	}
-
-	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
-	if (is_file_upload_request(buffer)) {
-		if (size == -1) {
-			perror("recv");
-			return;
-		}
-
-		std::string request(buffer);
-
-		FileUploader uploader;
-		std::size_t content_length = extract_content_length(buffer);
-		std::string filename = extract_filename_from_request(buffer);
-
-		// we must extract the first part of the request body in between the boundary
-		// to pass it to the file upload which will further extract the file content
-		// but the first part of the request body is not in the buffer if we dont read it
-
-		std::string content = extract_content_body(request.c_str());
-
-		switch_poll(client.fd, EPOLLIN);
-		uploader.handle_file_upload(client.fd, filename, content_length, content.c_str());
-		// TODO - craft a response to the client
-	}
-}
-
 void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
-
-	// build the path to the cgi script by looking at the request requested file path
-	// and compare against client.server->getCgiPath() to get verify that we have permission to
-	// execute the script
 
 	char buffer[BUFFER_SIZE];
 	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
