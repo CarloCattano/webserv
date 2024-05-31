@@ -11,6 +11,7 @@
 #include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 const int MAX_EVENTS = 42;
@@ -161,9 +162,6 @@ void ServerCluster::handle_request(const Client &client) {
 	}
 
 	int size = recv(client.fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-	if (size == -1) {
-		return;
-	}
 
 	if (size == -1) {
 		perror("recv");
@@ -172,20 +170,20 @@ void ServerCluster::handle_request(const Client &client) {
 
 	std::size_t content_length = extract_content_length(buffer);
 
-	logConfig(client);
-
 	if (static_cast<long long>(content_length) > client.server->getClientMaxBodySize()) {
 		Response response;
 		response.ErrorResponse(client.fd, 413);
 		return;
 	}
 
+	std::string s_root = client.server->getRoot();
+
 	HttpMethod reqType = get_http_method(buffer);
 
 	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString(client.server->getRoot() + requested_file_path);
+	std::string file_content = readFileToString(s_root + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
-	std::string full_path = client.server->getRoot() + requested_file_path;
+	std::string full_path = s_root + requested_file_path;
 
 	if (reqType == GET) {
 		/* TODO's handle response code */
@@ -208,8 +206,7 @@ void ServerCluster::handle_delete_request(const Client &client, std::string full
 
 	// TODO check if full_path is a folder or an html file and dont remove it if so
 
-	/* int ret = std::remove(full_path.c_str()); */
-	int ret = -1;
+	int ret = std::remove(full_path.c_str());
 	if (ret != 0) {
 		perror("remove");
 		// TODO send error code
@@ -218,8 +215,10 @@ void ServerCluster::handle_delete_request(const Client &client, std::string full
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
 		response += "200 ok\r\n";
 	}
-	send(client.fd, response.c_str(), response.size(), 0);
-	// TODO - check return value of send
+	ssize_t status = send(client.fd, response.c_str(), response.size(), 0);
+	if (status == -1) {
+		perror("send");
+	}
 }
 
 void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
@@ -251,7 +250,7 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 void ServerCluster::handle_get_request(const Client &client,
 									   const std::string &requested_file_path) {
 
-	std::string full_path = client.server->getRoot() + requested_file_path;
+	std::string full_path = "." + client.server->getRoot() + requested_file_path;
 	struct stat path_stat;
 
 	switch_poll(client.fd, EPOLLOUT);
