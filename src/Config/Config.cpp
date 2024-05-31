@@ -6,6 +6,42 @@ Config::Config() {}
 
 Config::~Config() {}
 
+void    set_allowed_methods(Server &server, std::vector<std::string> key_with_values) {
+	Method POST = server.getPost();
+	Method GET = server.getGet();
+	Method DELETE = server.getDelete();
+    bool new_state;
+
+    if (key_with_values[0] == "allow")
+        new_state = true;
+    else if (key_with_values[0] == "deny")
+        new_state = false;
+    else
+        return;
+
+
+    size_t  i = 1;
+    while (i < key_with_values.size()) {
+        std::string key = key_with_values[i];
+        if (key == "all") {
+            if (POST.can_be_edited)
+                server.setPost(Method(new_state, true));
+            if (GET.can_be_edited)
+                server.setGet(Method(new_state, true));
+            if (DELETE.can_be_edited)
+                server.setDelete(Method(new_state, true));
+        }
+        else if (key == "POST" && POST.can_be_edited)
+			server.setPost(Method(new_state, false));
+        else if (key == "GET" && GET.can_be_edited)
+			server.setGet(Method(new_state, false));
+        else if (key == "DELETE" && DELETE.can_be_edited)
+			server.setDelete(Method(new_state, false));
+
+        i++;
+    }
+}
+
 void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values) {
 	if (size >= 2)
 		server.setPort(atoi(key_with_values[1].c_str()));
@@ -48,11 +84,14 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 		parse_client_max_body_size(size, server, key_with_values);
 	else if (key == "autoindex" && size >= 2 && key_with_values[1] == "true")
 		server.setAutoindex(true);
-	else if (key == "root" && size >= 2) {
-		std::cout << "Testsss" << std::endl;
-		server.setRoot("hello");
-		std::cout << "test: " << server.getRoot() << std::endl;
-	}
+	else if (key == "root" && size >= 2)
+		server.setRoot(key_with_values[1]);
+	else if (key == "deny" || key == "allow")
+		set_allowed_methods(server, key_with_values);
+	else if (key == "cgi_path" || size >= 2)
+		server.setCgiPath(key_with_values[1]);
+	else if (key == "cgi_extension" || size >= 2)
+		server.setCgiExtension(key_with_values[1]);
 }
 
 void set_server_config_settings(Server &server, std::string str, int i) {
@@ -77,11 +116,11 @@ Config::Config(const std::string filename) {
 
 	size_t index = file_content.find("server");
 	while (index != std::string::npos) {
-		Server *server_obj = new Server();
+		Server server_obj;
 
-		set_server_config_settings(*server_obj, file_content, index + 6);
-		server_obj->setup();
-		print_server_obj(*server_obj);
+		set_server_config_settings(server_obj, file_content, index + 6);
+		server_obj.setup();
+		print_server_obj(server_obj);
 		this->_servers.push_back(server_obj);
 		while (file_content[index] && file_content[index] != '}') {
 			index++;
@@ -90,4 +129,4 @@ Config::Config(const std::string filename) {
 	}
 }
 
-std::vector<Server*> Config::get_servers() { return (this->_servers); }
+std::vector<Server>& Config::get_servers() { return (this->_servers); }

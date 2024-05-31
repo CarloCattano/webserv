@@ -10,7 +10,8 @@
 // include for exit function
 #include <stdlib.h>
 
-Server::Server() : _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1") {
+Server::Server()
+	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1"), _cgi_path(""), _cgi_extension("") {
 	// _server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
@@ -89,6 +90,10 @@ Method Server::getPost() { return this->_POST; }
 
 Method Server::getDelete() { return this->_DELETE; }
 
+std::string Server::getCgiPath() { return this->_cgi_path; }
+
+std::string Server::getCgiExtension() { return this->_cgi_extension; }
+
 //setters
 void Server::setPort(unsigned int port) { this->_port = port; }
 
@@ -112,5 +117,12 @@ void Server::setRoutes(std::vector<Route> routes) { this->_routes = routes; }
 
 void Server::setRoot(std::string root) { this->_root = root; }
 
+void Server::setGet(Method method) { this->_GET = method; }
 
+void Server::setPost(Method method) { this->_POST= method; }
 
+void Server::setDelete(Method method) { this->_DELETE= method; }
+
+void Server::setCgiPath(std::string path) { this->_cgi_path = path; }
+
+void Server::setCgiExtension(std::string extension) { (void)extension; this->_cgi_extension = "test"; }

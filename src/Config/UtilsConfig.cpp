@@ -97,6 +97,8 @@ void print_server_obj(Server &obj) {
 	std::cout << "\tPOST: " << obj.getPost().is_allowed << std::endl;
 	std::cout << "\tGET: " << obj.getGet().is_allowed << std::endl;
 	std::cout << "\tDELETE: " << obj.getDelete().is_allowed << std::endl;
+	std::cout << "\tcgi_path: " << obj.getCgiPath() << std::endl;
+	std::cout << "\tcgi_extension: " << obj.getCgiExtension() << std::endl;
     if (obj.getRoutes().size() > 0)
         print_server_routes(obj.getRoutes());
     std::cout << std::endl;

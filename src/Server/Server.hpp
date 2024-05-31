@@ -19,6 +19,7 @@ struct Method {
 	bool can_be_edited;
 
 	Method() : is_allowed(true), can_be_edited(true) {}
+	Method(bool is_allowed, bool can_be_edited) : is_allowed(is_allowed), can_be_edited(can_be_edited) {}
 };
 
 struct Fastcgi_Param {
@@ -66,6 +67,8 @@ class Server {
 		Method						_POST;
 		Method						_GET;
 		Method						_DELETE;
+		std::string					_cgi_path;
+		std::string					_cgi_extension;
 		int							_socket_fd;
 		struct sockaddr_in			_server_address;
 
@@ -88,6 +91,8 @@ class Server {
 		Method	getGet();
 		Method	getPost();
 		Method	getDelete();
+		std::string getCgiPath();
+		std::string getCgiExtension();
 
 		//setters
 		void setPort(unsigned int port);
@@ -101,6 +106,11 @@ class Server {
 		void setSocketFd(int socket_fd);
 		void setServerAddress(struct sockaddr_in server_address);
 		void setRoot(std::string root);
+		void setGet(Method method);
+		void setPost(Method method);
+		void setDelete(Method method);
+		void setCgiPath(std::string path);
+		void setCgiExtension(std::string extension);
 
 		void setup();
 
