@@ -10,18 +10,11 @@
 // include for exit function
 #include <stdlib.h>
 
-Server::Server() : _port(0), _default_server(false), _client_max_body_size(""), _autoindex(false) {
-	_server_names = std::vector<std::string>();
+Server::Server()
+	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1"), _cgi_path(""), _cgi_extension("") {
+	// _server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
-}
-
-Server::Server(unsigned int port, std::string server_name) : _port(port) {
-	std::vector<std::string> server_names;
-
-	server_names.push_back(server_name);
-	_server_names = server_names;
-	Server::setup();
 }
 
 Server::Server(const Server &server) {
@@ -81,13 +74,25 @@ std::vector<std::string> Server::getServerNames() { return this->_server_names; 
 
 std::vector<std::string> Server::getErrorPages() { return this->_error_pages; }
 
-std::string Server::getClientMaxBodySize() { return this->_client_max_body_size; }
+long long Server::getClientMaxBodySize() { return this->_client_max_body_size; }
 
 struct sockaddr_in Server::getServerAddress() { return this->_server_address; }
 
 bool Server::getDefaultServer() { return this->_default_server; }
 
 bool Server::getAutoindex() { return this->_autoindex; }
+
+std::string Server::getRoot() { return this->_root; }
+
+Method Server::getGet() { return this->_GET; }
+
+Method Server::getPost() { return this->_POST; }
+
+Method Server::getDelete() { return this->_DELETE; }
+
+std::string Server::getCgiPath() { return this->_cgi_path; }
+
+std::string Server::getCgiExtension() { return this->_cgi_extension; }
 
 //setters
 void Server::setPort(unsigned int port) { this->_port = port; }
@@ -98,7 +103,7 @@ void Server::setServerNames(std::vector<std::string> server_names) { this->_serv
 
 void Server::setErrorPages(std::vector<std::string> error_pages) { this->_error_pages = error_pages; }
 
-void Server::setClientMaxBodySize(std::string client_max_body_size) { this->_client_max_body_size = client_max_body_size; }
+void Server::setClientMaxBodySize(long long client_max_body_size) { this->_client_max_body_size = client_max_body_size; }
 
 void Server::setAutoindex(bool autoindex) { this->_autoindex = autoindex; }
 
@@ -110,4 +115,14 @@ void Server::addRoute(Route route) { this->_routes.push_back(route); }
 
 void Server::setRoutes(std::vector<Route> routes) { this->_routes = routes; }
 
+void Server::setRoot(std::string root) { this->_root = root; }
 
+void Server::setGet(Method method) { this->_GET = method; }
+
+void Server::setPost(Method method) { this->_POST= method; }
+
+void Server::setDelete(Method method) { this->_DELETE= method; }
+
+void Server::setCgiPath(std::string path) { this->_cgi_path = path; }
+
+void Server::setCgiExtension(std::string extension) { (void)extension; this->_cgi_extension = "test"; }

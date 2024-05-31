@@ -62,6 +62,7 @@ void print_server_routes(std::vector<Route> routes) {
 		}
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
+		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
 		if (routes[i].fastcgi_pass != "")
 			std::cout << "\t\tFastcgi_pass: " << routes[i].fastcgi_pass << std::endl;
 		if (routes[i].fastcgi_index != "")
@@ -77,7 +78,7 @@ void print_server_routes(std::vector<Route> routes) {
 	std::cout << std::endl;
 }
 
-void print_server_obj(Server obj) {
+void print_server_obj(Server &obj) {
 	std::cout << GREEN << "SERVER_OBJ " << RESET << std::endl;
     if (obj.getPort())
         std::cout << "\tPort: " << obj.getPort() << std::endl;
@@ -89,9 +90,15 @@ void print_server_obj(Server obj) {
         std::cout << "\tError pages: ";
         print_vector(obj.getErrorPages());
     }
+	// obj.setRoot("test");
+	std::cout << "\tRoot " << obj.getRoot() << std::endl;
     std::cout << "\tAutoIndex: " << obj.getAutoindex() << std::endl;
-    if (obj.getClientMaxBodySize().size() > 0)
-        std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
+	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
+	std::cout << "\tPOST: " << obj.getPost().is_allowed << std::endl;
+	std::cout << "\tGET: " << obj.getGet().is_allowed << std::endl;
+	std::cout << "\tDELETE: " << obj.getDelete().is_allowed << std::endl;
+	std::cout << "\tcgi_path: " << obj.getCgiPath() << std::endl;
+	std::cout << "\tcgi_extension: " << obj.getCgiExtension() << std::endl;
     if (obj.getRoutes().size() > 0)
         print_server_routes(obj.getRoutes());
     std::cout << std::endl;
@@ -141,4 +148,20 @@ int iterate_to_first_server_line(std::string str, int i) {
 		i++;
 	}
 	return (i);
+}
+
+bool isNumeric(const std::string& str) {
+    // Check if the string is empty
+    if (str.empty()) {
+        return false;
+    }
+
+    // Check each character
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (!isdigit(str[i])) {
+            return false;
+        }
+    }
+
+    return true;
 }

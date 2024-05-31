@@ -19,9 +19,7 @@ const int BUFFER_SIZE = 1024;
 std::string CGI_BIN =
 	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
 
-ServerCluster::ServerCluster() {}
-
-ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
+ServerCluster::ServerCluster(std::vector<Server> &servers) : _servers(servers) {
 	this->setupCluster();
 }
 
@@ -167,8 +165,7 @@ void ServerCluster::handle_request(const Client &client) {
 
 	// ----------------------------------------------------------
 
-	if (static_cast<int>(content_length) >
-		std::atoi(client.server->getClientMaxBodySize().c_str())) {
+	if (static_cast<long long>(content_length) > client.server->getClientMaxBodySize()) {
 		Response response;
 		response.ErrorResponse(client.fd, 413);
 		return;

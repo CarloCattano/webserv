@@ -18,6 +18,8 @@ void    set_allowed_methods(Route &route, std::vector<std::string> key_with_valu
                 route.POST.is_allowed = new_state;
             if (route.GET.can_be_edited)
                 route.GET.is_allowed = new_state;
+            if (route.DELETE.can_be_edited)
+                route.DELETE.is_allowed = new_state;
         }
         else if (key == "POST" && route.POST.can_be_edited) {
             route.POST.is_allowed = new_state;
@@ -26,6 +28,10 @@ void    set_allowed_methods(Route &route, std::vector<std::string> key_with_valu
         else if (key == "GET" && route.GET.can_be_edited) {
             route.GET.is_allowed = new_state;
             route.GET.can_be_edited = false;
+        }
+        else if (key == "DELETE" && route.DELETE.can_be_edited) {
+            route.DELETE.is_allowed = new_state;
+            route.DELETE.can_be_edited = false;
         }
         i++;
     }
@@ -91,7 +97,7 @@ int	parse_route(Server &virtual_server, std::string str, int i) {
 	}
 	if (str[i] == '}')
 		i++;
-	
+
 	virtual_server.addRoute(route);
 	return (i);
 }

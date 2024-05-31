@@ -14,17 +14,15 @@ struct Client
 
 class ServerCluster {
   private:
-	std::vector<Server>		_servers;
-	std::map<int, Server>	_server_map;
+	std::vector<Server>&		_servers;
+	std::map<int, Server>		_server_map;
 	// To-Do delete entry if client closed
-	std::map<int, Server>	_client_fd_to_server_map;
+	std::map<int, Server>		_client_fd_to_server_map;
 
 	int _epoll_fd;
 
-	ServerCluster();
-
   public:
-	ServerCluster(std::vector<Server> servers);
+	ServerCluster(std::vector<Server>& servers);
 	~ServerCluster();
 
 	void			setupCluster();
