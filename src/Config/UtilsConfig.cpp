@@ -62,6 +62,7 @@ void print_server_routes(std::vector<Route> routes) {
 		}
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
+		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
 		if (routes[i].fastcgi_pass != "")
 			std::cout << "\t\tFastcgi_pass: " << routes[i].fastcgi_pass << std::endl;
 		if (routes[i].fastcgi_index != "")
@@ -93,6 +94,9 @@ void print_server_obj(Server &obj) {
 	std::cout << "\tRoot " << obj.getRoot() << std::endl;
     std::cout << "\tAutoIndex: " << obj.getAutoindex() << std::endl;
 	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
+	std::cout << "\tPOST: " << obj.getPost().is_allowed << std::endl;
+	std::cout << "\tGET: " << obj.getGet().is_allowed << std::endl;
+	std::cout << "\tDELETE: " << obj.getDelete().is_allowed << std::endl;
     if (obj.getRoutes().size() > 0)
         print_server_routes(obj.getRoutes());
     std::cout << std::endl;

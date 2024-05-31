@@ -4,11 +4,7 @@
 
 Config::Config() {}
 
-Config::~Config() {
-	// to-do free servers
-
-
-}
+Config::~Config() {}
 
 void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values) {
 	if (size >= 2)

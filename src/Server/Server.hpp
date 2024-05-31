@@ -35,9 +35,9 @@ struct Route {
 	std::vector<HttpRedirection> redirections;
 	bool autoindex;
 	std::vector<std::string> index_files;
-	// TO-DO add delete
 	Method POST;
 	Method GET;
+	Method DELETE;
 	std::string fastcgi_pass;
 	std::string fastcgi_index;
 	std::vector<Fastcgi_Param> fastcgi_params;
@@ -63,6 +63,9 @@ class Server {
 		std::vector<Route>			_routes;
 		bool						_autoindex;
 		std::string					_root;
+		Method						_POST;
+		Method						_GET;
+		Method						_DELETE;
 		int							_socket_fd;
 		struct sockaddr_in			_server_address;
 
@@ -82,6 +85,9 @@ class Server {
 		int getSocketFd();
 		struct sockaddr_in getServerAddress();
 		std::string getRoot();
+		Method	getGet();
+		Method	getPost();
+		Method	getDelete();
 
 		//setters
 		void setPort(unsigned int port);

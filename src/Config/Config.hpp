@@ -4,15 +4,15 @@
 
 class Config {
   private:
-	std::string _filename;
-	std::vector<Server*> _servers;
+	std::string 		_filename;
+	std::vector<Server> _servers;
 	// Server				default_server;
 
   public:
 	Config();
 	~Config();
 	Config(const std::string filename);
-	std::vector<Server*> get_servers();
+	std::vector<Server>& get_servers();
 };
 
 std::string								get_file_content(const std::string &filename);

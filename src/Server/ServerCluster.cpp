@@ -19,9 +19,7 @@ const int BUFFER_SIZE = 1024;
 std::string CGI_BIN =
 	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
 
-ServerCluster::ServerCluster() {}
-
-ServerCluster::ServerCluster(std::vector<Server> servers) : _servers(servers) {
+ServerCluster::ServerCluster(std::vector<Server> &servers) : _servers(servers) {
 	this->setupCluster();
 }
 

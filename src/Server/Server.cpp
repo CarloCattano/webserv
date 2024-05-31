@@ -10,8 +10,8 @@
 // include for exit function
 #include <stdlib.h>
 
-Server::Server() : _port(0), _default_server(false), _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1") {
-	_server_names = std::vector<std::string>();
+Server::Server() : _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1") {
+	// _server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
 }
@@ -83,6 +83,12 @@ bool Server::getAutoindex() { return this->_autoindex; }
 
 std::string Server::getRoot() { return this->_root; }
 
+Method Server::getGet() { return this->_GET; }
+
+Method Server::getPost() { return this->_POST; }
+
+Method Server::getDelete() { return this->_DELETE; }
+
 //setters
 void Server::setPort(unsigned int port) { this->_port = port; }
 
@@ -105,5 +111,6 @@ void Server::addRoute(Route route) { this->_routes.push_back(route); }
 void Server::setRoutes(std::vector<Route> routes) { this->_routes = routes; }
 
 void Server::setRoot(std::string root) { this->_root = root; }
+
 
 
