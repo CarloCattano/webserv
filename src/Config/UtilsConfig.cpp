@@ -63,17 +63,6 @@ void print_server_routes(std::vector<Route> routes) {
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
 		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
-		if (routes[i].fastcgi_pass != "")
-			std::cout << "\t\tFastcgi_pass: " << routes[i].fastcgi_pass << std::endl;
-		if (routes[i].fastcgi_index != "")
-			std::cout << "\t\tFastcgi_Index: " << routes[i].fastcgi_index << std::endl;
-		for (size_t j = 0; j < routes[i].fastcgi_params.size(); ++j) {
-			if (j == 0)
-				std::cout << "\t\tFastcgi_Params:" << std::endl;
-			std::cout << "\t\t\tKey: " << routes[i].fastcgi_params[j].key;
-			std::cout << " Value: " << routes[i].fastcgi_params[j].value;
-			std::cout << std::endl;
-		}
 	}
 	std::cout << std::endl;
 }

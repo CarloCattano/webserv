@@ -39,16 +39,11 @@ struct Route {
 	Method POST;
 	Method GET;
 	Method DELETE;
-	std::string fastcgi_pass;
-	std::string fastcgi_index;
-	std::vector<Fastcgi_Param> fastcgi_params;
 
 	Route()
-		: location(""), matching_style(""), root(""), autoindex(false), fastcgi_pass(""),
-		  fastcgi_index("") {
+		: location(""), matching_style(""), root(""), autoindex(false) {
 		redirections = std::vector<HttpRedirection>();
 		index_files = std::vector<std::string>();
-		fastcgi_params = std::vector<Fastcgi_Param>();
 	}
 };
 

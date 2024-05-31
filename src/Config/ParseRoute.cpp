@@ -54,12 +54,6 @@ void parse_redirection(std::vector<std::string> &values, int value_count, Route 
 	route.redirections.push_back(redirection);
 }
 
-void parse_param(std::vector<std::string> &values, Route &route)
-{
-	Fastcgi_Param param(values[0], values[1]);
-	route.fastcgi_params.push_back(param);
-}
-
 int	parse_route(Server &virtual_server, std::string str, int i) {
 	Route						route;
 	std::vector<std::string> 	key_with_values;
@@ -86,13 +80,6 @@ int	parse_route(Server &virtual_server, std::string str, int i) {
 			route.index_files = values;
 		else if (key == "deny" || key == "allow")
             set_allowed_methods(route, key_with_values);
-		else if (key == "fastcgi_pass" && value_count == 1)
-			route.fastcgi_pass = values[0];
-		else if (key == "fastcgi_index" && value_count == 1)
-			route.fastcgi_index = values[0];
-		else if (key == "fastcgi_param" && value_count == 2)
-			parse_param(key_with_values, route);
-
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')

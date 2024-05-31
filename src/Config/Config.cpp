@@ -88,12 +88,10 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 		server.setRoot(key_with_values[1]);
 	else if (key == "deny" || key == "allow")
 		set_allowed_methods(server, key_with_values);
-	else if (key == "cgi_path" || size >= 2)
+	else if (key == "cgi_path" && size >= 2)
 		server.setCgiPath(key_with_values[1]);
-	else if (key == "cgi_extension" || size >= 2) {
-		std::cout << "Testssssssssssssssssssss" << std::endl;
+	else if (key == "cgi_extension" && size >= 2)
 		server.setCgiExtension(key_with_values[1]);
-	}
 }
 
 void set_server_config_settings(Server &server, std::string str, int i) {
