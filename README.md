@@ -2,12 +2,7 @@
  by ccattano bmacmaho jalbers
 
 ## Current open fronts:
-- [ ] Check client max body size
-
 - [ ] Parsing implementation (See TODO tags)
-- [ ] Request handling
-
-- [ ] Response handling
 
 - [ ] File Upload 
 - [ ] take cgi script name and execute it if it exists in the associated directory ( currently hardcoded to either hello.py or test.py)
@@ -15,15 +10,9 @@
         - timeout works but it uses alarm, which is a function from unistd.h and not allowed
 
 ### Many hardcoded values such as:
-- [ ] Port number
-- [ ] Server root
 - [ ] Server name
-- [ ] autoindex
-- [ ] cgi paths
-- [ ] server website root
 - [ ] server website index
 
 
 ### Double check:
     - [ ] wrong path or dir requested
-    - Config max body size string or int or gb or mb or kb

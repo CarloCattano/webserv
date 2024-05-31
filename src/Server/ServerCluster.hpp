@@ -19,6 +19,7 @@ class ServerCluster {
 
 	int _epoll_fd;
 	void logConfig(const Client &client);
+	int allowed_in_path(const std::string &file_path, const Client &client);
 
   public:
 	ServerCluster(std::vector<Server> &servers);
@@ -36,7 +37,7 @@ class ServerCluster {
 	void handle_write(const Client &client);
 	void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
 	void handle_get_request(const Client &client, const std::string &requested_file_path);
-	void handle_delete_request(const Client &client, std::string full_path, std::string file_path);
+	void handle_delete_request(const Client &client, std::string full_path);
 	int accept_new_connection(int server_fd);
 	void add_client_fd_to_epoll(int client_fd);
 	void handle_new_client_connection(int server_fd);

@@ -183,17 +183,12 @@ void ServerCluster::handle_request(const Client &client) {
 	std::string requested_file_path = extract_requested_file_path(buffer);
 	std::string file_content = readFileToString(s_root + requested_file_path);
 	std::string content_type = getContentType(requested_file_path);
-	std::string full_path = s_root + requested_file_path;
-
-	std::cout << "Requested file path: " << requested_file_path << std::endl;
-	std::cout << "Full path: " << full_path << std::endl;
 
 	if (reqType == GET) {
-		/* TODO's handle response code */
 		/*        check permissions for a certain file access */
 		handle_get_request(client, requested_file_path);
-	} else if (reqType == DELETE) {
-		handle_delete_request(client, full_path, requested_file_path);
+	} else if (reqType == DELETE) { // TODO - cant issue a delete req from browser
+		handle_delete_request(client, requested_file_path);
 	} else if (requested_file_path.find(client.server->getCgiExtension()) != std::string::npos &&
 			   (reqType == POST || reqType == GET)) {
 		/* handle_cgi_request(client, client.server->getCgiPath()); */
@@ -201,26 +196,44 @@ void ServerCluster::handle_request(const Client &client) {
 	}
 }
 
-void ServerCluster::handle_delete_request(const Client &client, std::string full_path,
-										  std::string file_path) {
+int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
 
-	full_path += file_path;
-	std::string response = "HTTP/1.1 ";
+	/* check if the file is in the root directory of the client server */
+	/* check if the file exists */
+	/* check if the file is a directory */
 
-	// TODO check if full_path is a folder or an html file and dont remove it if so
+	if (file_path.find(client.server->getRoot()) == std::string::npos)
+		return -1;
+	struct stat buffer;
+	if (stat(file_path.c_str(), &buffer) != 0) {
+		Error(file_path.c_str());
+		return -2;
+	}
+	if (S_ISDIR(buffer.st_mode))
+		return 2;
+	return 0;
+}
+
+void ServerCluster::handle_delete_request(const Client &client, std::string requested_file_path) {
+
+	Response response;
+
+	std::string full_path = "." + client.server->getRoot() + "/upload" + requested_file_path;
+
+	if (allowed_in_path(full_path, const_cast<Client &>(client))) {
+		response.ErrorResponse(client.fd, 403);
+		return;
+	}
 
 	int ret = std::remove(full_path.c_str());
 	if (ret != 0) {
 		perror("remove");
-		// TODO send error code
-		response += "404 not found\r\n";
+		response.ErrorResponse(client.fd, 404);
 	} else {
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
-		response += "200 ok\r\n";
-	}
-	ssize_t status = send(client.fd, response.c_str(), response.size(), 0);
-	if (status == -1) {
-		perror("send");
+		response.setStatusCode(200);
+		response.setBody("File was deleted successfully");
+		response.respond(client.fd, _epoll_fd);
 	}
 }
 
@@ -236,7 +249,12 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 		return;
 	}
 
-	if (full_path.find(client.server->getRoot()) == std::string::npos) {
+	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
+
+	std::cout << " Handle file request " << std::endl;
+	std::cout << " is allowed " << is_allowed << std::endl;
+
+	if (is_allowed == -1) {
 		response.ErrorResponse(client.fd, 403);
 		return;
 	}
@@ -254,15 +272,15 @@ void ServerCluster::handle_get_request(const Client &client,
 									   const std::string &requested_file_path) {
 
 	std::string full_path = "." + client.server->getRoot() + requested_file_path;
-	struct stat path_stat;
 
 	switch_poll(client.fd, EPOLLOUT);
 
 	Response response;
 
-	if (client.server->getAutoindex() == false && stat(full_path.c_str(), &path_stat) == 0 &&
-		S_ISDIR(path_stat.st_mode)) {
+	if (client.server->getAutoindex() == false &&
+		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
 		// It's a directory, generate directory listing for the requested path
+		std::cout << "Generating directory listing for " << full_path << std::endl;
 		std::string dir_list = generateDirectoryListing(full_path);
 
 		response.setStatusCode(200);
