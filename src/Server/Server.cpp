@@ -125,4 +125,4 @@ void Server::setDelete(Method method) { this->_DELETE= method; }
 
 void Server::setCgiPath(std::string path) { this->_cgi_path = path; }
 
-void Server::setCgiExtension(std::string extension) { (void)extension; this->_cgi_extension = "test"; }
+void Server::setCgiExtension(std::string extension) { this->_cgi_extension = extension; }
