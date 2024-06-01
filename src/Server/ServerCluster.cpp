@@ -110,11 +110,8 @@ void ServerCluster::await_connections() {
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
-					log("Handling request");
 					handle_request(client);
-				}
-				if (events[i].events & EPOLLOUT) {
-					log("Handling write");
+				} else if (events[i].events & EPOLLOUT) {
 					/* handle_write(client); */
 				}
 				close(client.fd);
@@ -198,15 +195,11 @@ void ServerCluster::handle_request(const Client &client) {
 
 int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
 
-	/* check if the file is in the root directory of the client server */
-	/* check if the file exists */
-	/* check if the file is a directory */
-
 	if (file_path.find(client.server->getRoot()) == std::string::npos)
 		return -1;
+
 	struct stat buffer;
-	if (stat(file_path.c_str(), &buffer) != 0) {
-		Error(file_path.c_str());
+	if (stat(file_path.c_str(), &buffer) != 0) { // file does not exist
 		return -2;
 	}
 	if (S_ISDIR(buffer.st_mode))
@@ -251,9 +244,6 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 
 	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
 
-	std::cout << " Handle file request " << std::endl;
-	std::cout << " is allowed " << is_allowed << std::endl;
-
 	if (is_allowed == -1) {
 		response.ErrorResponse(client.fd, 403);
 		return;
@@ -266,6 +256,7 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
 	response.respond(client.fd, _epoll_fd);
+	switch_poll(client.fd, EPOLLIN);
 }
 
 void ServerCluster::handle_get_request(const Client &client,
@@ -280,7 +271,6 @@ void ServerCluster::handle_get_request(const Client &client,
 	if (client.server->getAutoindex() == false &&
 		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
 		// It's a directory, generate directory listing for the requested path
-		std::cout << "Generating directory listing for " << full_path << std::endl;
 		std::string dir_list = generateDirectoryListing(full_path);
 
 		response.setStatusCode(200);
@@ -289,6 +279,7 @@ void ServerCluster::handle_get_request(const Client &client,
 		response.setHeader("Content-Length", intToString(dir_list.size()));
 		response.setBody(dir_list);
 		response.respond(client.fd, _epoll_fd);
+		switch_poll(client.fd, EPOLLIN);
 	} else
 		handle_file_request(client,
 							requested_file_path == "/" ? "/index.html" : requested_file_path);
@@ -303,8 +294,9 @@ void ServerCluster::handle_cgi_request(const Client &client, const std::string &
 		return;
 	}
 
+	// TODO : implement rewrite from branch carlo
+
 	std::string script_path = client.server->getRoot() + cgi_script_path;
-	log("script path: " + script_path);
 }
 
 void ServerCluster::stop(int signal) {
