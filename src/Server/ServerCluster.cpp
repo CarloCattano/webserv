@@ -54,7 +54,7 @@ int ServerCluster::accept_new_connection(int server_fd) {
 void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	struct epoll_event ev;
 
-	ev.events = EPOLLIN;
+	ev.events = EPOLLIN | EPOLLOUT;
 	ev.data.fd = client_fd;
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -188,8 +188,7 @@ void ServerCluster::handle_request(const Client &client) {
 		handle_delete_request(client, requested_file_path);
 	} else if (requested_file_path.find(client.server->getCgiExtension()) != std::string::npos &&
 			   (reqType == POST || reqType == GET)) {
-		/* handle_cgi_request(client, client.server->getCgiPath()); */
-		log("Insert CGI handler here .....\n .... \n");
+		handle_cgi_request(client, "." + s_root + requested_file_path);
 	}
 }
 
@@ -231,6 +230,7 @@ void ServerCluster::handle_delete_request(const Client &client, std::string requ
 }
 
 void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
+
 	std::string full_path = client.server->getRoot() + file_path;
 	std::string file_content = readFileToString("." + full_path);
 	std::string content_type = getContentType("." + file_path);
@@ -250,12 +250,14 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 	}
 
 	switch_poll(client.fd, EPOLLOUT);
+
 	response.setStatusCode(200);
 	response.setHeader("Connection", "keep-alive");
 	response.setHeader("Content-Type", content_type);
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
 	response.respond(client.fd, _epoll_fd);
+
 	switch_poll(client.fd, EPOLLIN);
 }
 
@@ -279,6 +281,7 @@ void ServerCluster::handle_get_request(const Client &client,
 		response.setHeader("Content-Length", intToString(dir_list.size()));
 		response.setBody(dir_list);
 		response.respond(client.fd, _epoll_fd);
+
 		switch_poll(client.fd, EPOLLIN);
 	} else
 		handle_file_request(client,
@@ -286,17 +289,21 @@ void ServerCluster::handle_get_request(const Client &client,
 }
 
 void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
+	Cgi cgi;
+	std::string cgi_res = cgi.run(cgi_script_path);
+	Response response;
 
-	char buffer[BUFFER_SIZE];
-	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
-	if (size == -1) {
-		perror("recv");
+	if (cgi_res.empty()) {
+		response.ErrorResponse(client.fd, 500);
 		return;
 	}
 
-	// TODO : implement rewrite from branch carlo
-
-	std::string script_path = client.server->getRoot() + cgi_script_path;
+	response.setStatusCode(200);
+	response.setHeader("Connection", "keep-alive");
+	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Content-Length", intToString(cgi_res.size()));
+	response.setBody(cgi_res);
+	response.respond(client.fd, _epoll_fd);
 }
 
 void ServerCluster::stop(int signal) {
