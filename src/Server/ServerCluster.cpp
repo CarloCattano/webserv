@@ -1,6 +1,5 @@
 #include "./ServerCluster.hpp"
 #include "../Cgi/Cgi.hpp"
-#include "../Response/Response.hpp"
 #include "../Utils/utils.hpp"
 #include <cstdio>
 #include <fcntl.h>
@@ -13,27 +12,25 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h>
 
 const int MAX_EVENTS = 42;
-const int BUFFER_SIZE = 1024;
+// const int BUFFER_SIZE = 1024;
 
-ServerCluster::ServerCluster(std::vector<Server> &servers) : _servers(servers) {
-	this->setupCluster();
-}
-
-void ServerCluster::setupCluster() {
+ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd == -1) {
+	if (_epoll_fd == -1)
 		perror("epoll_create1");
-	}
-	for (size_t i = 0; i < _servers.size(); i++) {
-		int socket_fd = _servers[i].getSocketFd();
 
-		_server_map[socket_fd] = _servers[i];
+	for (size_t i = 0; i < servers.size(); i++) {
+		int socket_fd = servers[i].getSocketFd();
+
+		_server_map[socket_fd] = servers[i];
 
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_fd;
+	
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
 			perror("epoll_ctl");
 			exit(EXIT_FAILURE);
@@ -48,36 +45,17 @@ int ServerCluster::accept_new_connection(int server_fd) {
 		perror("accept");
 		exit(EXIT_FAILURE);
 	}
+
 	return (client_fd);
 }
 
-void ServerCluster::add_client_fd_to_epoll(int client_fd) {
-	struct epoll_event ev;
-
-	ev.events = EPOLLIN | EPOLLOUT;
-	ev.data.fd = client_fd;
-
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
-		exit(EXIT_FAILURE);
-	}
-}
-
 void ServerCluster::handle_new_client_connection(int server_fd) {
+
 	int client_fd = accept_new_connection(server_fd);
-	add_client_fd_to_epoll(client_fd);
-	_client_fd_to_server_map[client_fd] = _server_map[server_fd];
-}
 
-Client ServerCluster::get_client_obj(const int &client_fd) {
-	Client client;
+	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
 
-	client.fd = client_fd;
-
-	if (!_client_fd_to_server_map.count(client_fd))
-		throw std::runtime_error("No matching server for client fd");
-	client.server = &_client_fd_to_server_map[client_fd];
-	return (client);
+	_client_map[client_fd] = *client;
 }
 
 void ServerCluster::await_connections() {
@@ -101,18 +79,19 @@ void ServerCluster::await_connections() {
 				handle_new_client_connection(event_fd);
 
 			} else {
-				Client client = get_client_obj(event_fd);
+				Client &client = _client_map[event_fd];
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-                    close(client.fd);
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
-					log("Error or hangup");
+					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
+					_client_map.erase(event_fd);
+					close(event_fd);
+
 					continue;
 				}
-				if (events[i].events & EPOLLIN) {
+				if (events[i].events & EPOLLIN)
 					handle_request(client);
-				} else if (events[i].events & EPOLLOUT) {
-					/* handle_write(client); */
+				if (events[i].events & EPOLLOUT) {
+					handle_response(client);
 				}
 			}
 		}
@@ -134,172 +113,157 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	}
 }
 
-void ServerCluster::logConfig(const Client &client) {
+void ServerCluster::handle_request(Client &client) {
+	//handle request
+	char buffer[4096];
 
-	log("Server configuration:");
-	log("Server port: " + intToString(client.server->getPort()));
-	log("Server root: " + client.server->getRoot());
-	log("Server autoindex: " +
-		static_cast<std::string>(client.server->getAutoindex() ? "on" : "off"));
-	log("Server default server: " +
-		static_cast<std::string>(client.server->getDefaultServer() ? "on" : "off"));
-	log("Server client max body size: " + intToString(client.server->getClientMaxBodySize()));
-	log("Server CGI path: " + client.server->getCgiPath());
-	log("Server CGI extension: " + client.server->getCgiExtension());
+	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
+
+	if (bytes_read == -1) {}
+	//error
+
+	client.appendRequestString(std::string(buffer, bytes_read));
+
+	size_t end_of_header = client.getRequest().request.find("\r\n\r\n");
+	if (end_of_header == std::string::npos)
+		return;
+	if (!client.getRequest().finishedHead)
+		client.parseHead();
+	client.parseBody();
+	if (!client.getRequest().finished)
+		return;
+
+	log(" METHOD ::::|" + client.getRequest().method + "|");
+
+	if (client.getRequest().method == "GET") {
+		log("GET request");
+		handle_get_request(client);
+	} else if (client.getRequest().method == "POST") {
+		// handle_post_request(client, client.getRequest().uri);
+	} else if (client.getRequest().method == "DELETE") {}
+		// handle_delete_request(client, client.getRequest().uri);
+
+	switch_poll(client.getFd(), EPOLLOUT);
+	
 }
 
-void ServerCluster::handle_request(const Client &client) {
-	char buffer[BUFFER_SIZE];
+//handle response
+void ServerCluster::handle_response(Client &client) {
+	std::cout << "handle response" << std::endl;
+	Response response = client.getResponse();
+	
+	std::string response_string = client.responseToString();
+	client.setResponseSize(response_string.size());
+	client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 4096, 0));
 
-	if (client.fd == -1) {
-		perror("client_fd");
-		return;
+	if (client.getSentBytes() >= response_string.size()) {
+		
 	}
 
-	int size = recv(client.fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-
-	if (size == -1) {
-		perror("recv");
-		return;
-	}
-
-	std::size_t content_length = extract_content_length(buffer);
-
-	if (static_cast<long long>(content_length) > client.server->getClientMaxBodySize()) {
-		Response response;
-		response.ErrorResponse(client.fd, 413);
-		return;
-	}
-
-	std::string s_root = client.server->getRoot();
-
-	HttpMethod reqType = get_http_method(buffer);
-
-	std::string requested_file_path = extract_requested_file_path(buffer);
-	std::string file_content = readFileToString(s_root + requested_file_path);
-	std::string content_type = getContentType(requested_file_path);
-
-	if (reqType == GET) {
-		/*        check permissions for a certain file access */
-		handle_get_request(client, requested_file_path);
-	} else if (reqType == DELETE) { // TODO - cant issue a delete req from browser
-		handle_delete_request(client, requested_file_path);
-	} else if (requested_file_path.find(client.server->getCgiExtension()) != std::string::npos &&
-			   (reqType == POST || reqType == GET)) {
-		handle_cgi_request(client, "." + s_root + requested_file_path);
-	}
 }
 
-int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
+int ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
 
-	if (file_path.find(client.server->getRoot()) == std::string::npos)
+	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
 		return -1;
 
 	struct stat buffer;
-	if (stat(file_path.c_str(), &buffer) != 0) { // file does not exist
+	if (stat(file_path.c_str(), &buffer) != 0)
 		return -2;
-	}
 	if (S_ISDIR(buffer.st_mode))
 		return 2;
 	return 0;
 }
 
-void ServerCluster::handle_delete_request(const Client &client, std::string requested_file_path) {
+// void ServerCluster::handle_delete_request(const Client &client, std::string requested_file_path) {
 
-	Response response;
+// 	Response response;
 
-	std::string full_path = "." + client.server->getRoot() + "/upload" + requested_file_path;
+// 	std::string full_path = "." + client.server->getRoot() + "/upload" + requested_file_path;
 
-	if (allowed_in_path(full_path, const_cast<Client &>(client))) {
-		response.ErrorResponse(client.fd, 403);
-		return;
-	}
+// 	if (allowed_in_path(full_path, const_cast<Client &>(client))) {
+// 		response.ErrorResponse(client.fd, 403);
+// 		return;
+// 	}
 
-	int ret = std::remove(full_path.c_str());
-	if (ret != 0) {
-		perror("remove");
-		response.ErrorResponse(client.fd, 404);
-	} else {
-		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
-		response.setStatusCode(200);
-		response.setBody("File was deleted successfully");
-		response.respond(client.fd, _epoll_fd);
-	}
-}
+// 	int ret = std::remove(full_path.c_str());
+// 	if (ret != 0) {
+// 		perror("remove");
+// 		response.ErrorResponse(client.fd, 404);
+// 	} else {
+// 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
+// 		response.setStatusCode(200);
+// 		response.setBody("File was deleted successfully");
+// 		response.respond(client.fd, _epoll_fd);
+// 	}
+// }
 
-void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
+// void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
 
-	std::string full_path = client.server->getRoot() + file_path;
-	std::string file_content = readFileToString("." + full_path);
-	std::string content_type = getContentType("." + file_path);
+// 	std::string full_path = client.server->getRoot() + file_path;
+// 	std::string file_content = readFileToString("." + full_path);
+// 	std::string content_type = getContentType("." + file_path);
 
-	Response response;
+// 	Response response;
 
-	if (file_content.empty()) {
-		response.ErrorResponse(client.fd, 404);
-		return;
-	}
+// 	if (file_content.empty()) {
+// 		response.ErrorResponse(client.fd, 404);
+// 		return;
+// 	}
 
-	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
+// 	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
 
-	if (is_allowed == -1) {
-		response.ErrorResponse(client.fd, 403);
-		return;
-	}
-
-
-	response.setStatusCode(200);
-	response.setHeader("Connection", "keep-alive");
-	response.setHeader("Content-Type", content_type);
-	response.setHeader("Content-Length", intToString(file_content.length()));
-	response.setBody(file_content);
-	response.respond(client.fd, _epoll_fd);
-    close(client.fd);
-}
-
-void ServerCluster::handle_get_request(const Client &client,
-									   const std::string &requested_file_path) {
-
-	std::string full_path = "." + client.server->getRoot() + requested_file_path;
+// 	if (is_allowed == -1) {
+// 		response.ErrorResponse(client.fd, 403);
+// 		return;
+// 	}
 
 
-	Response response;
+// 	response.setStatusCode(200);
+// 	response.setHeader("Connection", "keep-alive");
+// 	response.setHeader("Content-Type", content_type);
+// 	response.setHeader("Content-Length", intToString(file_content.length()));
+// 	response.setBody(file_content);
+// 	response.respond(client.fd, _epoll_fd);
+//     close(client.fd);
+// }
 
-	if (client.server->getAutoindex() == false &&
-		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
-		// It's a directory, generate directory listing for the requested path
+void ServerCluster::handle_get_request(Client &client) {
+	std::cout << "handle get request" << std::endl;
+	Server *server = client.getServer();
+
+	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
+
+	if (server->getAutoindex() == false &&
+		allowed_in_path(full_path, const_cast<Client &>(client)) == 2){
 		std::string dir_list = generateDirectoryListing(full_path);
-
-		response.setStatusCode(200);
-		response.setHeader("Connection", "keep-alive");
-		response.setHeader("Content-Type", "text/html");
-		response.setHeader("Content-Length", intToString(dir_list.size()));
-		response.setBody(dir_list);
-		response.respond(client.fd, _epoll_fd);
-        close(client.fd);
-
-	} else
-		handle_file_request(client,
-							requested_file_path == "/" ? "/index.html" : requested_file_path);
-}
-
-void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
-	Cgi cgi;
-	std::string cgi_res = cgi.run(cgi_script_path);
-	Response response;
-
-	if (cgi_res.empty()) {
-		response.ErrorResponse(client.fd, 500);
-		return;
+		client.setResponseBody(dir_list);
+		client.setResponseStatusCode(200);
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(dir_list.size()));
 	}
-
-	response.setStatusCode(200);
-	response.setHeader("Connection", "keep-alive");
-	response.setHeader("Content-Type", "text/html");
-	response.setHeader("Content-Length", intToString(cgi_res.size()));
-	response.setBody(cgi_res);
-	response.respond(client.fd, _epoll_fd);
+	// else
+	// 	handle_file_request(client,
+	// 						requested_file_path == "/" ? "/index.html" : requested_file_path);
 }
+
+// void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
+// 	Cgi cgi;
+// 	std::string cgi_res = cgi.run(cgi_script_path);
+// 	Response response;
+
+// 	if (cgi_res.empty()) {
+// 		response.ErrorResponse(client.fd, 500);
+// 		return;
+// 	}
+
+// 	response.setStatusCode(200);
+// 	response.setHeader("Connection", "keep-alive");
+// 	response.setHeader("Content-Type", "text/html");
+// 	response.setHeader("Content-Length", intToString(cgi_res.size()));
+// 	response.setBody(cgi_res);
+// 	response.respond(client.fd, _epoll_fd);
+// }
 
 void ServerCluster::stop(int signal) {
 	(void)signal;
