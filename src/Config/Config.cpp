@@ -104,9 +104,8 @@ void set_server_config_settings(Server &server, std::string str, int i) {
 			parse_key_with_values(server, str, i);
 		i = iterate_to_next_server_line(str, i);
 	}
-	if (str[i] != '}') {
+	if (str[i] != '}')
 		throw std::runtime_error("Ending curly brace missing: '}'");
-	}
 }
 
 Config::Config(const std::string filename) {

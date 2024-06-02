@@ -104,8 +104,15 @@ std::string toLowerCase(std::string str) {
 }
 
 int iterate_to_next_server_line(std::string str, int i) {
-	while (str[i] && str[i] != '}' && str[i] != ';' && str[i] != '\n')
+	bool is_comment = false;
+
+	if (str[i] == '#')
+		is_comment = true;
+	while (str[i] && str[i] != '\n') {
+		if (!is_comment && (str[i] == '}' || str[i] == ';'))
+			break;
 		i++;
+	}
 	while (str[i] && str[i] != '}' && (str[i] == ';' || is_whitespace_char(str[i])))
 		i++;
 	return (i);
