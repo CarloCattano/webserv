@@ -40,8 +40,9 @@ struct Route {
 	Method POST;
 	Method GET;
 	Method DELETE;
-
-	Route() : location(""), matching_style(""), root(""), autoindex(false) {
+	std::string cgi_path;
+	std::string cgi_extension;
+	Route() : location(""), matching_style(""), root(""), autoindex(false), cgi_path(""), cgi_extension("") {
 		redirections = std::vector<HttpRedirection>();
 		index_files = std::vector<std::string>();
 	}

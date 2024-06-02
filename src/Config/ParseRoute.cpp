@@ -80,6 +80,10 @@ int	parse_route(Server &virtual_server, std::string str, int i) {
 			route.index_files = values;
 		else if (key == "deny" || key == "allow")
             set_allowed_methods(route, key_with_values);
+        else if (key == "cgi_path" && value_count >= 1)
+            route.cgi_path = key_with_values[1];
+        else if (key == "cgi_extension" && value_count >= 1)
+            route.cgi_extension = key_with_values[1];
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')
