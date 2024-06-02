@@ -1,0 +1,39 @@
+* {
+  margin: 0.22rem;
+  padding: 0.22rem;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Futura, sans-serif;
+}
+
+p {
+  color: #333;
+}
+
+strong {
+  font-weight: bold;
+}
+
+input {
+  width: 30%px;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+input:hover {
+  background-color: #45a049;
+}
+
+
+.myInput {
+  width: 14%;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+}
