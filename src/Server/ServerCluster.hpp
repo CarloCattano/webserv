@@ -10,14 +10,16 @@ class ServerCluster {
 	std::map<int, Server>	_server_map;
 	std::map<int, Client>	_client_map;
 
-	int _epoll_fd;
-	void logConfig(const Client &client);
-	int allowed_in_path(const std::string &file_path, Client &client);
+	int     _epoll_fd;
+	void    logConfig(const Client &client);
+	int     allowed_in_path(const std::string &file_path, Client &client);
+    
 
   public:
 	ServerCluster(std::vector<Server> &servers);
 	~ServerCluster();
 
+    void            close_client(int client_fd);
 	void			await_connections();
 	void			setup();
 	void			start();
@@ -31,13 +33,15 @@ class ServerCluster {
 	
 	void			handle_cgi_request(const Client &client, const std::string &cgi_script_path);
 	void			handle_get_request(Client &client);
-	// void			handle_delete_request(const Client &client, std::string full_path, std::string file_path);
+    void            handle_post_request(Client &client);
+	void			handle_delete_request(Client &client);
 	Client			get_client_obj(epoll_event &event);
+    void            handle_delete_request(Client &client, std::string full_path);
+    
 // 	void handle_file_request(const Client &client, const std::string &file_path);
 // 	void handle_write(const Client &client);
 // 	void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
 // 	void handle_get_request(const Client &client, const std::string &requested_file_path);
-// 	void handle_delete_request(const Client &client, std::string full_path);
 
 
 	FileUploader uploader;
