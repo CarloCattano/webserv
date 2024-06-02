@@ -1,15 +1,19 @@
 #include "../Server/Server.hpp"
 #include <sys/epoll.h>
 #include <iostream>
+#include <sstream>
 #include <map>
 
-struct Request {
+struct Request
+{
+    std::string                         request;
     std::string                         method;
     std::string                         uri;
     std::string                         httpVersion;
     std::map<std::string, std::string>  headers;
     std::string                         body;
-    bool                                finishedReading;
+    bool                                finishedHead;
+    bool                                finished;
 };
 
 struct Response
@@ -29,6 +33,7 @@ class Client
         Request 	request;
         Response	response;
         size_t		sentBytes;
+        std::stringstream responseStream;
 
     public:
         Client();
@@ -37,9 +42,11 @@ class Client
         Client &operator=(const Client &client);
         ~Client();
 
-        void        parseRequest(std::string request);
+        void        parseHead();
+        void        parseBody();
         std::string getErrorString(int code);
         std::string responseToString();
+        void        sendErrorPage(int code);
 
         //general getters and setters
         int			getFd() const;
@@ -56,32 +63,26 @@ class Client
         void    setEvent(epoll_event *event);
         void    setSentBytes(size_t sentBytes);
 
-
         //getters and setters for request
+        void    setRequestString(std::string request);
+        void    appendRequestString(std::string str);
         void    setRequestMethod(std::string method);
         void    setRequestUri(std::string uri);
         void    setRequestHttpVersion(std::string httpVersion);
         void    setRequestHeaders(std::map<std::string, std::string> headers);
         void    addRequestHeader(std::string key, std::string value);
         void    setRequestBody(std::string body);
-
-        std::map<std::string, std::string>  getRequestHeaders() const;
-        std::string                         getRequestMethod() const;
-        std::string                         getRequestUri() const;
-        std::string                         getRequestHttpVersion() const;
-        std::string                         getRequestBody() const;
+        void    setRequestFinishedHead(bool finishedHead);
+        void    setRequestFinished(bool finishedBody);
 
         //getters and setters for response
-        int                                 getResponseSize();
-        int                                 getResponseStatusCode();
-        std::string                         getResponseBody();
-        std::map<std::string, std::string>  getResponseHeaders();
 
         void    setResponseSize(int size);
         void    setResponseStatusCode(int statusCode);
         void    setResponseBody(std::string body);
         void    setResponseHeaders(std::map<std::string, std::string> headers);
         void    addResponseHeader(std::string key, std::string value);
+        void    setFinishedSending(bool finishedSending);
 
 };
 

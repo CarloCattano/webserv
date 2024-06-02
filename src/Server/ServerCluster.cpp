@@ -11,6 +11,7 @@
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <string.h>
 
 const int MAX_EVENTS = 42;
 // const int BUFFER_SIZE = 1024;
@@ -119,30 +120,54 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 }
 
 void ServerCluster::handle_request(Client &client) {
-	std::cout << "handle request" << std::endl;
-	// Response *response = &client.getResponse();
+	//handle request
+	char buffer[4096];
+
+	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
+
+	if (bytes_read == -1) {}
+	//error
+
+	client.appendRequestString(std::string(buffer, bytes_read));
+
+	size_t end_of_header = client.getRequest().request.find("\r\n\r\n");
+	if (end_of_header == std::string::npos)
+		return;
+	if (!client.getRequest().finishedHead)
+		client.parseHead();
+	client.parseBody();
+	if (!client.getRequest().finished)
+		return;
+
+	if (client.getRequest().method == "GET") {
+		// handle_get_request(client, client.getRequest().uri);
+	} else if (client.getRequest().method == "POST") {
+		// handle_post_request(client, client.getRequest().uri);
+	} else if (client.getRequest().method == "DELETE") 
+		// handle_delete_request(client, client.getRequest().uri);
+
+	switch_poll(client.getFd(), EPOLLOUT);
 	
-	// Request *request = &client.getRequest();
-
-	this->switch_poll(client.getFd(), EPOLLOUT);	
-	//get request
-
 }
 
 //handle response
 void ServerCluster::handle_response(Client &client) {
-	std::cout << "handle response" << std::endl;
-	Response response = client.getResponse();
-	
-	std::string response_string = client.responseToString();
-	client.setResponseSize(response_string.size());
-	client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 3, 0));
+	std::string helloWorld_response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
-	if (client.getSentBytes() >= response_string.size()) {
-		std::cout << "response: \nsize: "<< client.getResponseSize() << "\n" << response_string << std::endl;
-		this->switch_poll(client.getFd(), EPOLLIN);
-		exit(69);
-	}
+	client.sendErrorPage(500);
+	exit(69);
+	// std::cout << "handle response" << std::endl;
+	// Response response = client.getResponse();
+	
+	// std::string response_string = client.responseToString();
+	// client.setResponseSize(response_string.size());
+	// client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 3, 0));
+
+	// if (client.getSentBytes() >= response_string.size()) {
+	// 	std::cout << "response: \nsize: "<< client.getResponseSize() << "\n" << response_string << std::endl;
+	// 	this->switch_poll(client.getFd(), EPOLLIN);
+	// 	exit(69);
+	// }
 
 }
 

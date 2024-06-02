@@ -6,11 +6,11 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 
-
-
 # define EXIT_FAILURE 1
 
-Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
+Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0){
+    this->setRequestFinishedHead(false);
+    
     struct epoll_event ev;
 
     ev.events = EPOLLIN;
@@ -26,32 +26,66 @@ Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), s
 	}
 }
 
-void Client::parseRequest(std::string httpRequest) {
-    size_t pos = 0;
-    size_t prev = 0;
-    std::string line;
-    std::string key;
-    std::string value;
-
-    while ((pos = httpRequest.find("\r\n", prev)) != std::string::npos) {
-        line = httpRequest.substr(prev, pos - prev);
-        prev = pos + 2;
-
-        if (line.find(":") != std::string::npos) {
-            key = line.substr(0, line.find(":"));
-            value = line.substr(line.find(":") + 2);
-            request.headers[key] = value;
-        } else {
-            if (line.find("GET") != std::string::npos || line.find("POST") != std::string::npos) {
-                request.method = line.substr(0, line.find(" "));
-                request.uri = line.substr(line.find(" ") + 1, line.rfind(" ") - line.find(" ") - 1);
-                request.httpVersion = line.substr(line.rfind(" ") + 1);
-            }
-        }
+std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
+    std::vector<std::string> tokens;
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+    while (end != std::string::npos) {
+        tokens.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+        end = str.find(delimiter, start);
     }
-    request.body = httpRequest.substr(prev);
+    tokens.push_back(str.substr(start, end));
+    return tokens;
 }
 
+//save head of request in request struct
+void Client::parseHead() {
+    std::string head = this->getRequest().request;
+    std::string headStr = head.substr(0, head.find("\r\n\r\n"));
+    std::vector<std::string> headLines = splitString(headStr, "\r\n");
+    std::vector<std::string> requestLine = splitString(headLines[0], " ");
+    this->setRequestMethod(requestLine[0]);
+    this->setRequestUri(requestLine[1]);
+    this->setRequestHttpVersion(requestLine[2]);
+    for (size_t i = 1; i < headLines.size(); i++) {
+        std::vector<std::string> header = splitString(headLines[i], ": ");
+        this->addRequestHeader(header[0], header[1]);
+    }
+    this->setRequestFinishedHead(true);
+}
+
+size_t stringToSizeT(std::string str) {
+    std::stringstream ss(str);
+    size_t size;
+    ss >> size;
+    return size;
+}
+
+bool checkFinishedBody(Request request) {
+    if (request.headers.find("Content-Length") != request.headers.end()) {
+        if (request.body.size() == stringToSizeT(request.headers["Content-Length"]))
+            return true;
+        return false;
+    }
+    return true;
+}
+
+void Client::parseBody() {
+    Request request = this->getRequest();
+    this->setRequestBody(request.request.substr(request.request.find("\r\n\r\n") + 4));
+    if (!checkFinishedBody(request))
+        return;
+    this->setRequestFinished(true);
+}
+
+void Client::sendErrorPage(int statusCode) {
+    // std::string errorPage = "<html><head><title>" + intToString(statusCode) + " " + this->getErrorString(statusCode) + "</title></head><body><h1>" + intToString(statusCode) + " " + this->getErrorString(statusCode) + "</h1></body></html>";
+    // this->setResponseBody(errorPage);
+    this->setResponseStatusCode(statusCode);
+    // this->setResponseSize(errorPage.size());
+    send(this->getFd(), this->responseToString().c_str(), this->responseToString().size(), 0);
+}
 
 std::string Client::responseToString() {
     std::string response = "HTTP/1.1 " + intToString(this->response.statusCode) + " " + this->getErrorString(this->response.statusCode) + "\r\n";
@@ -76,20 +110,17 @@ void Client::setRequest(Request &request) { this->request = request; }
 void Client::setResponse(Response &response) { this->response = response; }
 void Client::setSentBytes(size_t sentBytes) { this->sentBytes = sentBytes; }
 
-//request getters
-std::map<std::string, std::string> Client::getRequestHeaders() const { return this->request.headers; }
-std::string Client::getRequestMethod() const { return this->request.method; }
-std::string Client::getRequestUri() const { return this->request.uri; }
-std::string Client::getRequestHttpVersion() const { return this->request.httpVersion; }
-std::string Client::getRequestBody() const { return this->request.body; }
-
 //request setters
+void Client::setRequestString(std::string request) { this->request.request = request; }
+void Client::appendRequestString(std::string str) { this->request.request += str; }
 void Client::setRequestMethod(std::string method) { this->request.method = method; }
 void Client::setRequestUri(std::string uri) { this->request.uri = uri; }
 void Client::setRequestHttpVersion(std::string httpVersion) { this->request.httpVersion = httpVersion; }
 void Client::setRequestHeaders(std::map<std::string, std::string> headers) { this->request.headers = headers; }
 void Client::addRequestHeader(std::string key, std::string value) { this->request.headers[key] = value; }
 void Client::setRequestBody(std::string body) { this->request.body = body; }
+void Client::setRequestFinishedHead(bool finishedHead) { this->request.finishedHead = finishedHead; }
+void Client::setRequestFinished(bool finishedBody) { this->request.finished = finishedBody; }
 
 //response setters
 void Client::setResponseStatusCode(int statusCode) { this->response.statusCode = statusCode; }
@@ -97,12 +128,6 @@ void Client::setResponseBody(std::string body) { this->response.body = body; }
 void Client::setResponseHeaders(std::map<std::string, std::string> headers) { this->response.headers = headers; }
 void Client::addResponseHeader(std::string key, std::string value) { this->response.headers[key] = value; }
 void Client::setResponseSize(int size) { this->response.size = size; }
-
-//response getters
-int Client::getResponseSize() { return this->response.size; }
-int Client::getResponseStatusCode() { return this->response.statusCode; }
-std::string Client::getResponseBody() { return this->response.body; }
-std::map<std::string, std::string> Client::getResponseHeaders() { return this->response.headers; }
 
 //boring stuff
 Client::Client() : fd(-1), server(NULL), sentBytes(0) {}

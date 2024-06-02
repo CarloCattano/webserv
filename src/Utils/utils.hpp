@@ -15,10 +15,6 @@ std::string readFileToString(const std::string &filename);
 std::string intToString(int value);
 std::string extract_requested_file_path(const char *buffer);
 std::string get_current_dir();
-std::string extract_body(const char *buffer);
-std::string extract_boundary(const char *buffer);
-std::string extract_content_body(const char *buffer);
-std::string extract_request_header(const char *buffer);
 std::string generateDirectoryListing(const std::string &path);
 
 bool is_file_upload_request(const char *request);
