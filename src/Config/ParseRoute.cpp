@@ -18,6 +18,8 @@ void    set_allowed_methods(Route &route, std::vector<std::string> key_with_valu
                 route.POST.is_allowed = new_state;
             if (route.GET.can_be_edited)
                 route.GET.is_allowed = new_state;
+            if (route.DELETE.can_be_edited)
+                route.DELETE.is_allowed = new_state;
         }
         else if (key == "POST" && route.POST.can_be_edited) {
             route.POST.is_allowed = new_state;
@@ -26,6 +28,10 @@ void    set_allowed_methods(Route &route, std::vector<std::string> key_with_valu
         else if (key == "GET" && route.GET.can_be_edited) {
             route.GET.is_allowed = new_state;
             route.GET.can_be_edited = false;
+        }
+        else if (key == "DELETE" && route.DELETE.can_be_edited) {
+            route.DELETE.is_allowed = new_state;
+            route.DELETE.can_be_edited = false;
         }
         i++;
     }
@@ -46,12 +52,6 @@ void parse_redirection(std::vector<std::string> &values, int value_count, Route 
 	if (value_count == 2)
 		redirection.code = values[0];
 	route.redirections.push_back(redirection);
-}
-
-void parse_param(std::vector<std::string> &values, Route &route)
-{
-	Fastcgi_Param param(values[0], values[1]);
-	route.fastcgi_params.push_back(param);
 }
 
 int	parse_route(Server &virtual_server, std::string str, int i) {
@@ -80,18 +80,11 @@ int	parse_route(Server &virtual_server, std::string str, int i) {
 			route.index_files = values;
 		else if (key == "deny" || key == "allow")
             set_allowed_methods(route, key_with_values);
-		else if (key == "fastcgi_pass" && value_count == 1)
-			route.fastcgi_pass = values[0];
-		else if (key == "fastcgi_index" && value_count == 1)
-			route.fastcgi_index = values[0];
-		else if (key == "fastcgi_param" && value_count == 2)
-			parse_param(key_with_values, route);
-
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')
 		i++;
-	
+
 	virtual_server.addRoute(route);
 	return (i);
 }

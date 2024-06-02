@@ -10,19 +10,17 @@
 #include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <string.h>
 
 const int MAX_EVENTS = 42;
 // const int BUFFER_SIZE = 1024;
 
-std::string CGI_BIN =
-	get_current_dir() + "/www/website1/cgi-bin/" + "test.py"; // TODO load from config
 
 ServerCluster::ServerCluster() {}
 
 ServerCluster::ServerCluster(std::vector<Server> servers) {
-
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
 		perror("epoll_create1");
@@ -53,7 +51,6 @@ int ServerCluster::accept_new_connection(int server_fd) {
 
 	return (client_fd);
 }
-
 
 void ServerCluster::handle_new_client_connection(int server_fd) {
 
@@ -91,11 +88,11 @@ void ServerCluster::await_connections() {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
 					_client_map.erase(event_fd);
 					close(event_fd);
+
 					continue;
 				}
-				if (events[i].events & EPOLLIN) {
+				if (events[i].events & EPOLLIN)
 					handle_request(client);
-				}
 				if (events[i].events & EPOLLOUT) {
 					handle_response(client);
 				}
@@ -171,56 +168,115 @@ void ServerCluster::handle_response(Client &client) {
 
 }
 
-// void ServerCluster::handle_get_request(const Client &client,
-// 									   const std::string &requested_file_path) {
+// int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
 
-// 	switch_poll(client.fd, EPOLLOUT);
+// 	if (file_path.find(client.server->getRoot()) == std::string::npos)
+// 		return -1;
+
+// 	struct stat buffer;
+// 	if (stat(file_path.c_str(), &buffer) != 0) { // file does not exist
+// 		return -2;
+// 	}
+// 	if (S_ISDIR(buffer.st_mode))
+// 		return 2;
+// 	return 0;
+// }
+
+// void ServerCluster::handle_delete_request(const Client &client, std::string requested_file_path) {
 
 // 	Response response;
 
-// 	if (client.server->getAutoindex() == false && stat(full_path.c_str(), &path_stat) == 0 &&
-// 		S_ISDIR(path_stat.st_mode)) {
+// 	std::string full_path = "." + client.server->getRoot() + "/upload" + requested_file_path;
+
+// 	if (allowed_in_path(full_path, const_cast<Client &>(client))) {
+// 		response.ErrorResponse(client.fd, 403);
+// 		return;
+// 	}
+
+// 	int ret = std::remove(full_path.c_str());
+// 	if (ret != 0) {
+// 		perror("remove");
+// 		response.ErrorResponse(client.fd, 404);
+// 	} else {
+// 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
+// 		response.setStatusCode(200);
+// 		response.setBody("File was deleted successfully");
+// 		response.respond(client.fd, _epoll_fd);
+// 	}
+// }
+
+// void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
+
+// 	std::string full_path = client.server->getRoot() + file_path;
+// 	std::string file_content = readFileToString("." + full_path);
+// 	std::string content_type = getContentType("." + file_path);
+
+// 	Response response;
+
+// 	if (file_content.empty()) {
+// 		response.ErrorResponse(client.fd, 404);
+// 		return;
+// 	}
+
+// 	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
+
+// 	if (is_allowed == -1) {
+// 		response.ErrorResponse(client.fd, 403);
+// 		return;
+// 	}
+
+
+// 	response.setStatusCode(200);
+// 	response.setHeader("Connection", "keep-alive");
+// 	response.setHeader("Content-Type", content_type);
+// 	response.setHeader("Content-Length", intToString(file_content.length()));
+// 	response.setBody(file_content);
+// 	response.respond(client.fd, _epoll_fd);
+//     close(client.fd);
+// }
+
+// void ServerCluster::handle_get_request(const Client &client,
+// 									   const std::string &requested_file_path) {
+
+// 	std::string full_path = "." + client.server->getRoot() + requested_file_path;
+
+
+// 	Response response;
+
+// 	if (client.server->getAutoindex() == false &&
+// 		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
 // 		// It's a directory, generate directory listing for the requested path
 // 		std::string dir_list = generateDirectoryListing(full_path);
 
 // 		response.setStatusCode(200);
-// 		response.addHeader("Content-Type", "text/html");
+// 		response.setHeader("Connection", "keep-alive");
+// 		response.setHeader("Content-Type", "text/html");
+// 		response.setHeader("Content-Length", intToString(dir_list.size()));
 // 		response.setBody(dir_list);
+// 		response.respond(client.fd, _epoll_fd);
+//         close(client.fd);
+
 // 	} else
 // 		handle_file_request(client,
 // 							requested_file_path == "/" ? "/index.html" : requested_file_path);
 // }
 
-
 // void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
-
+// 	Cgi cgi;
+// 	std::string cgi_res = cgi.run(cgi_script_path);
 // 	Response response;
-// 	switch_poll(client.fd, EPOLLOUT);
 
-// 	int forked = fork();
-// 	if (forked == -1) {
-// 		perror("fork");
+// 	if (cgi_res.empty()) {
+// 		response.ErrorResponse(client.fd, 500);
 // 		return;
 // 	}
 
-// 	if (forked == 0) {
-// 		Cgi cgi;
-// 		std::string cgi_response = cgi.run(cgi_script_path);
-
-// 		if (!cgi_response.empty()) {
-// 			response.setStatusCode(200);
-// 			response.setHeader("Connection", "keep-alive");
-// 			response.setHeader("Content-Type", "text/html");
-// 			response.setHeader("Content-Length", intToString(cgi_response.length()));
-// 			response.setBody(cgi_response);
-// 			response.respond(client.fd, _epoll_fd);
-// 			close(client.fd);
-// 			exit(0);
-// 		} else {
-// 			response.ErrorResponse(client.fd, 500);
-// 			exit(0);
-// 		}
-// 	}
+// 	response.setStatusCode(200);
+// 	response.setHeader("Connection", "keep-alive");
+// 	response.setHeader("Content-Type", "text/html");
+// 	response.setHeader("Content-Length", intToString(cgi_res.size()));
+// 	response.setBody(cgi_res);
+// 	response.respond(client.fd, _epoll_fd);
 // }
 
 void ServerCluster::stop(int signal) {

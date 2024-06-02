@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Response/Response.hpp"
 #include "./Server.hpp"
 #include <map>
 #include "../Client/Client.hpp"
@@ -11,11 +12,11 @@ class ServerCluster {
 	std::map<int, Client>	_client_map;
 
 	int _epoll_fd;
-
-	ServerCluster();
+	void logConfig(const Client &client);
+	int allowed_in_path(const std::string &file_path, const Client &client);
 
   public:
-	ServerCluster(std::vector<Server> servers);
+	ServerCluster(std::vector<Server> &servers);
 	~ServerCluster();
 
 	void			await_connections();
@@ -33,6 +34,12 @@ class ServerCluster {
 	void			handle_get_request(const Client &client, const std::string &requested_file_path);
 	// void			handle_delete_request(const Client &client, std::string full_path, std::string file_path);
 	Client			get_client_obj(epoll_event &event);
+// 	void handle_file_request(const Client &client, const std::string &file_path);
+// 	void handle_write(const Client &client);
+// 	void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
+// 	void handle_get_request(const Client &client, const std::string &requested_file_path);
+// 	void handle_delete_request(const Client &client, std::string full_path);
+
 
 	FileUploader uploader;
 	void switch_poll(int client_fd, uint32_t events);

@@ -76,12 +76,18 @@ std::string intToString(int value) {
 
 std::string extract_requested_file_path(const char *buffer) {
 	std::string request(buffer);
-	size_t start = request.find("GET") + 4;
+	size_t start = 0;
+
+	if (request.find("GET") == 0) {
+		start = request.find("GET") + 4;
+	} else if (request.find("POST") == 0) {
+		start = request.find("POST") + 5;
+	} else if (request.find("DELETE") == 0) {
+		start = request.find("DELETE") + 7;
+	}
+
 	size_t end = request.find("HTTP/1.1") - 1;
 	std::string path = request.substr(start, end - start);
-
-	/* if (path == "/") */
-	/* return "/index.html"; */
 
 	return path;
 }
