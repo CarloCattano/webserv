@@ -92,6 +92,26 @@
       "-I./src/Config",
       "-I./src/Utils",
       "-o",
+      "src/Server/ServerCluster.o",
+      "src/Server/ServerCluster.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Server/ServerCluster.cpp",
+    "output": "/home/carlo/42/webserv/src/Server/ServerCluster.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
       "src/Config/Config.o",
       "src/Config/Config.cpp"
     ],
@@ -158,5 +178,25 @@
     "directory": "/home/carlo/42/webserv",
     "file": "/home/carlo/42/webserv/src/Utils/FileUpload.cpp",
     "output": "/home/carlo/42/webserv/src/Utils/FileUpload.o"
+  },
+  {
+    "arguments": [
+      "/sbin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-I./src/Cgi",
+      "-I./src/Server",
+      "-I./src/Config",
+      "-I./src/Utils",
+      "-o",
+      "src/Response/Response.o",
+      "src/Response/Response.cpp"
+    ],
+    "directory": "/home/carlo/42/webserv",
+    "file": "/home/carlo/42/webserv/src/Response/Response.cpp",
+    "output": "/home/carlo/42/webserv/src/Response/Response.o"
   }
 ]

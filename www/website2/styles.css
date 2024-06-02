@@ -17,7 +17,7 @@ strong {
 }
 
 input {
-  width: 400px;
+  width: 30%px;
   padding: 10px;
   background-color: #4CAF50;
   color: white;
@@ -30,3 +30,10 @@ input:hover {
   background-color: #45a049;
 }
 
+
+.myInput {
+  width: 14%;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+}

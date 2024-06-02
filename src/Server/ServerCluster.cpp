@@ -54,7 +54,7 @@ int ServerCluster::accept_new_connection(int server_fd) {
 void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	struct epoll_event ev;
 
-	ev.events = EPOLLIN;
+	ev.events = EPOLLIN | EPOLLOUT;
 	ev.data.fd = client_fd;
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -104,21 +104,16 @@ void ServerCluster::await_connections() {
 				Client client = get_client_obj(event_fd);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+                    close(client.fd);
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
 					log("Error or hangup");
-					close(client.fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
-					log("Handling request");
 					handle_request(client);
-				}
-				if (events[i].events & EPOLLOUT) {
-					log("Handling write");
+				} else if (events[i].events & EPOLLOUT) {
 					/* handle_write(client); */
 				}
-				close(client.fd);
-				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
 			}
 		}
 	}
@@ -191,22 +186,17 @@ void ServerCluster::handle_request(const Client &client) {
 		handle_delete_request(client, requested_file_path);
 	} else if (requested_file_path.find(client.server->getCgiExtension()) != std::string::npos &&
 			   (reqType == POST || reqType == GET)) {
-		/* handle_cgi_request(client, client.server->getCgiPath()); */
-		log("Insert CGI handler here .....\n .... \n");
+		handle_cgi_request(client, "." + s_root + requested_file_path);
 	}
 }
 
 int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
 
-	/* check if the file is in the root directory of the client server */
-	/* check if the file exists */
-	/* check if the file is a directory */
-
 	if (file_path.find(client.server->getRoot()) == std::string::npos)
 		return -1;
+
 	struct stat buffer;
-	if (stat(file_path.c_str(), &buffer) != 0) {
-		Error(file_path.c_str());
+	if (stat(file_path.c_str(), &buffer) != 0) { // file does not exist
 		return -2;
 	}
 	if (S_ISDIR(buffer.st_mode))
@@ -238,6 +228,7 @@ void ServerCluster::handle_delete_request(const Client &client, std::string requ
 }
 
 void ServerCluster::handle_file_request(const Client &client, const std::string &file_path) {
+
 	std::string full_path = client.server->getRoot() + file_path;
 	std::string file_content = readFileToString("." + full_path);
 	std::string content_type = getContentType("." + file_path);
@@ -251,21 +242,19 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 
 	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
 
-	std::cout << " Handle file request " << std::endl;
-	std::cout << " is allowed " << is_allowed << std::endl;
-
 	if (is_allowed == -1) {
 		response.ErrorResponse(client.fd, 403);
 		return;
 	}
 
-	switch_poll(client.fd, EPOLLOUT);
+
 	response.setStatusCode(200);
 	response.setHeader("Connection", "keep-alive");
 	response.setHeader("Content-Type", content_type);
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
 	response.respond(client.fd, _epoll_fd);
+    close(client.fd);
 }
 
 void ServerCluster::handle_get_request(const Client &client,
@@ -273,14 +262,12 @@ void ServerCluster::handle_get_request(const Client &client,
 
 	std::string full_path = "." + client.server->getRoot() + requested_file_path;
 
-	switch_poll(client.fd, EPOLLOUT);
 
 	Response response;
 
 	if (client.server->getAutoindex() == false &&
 		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
 		// It's a directory, generate directory listing for the requested path
-		std::cout << "Generating directory listing for " << full_path << std::endl;
 		std::string dir_list = generateDirectoryListing(full_path);
 
 		response.setStatusCode(200);
@@ -289,22 +276,29 @@ void ServerCluster::handle_get_request(const Client &client,
 		response.setHeader("Content-Length", intToString(dir_list.size()));
 		response.setBody(dir_list);
 		response.respond(client.fd, _epoll_fd);
+        close(client.fd);
+
 	} else
 		handle_file_request(client,
 							requested_file_path == "/" ? "/index.html" : requested_file_path);
 }
 
 void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
+	Cgi cgi;
+	std::string cgi_res = cgi.run(cgi_script_path);
+	Response response;
 
-	char buffer[BUFFER_SIZE];
-	int size = recv(client.fd, buffer, BUFFER_SIZE, 0);
-	if (size == -1) {
-		perror("recv");
+	if (cgi_res.empty()) {
+		response.ErrorResponse(client.fd, 500);
 		return;
 	}
 
-	std::string script_path = client.server->getRoot() + cgi_script_path;
-	log("script path: " + script_path);
+	response.setStatusCode(200);
+	response.setHeader("Connection", "keep-alive");
+	response.setHeader("Content-Type", "text/html");
+	response.setHeader("Content-Length", intToString(cgi_res.size()));
+	response.setBody(cgi_res);
+	response.respond(client.fd, _epoll_fd);
 }
 
 void ServerCluster::stop(int signal) {
