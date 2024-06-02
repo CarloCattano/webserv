@@ -104,9 +104,9 @@ void ServerCluster::await_connections() {
 				Client client = get_client_obj(event_fd);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+                    close(client.fd);
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
 					log("Error or hangup");
-					close(client.fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN) {
@@ -114,8 +114,6 @@ void ServerCluster::await_connections() {
 				} else if (events[i].events & EPOLLOUT) {
 					/* handle_write(client); */
 				}
-				close(client.fd);
-				epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.fd, NULL);
 			}
 		}
 	}
@@ -249,7 +247,6 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 		return;
 	}
 
-	switch_poll(client.fd, EPOLLOUT);
 
 	response.setStatusCode(200);
 	response.setHeader("Connection", "keep-alive");
@@ -257,8 +254,7 @@ void ServerCluster::handle_file_request(const Client &client, const std::string 
 	response.setHeader("Content-Length", intToString(file_content.length()));
 	response.setBody(file_content);
 	response.respond(client.fd, _epoll_fd);
-
-	switch_poll(client.fd, EPOLLIN);
+    close(client.fd);
 }
 
 void ServerCluster::handle_get_request(const Client &client,
@@ -266,7 +262,6 @@ void ServerCluster::handle_get_request(const Client &client,
 
 	std::string full_path = "." + client.server->getRoot() + requested_file_path;
 
-	switch_poll(client.fd, EPOLLOUT);
 
 	Response response;
 
@@ -281,8 +276,8 @@ void ServerCluster::handle_get_request(const Client &client,
 		response.setHeader("Content-Length", intToString(dir_list.size()));
 		response.setBody(dir_list);
 		response.respond(client.fd, _epoll_fd);
+        close(client.fd);
 
-		switch_poll(client.fd, EPOLLIN);
 	} else
 		handle_file_request(client,
 							requested_file_path == "/" ? "/index.html" : requested_file_path);

@@ -16,3 +16,7 @@
 
 ### Double check:
     - [ ] wrong path or dir requested
+
+### Bugs to fix:
+    - [ ]  ./webserv server.conf stalls
+    - [ ] 
