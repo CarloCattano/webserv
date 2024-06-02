@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Response/Response.hpp"
 #include "./Server.hpp"
 #include <map>
 #include "../Client/Client.hpp"
@@ -13,7 +12,7 @@ class ServerCluster {
 
 	int _epoll_fd;
 	void logConfig(const Client &client);
-	int allowed_in_path(const std::string &file_path, const Client &client);
+	int allowed_in_path(const std::string &file_path, Client &client);
 
   public:
 	ServerCluster(std::vector<Server> &servers);
@@ -31,7 +30,7 @@ class ServerCluster {
 	void			handle_response(Client &client);
 	
 	void			handle_cgi_request(const Client &client, const std::string &cgi_script_path);
-	void			handle_get_request(const Client &client, const std::string &requested_file_path);
+	void			handle_get_request(Client &client);
 	// void			handle_delete_request(const Client &client, std::string full_path, std::string file_path);
 	Client			get_client_obj(epoll_event &event);
 // 	void handle_file_request(const Client &client, const std::string &file_path);

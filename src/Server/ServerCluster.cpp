@@ -17,10 +17,7 @@
 const int MAX_EVENTS = 42;
 // const int BUFFER_SIZE = 1024;
 
-
-ServerCluster::ServerCluster() {}
-
-ServerCluster::ServerCluster(std::vector<Server> servers) {
+ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
 		perror("epoll_create1");
@@ -136,11 +133,14 @@ void ServerCluster::handle_request(Client &client) {
 	if (!client.getRequest().finished)
 		return;
 
+	log(" METHOD ::::|" + client.getRequest().method + "|");
+
 	if (client.getRequest().method == "GET") {
-		// handle_get_request(client, client.getRequest().uri);
+		log("GET request");
+		handle_get_request(client);
 	} else if (client.getRequest().method == "POST") {
 		// handle_post_request(client, client.getRequest().uri);
-	} else if (client.getRequest().method == "DELETE") 
+	} else if (client.getRequest().method == "DELETE") {}
 		// handle_delete_request(client, client.getRequest().uri);
 
 	switch_poll(client.getFd(), EPOLLOUT);
@@ -149,38 +149,31 @@ void ServerCluster::handle_request(Client &client) {
 
 //handle response
 void ServerCluster::handle_response(Client &client) {
-	std::string helloWorld_response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
-
-	client.sendErrorPage(500);
-	exit(69);
-	// std::cout << "handle response" << std::endl;
-	// Response response = client.getResponse();
+	std::cout << "handle response" << std::endl;
+	Response response = client.getResponse();
 	
-	// std::string response_string = client.responseToString();
-	// client.setResponseSize(response_string.size());
-	// client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 3, 0));
+	std::string response_string = client.responseToString();
+	client.setResponseSize(response_string.size());
+	client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 4096, 0));
 
-	// if (client.getSentBytes() >= response_string.size()) {
-	// 	std::cout << "response: \nsize: "<< client.getResponseSize() << "\n" << response_string << std::endl;
-	// 	this->switch_poll(client.getFd(), EPOLLIN);
-	// 	exit(69);
-	// }
+	if (client.getSentBytes() >= response_string.size()) {
+		
+	}
 
 }
 
-// int ServerCluster::allowed_in_path(const std::string &file_path, const Client &client) {
+int ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
 
-// 	if (file_path.find(client.server->getRoot()) == std::string::npos)
-// 		return -1;
+	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
+		return -1;
 
-// 	struct stat buffer;
-// 	if (stat(file_path.c_str(), &buffer) != 0) { // file does not exist
-// 		return -2;
-// 	}
-// 	if (S_ISDIR(buffer.st_mode))
-// 		return 2;
-// 	return 0;
-// }
+	struct stat buffer;
+	if (stat(file_path.c_str(), &buffer) != 0)
+		return -2;
+	if (S_ISDIR(buffer.st_mode))
+		return 2;
+	return 0;
+}
 
 // void ServerCluster::handle_delete_request(const Client &client, std::string requested_file_path) {
 
@@ -235,31 +228,24 @@ void ServerCluster::handle_response(Client &client) {
 //     close(client.fd);
 // }
 
-// void ServerCluster::handle_get_request(const Client &client,
-// 									   const std::string &requested_file_path) {
+void ServerCluster::handle_get_request(Client &client) {
+	std::cout << "handle get request" << std::endl;
+	Server *server = client.getServer();
 
-// 	std::string full_path = "." + client.server->getRoot() + requested_file_path;
+	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
 
-
-// 	Response response;
-
-// 	if (client.server->getAutoindex() == false &&
-// 		allowed_in_path(full_path, const_cast<Client &>(client)) == 2) {
-// 		// It's a directory, generate directory listing for the requested path
-// 		std::string dir_list = generateDirectoryListing(full_path);
-
-// 		response.setStatusCode(200);
-// 		response.setHeader("Connection", "keep-alive");
-// 		response.setHeader("Content-Type", "text/html");
-// 		response.setHeader("Content-Length", intToString(dir_list.size()));
-// 		response.setBody(dir_list);
-// 		response.respond(client.fd, _epoll_fd);
-//         close(client.fd);
-
-// 	} else
-// 		handle_file_request(client,
-// 							requested_file_path == "/" ? "/index.html" : requested_file_path);
-// }
+	if (server->getAutoindex() == false &&
+		allowed_in_path(full_path, const_cast<Client &>(client)) == 2){
+		std::string dir_list = generateDirectoryListing(full_path);
+		client.setResponseBody(dir_list);
+		client.setResponseStatusCode(200);
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(dir_list.size()));
+	}
+	// else
+	// 	handle_file_request(client,
+	// 						requested_file_path == "/" ? "/index.html" : requested_file_path);
+}
 
 // void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
 // 	Cgi cgi;
