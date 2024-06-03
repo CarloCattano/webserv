@@ -7,12 +7,12 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <string.h>
 
 const int MAX_EVENTS = 42;
 
@@ -29,7 +29,7 @@ ServerCluster::ServerCluster(std::vector<Server> &servers) {
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = socket_fd;
-	
+
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
 			perror("epoll_ctl");
 			exit(EXIT_FAILURE);
@@ -58,9 +58,9 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 }
 
 void ServerCluster::close_client(int fd) {
-    _client_map.erase(fd);
-    epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-    close(fd);
+	_client_map.erase(fd);
+	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+	close(fd);
 }
 
 void ServerCluster::await_connections() {
@@ -88,7 +88,7 @@ void ServerCluster::await_connections() {
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
-                    close_client(event_fd);
+					close_client(event_fd);
 					continue;
 				}
 				if (events[i].events & EPOLLIN)
@@ -117,13 +117,14 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 }
 
 void ServerCluster::handle_request(Client &client) {
-	//handle request
+	// handle request
 	char buffer[4096];
 
 	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
 
-	if (bytes_read == -1) {}
-	//error
+	if (bytes_read == -1) {
+	}
+	// error
 
 	client.appendRequestString(std::string(buffer, bytes_read));
 
@@ -148,15 +149,14 @@ void ServerCluster::handle_request(Client &client) {
 
 void ServerCluster::handle_response(Client &client) {
 	Response response = client.getResponse();
-	
+
 	std::string response_string = client.responseToString();
 	client.setResponseSize(response_string.size());
-	client.setSentBytes( client.getSentBytes() + send(client.getFd(), response_string.c_str(), 4096, 0));
+	client.setSentBytes(client.getSentBytes() +
+						send(client.getFd(), response_string.c_str(), 4096, 0));
 
 	if (client.getSentBytes() >= response_string.size()) {
-		
 	}
-
 }
 
 int ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
@@ -164,34 +164,44 @@ int ServerCluster::allowed_in_path(const std::string &file_path, Client &client)
 	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
 		return NO;
 
-	struct stat buffer;
-	if (stat(file_path.c_str(), &buffer) != 0)
-		return EXISTS;
-	if (S_ISDIR(buffer.st_mode))
-		return FOLDER;
+	/* 	struct stat buffer; */
+	/* 	if (stat(file_path.c_str(), &buffer) != 0) */
+	/* 		return EXISTS; */
+	/* 	if (S_ISDIR(buffer.st_mode)) */
+	/* 		return FOLDER; */
 	return YES;
+}
+
+bool isFolder(const std::string &path) {
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0)
+		return false;
+	if (S_ISDIR(buffer.st_mode))
+		return true;
+	return false;
 }
 
 void ServerCluster::handle_delete_request(Client &client) {
 
 	Response response;
 
-    std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
-    int is_allowed = allowed_in_path(full_path, client);
-	
-    if (is_allowed == FOLDER){
-        client.setResponseStatusCode(403);
-        client.setResponseBody("Forbidden");
-        client.addResponseHeader("Content-Type", "text/html");
-        client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+	int is_allowed = allowed_in_path(full_path, client);
+
+	if (isFolder(full_path)) {
+		client.setResponseStatusCode(403);
+		client.setResponseBody("Forbidden");
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	} else if (is_allowed == YES) {
-        if (std::remove(full_path.c_str()) == 0) {};
-        std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
-        client.setResponseStatusCode(200);
-        client.setResponseBody("File was deleted successfully");
-        client.addResponseHeader("Content-Type", "text/html");
-        client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+		if (std::remove(full_path.c_str()) == 0) {
+		};
+		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
+		client.setResponseStatusCode(200);
+		client.setResponseBody("File was deleted successfully");
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	}
 }
 
@@ -215,7 +225,6 @@ void ServerCluster::handle_delete_request(Client &client) {
 // 		return;
 // 	}
 
-
 // 	response.setStatusCode(200);
 // 	response.setHeader("Connection", "keep-alive");
 // 	response.setHeader("Content-Type", content_type);
@@ -231,45 +240,34 @@ void ServerCluster::handle_get_request(Client &client) {
 
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
 
-	if (server->getAutoindex() == false &&
-		allowed_in_path(full_path, const_cast<Client &>(client)) == 2){
+	if (server->getAutoindex() == false && isFolder(full_path)) {
 		std::string dir_list = generateDirectoryListing(full_path);
 		client.setResponseBody(dir_list);
 		client.setResponseStatusCode(200);
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Content-Length", intToString(dir_list.size()));
+		client.addResponseHeader("Connection", "keep-alive");
 	} else {
-        std::string file_content = readFileToString(full_path);
-        std::string content_type = getContentType(full_path);
+		std::string file_content = readFileToString(full_path);
+		std::string content_type = getContentType(full_path);
 
-        if (file_content.empty()) {
-            client.setResponseStatusCode(404);
-            client.setResponseBody("File not found");
-            client.addResponseHeader("Content-Type", "text/html");
-            client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-        } else {
-            client.setResponseStatusCode(200);
-            if (client.getRequest().uri.find("/") == std::string::npos)
-            {
-                full_path += "/index.html";
-                file_content = readFileToString(full_path);
-                client.setResponseBody(file_content);
-            } else
-                client.setResponseBody(file_content);
+		if (client.getRequest().uri.find("/") == std::string::npos) {
+			full_path += "/index.html";
+			file_content = readFileToString(full_path);
+			client.setResponseBody(file_content);
+		} else
+			client.setResponseBody(file_content);
 
-            client.setResponseBody(file_content);
-            client.addResponseHeader("Content-Type", content_type);
-            client.addResponseHeader("Content-Length", intToString(file_content.size()));
-            client.addResponseHeader("Connection", "keep-alive");
-        }
-        
-    }
+		client.setResponseStatusCode(200);
+		client.addResponseHeader("Content-Type", content_type);
+		client.addResponseHeader("Content-Length", intToString(file_content.size()));
+		client.addResponseHeader("Connection", "keep-alive");
+	}
 }
 
-// void ServerCluster::handle_cgi_request(const Client &client, const std::string &cgi_script_path) {
-// 	Cgi cgi;
-// 	std::string cgi_res = cgi.run(cgi_script_path);
-// 	Response response;
+// void ServerCluster::handle_cgi_request(const Client &client, const std::string
+// &cgi_script_path) { 	Cgi cgi; 	std::string cgi_res = cgi.run(cgi_script_path); 	Response
+// response;
 
 // 	if (cgi_res.empty()) {
 // 		response.ErrorResponse(client.fd, 500);
