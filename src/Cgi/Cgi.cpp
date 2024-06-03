@@ -1,117 +1,41 @@
-#include "Cgi.hpp"
-#include <cstdlib>
-#include <iostream>
-#include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "./Cgi.hpp"
+#define READ_END 0
+#define WRITE_END 1
 
-Cgi::Cgi()
-{
-}
+void handle_cgi_request(const Client &client, char *cgi_script_path) {
+	(void)client;
+	int 	pipefd[2];
+	pid_t 	pid;
 
-Cgi::~Cgi()
-{
-}
+	if (pipe(pipefd) == -1)
+		throw (std::runtime_error("Pipe creation failed."));
 
-Cgi &Cgi::operator=(const Cgi &src)
-{
-	if (this != &src) {
-		this->_cgi = src._cgi;
-	}
-	return *this;
-}
+	char *av[] = {cgi_script_path, NULL};
 
-Cgi::Cgi(const Cgi &src)
-{
-	*this = src;
-}
+	pid = fork();
+	if (pid == -1)
+		throw (std::runtime_error("Fork failed."));
 
-std::string relativePath(std::string path)
-{
-	// add main folder abs path
-	std::string mainFolder = "/home/carlo/42/webserv/";
-	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
-	std::string result = mainFolder + prefix + path;
-	return result;
-}
+	if (pid == 0)
+	{
+		close(pipefd[READ_END]);
 
-/**
- * c++98 must be used and popen is forbiden, so this is the reason why we use fork and exec
- * the problem is that waitpid is blocking the process, so we need
- * to find a way to make it non-blocking
- **/
+		// Here we need to dup to the epoll fd
 
-std::string runCommand(const std::string &scriptPath)
-{
-	const int TIMEOUT_SECONDS = 20;
-	std::string result = "";
-	if (scriptPath.empty()) {
-		throw std::invalid_argument("Empty script path");
-	}
+		// do i even need pipes ???
+		
+        dup2(client.getFd(), STDOUT_FILENO);
 
-	int pipe_fd[2];
-	if (pipe(pipe_fd) == -1) {
-		std::cerr << "Failed to create pipe" << std::endl;
+        close(pipefd[WRITE_END]);
+        execve(cgi_script_path, av, NULL);
 		exit(EXIT_FAILURE);
+    }
+	else
+	{
+		close(pipefd[READ_END]);
+		close(pipefd[WRITE_END]);
+        int status;
+        if (waitpid(pid, &status, 0) == -1)
+			throw (std::runtime_error("Waitpid failed."));
 	}
-
-	pid_t pid = fork();
-	if (pid == -1) {
-		std::cerr << "Failed to fork process" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	if (pid == 0) {
-		close(pipe_fd[0]); // Close read
-
-		// stdout to write
-		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
-			std::cerr << "Failed to redirect stdout" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-
-		alarm(TIMEOUT_SECONDS);
-
-		char pyBin[] = "/usr/bin/python3";
-
-		char *av[] = { pyBin, strdup(scriptPath.c_str()), NULL };
-
-		if (execve(pyBin, av, NULL) == -1) {
-			std::cerr << "Failed to execute Python script" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		exit(EXIT_SUCCESS);
-	}
-	else {
-		close(pipe_fd[1]);
-
-		char buffer[1024]; // output from the child process
-
-		ssize_t bytes_read;
-
-		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
-			result.append(buffer, bytes_read);
-		}
-
-		close(pipe_fd[0]);
-
-		int status;
-
-		// waitpid is blocking the process, so we need to find a way to make it non-blocking
-		// we can use WNOHANG flag to make it non-blocking
-		// == 0 means that the child process is still running and we need to wait but we continue
-		// the loop
-		// != 0 means that the child process is done and we can return the result
-		while (waitpid(pid, &status, WNOHANG) == 0) {
-			continue;
-		}
-	}
-	return result;
-}
-
-std::string Cgi::run(const std::string &scriptPath)
-{
-	std::string result = "";
-	result = runCommand(scriptPath);
-	return result;
 }

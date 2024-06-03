@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Client/Client.hpp"
+#include "../Cgi/Cgi.hpp"
 #include "./Server.hpp"
 #include <map>
 #include <sys/epoll.h>
@@ -30,7 +31,6 @@ class ServerCluster {
 	void handle_request(Client &client);
 	void handle_response(Client &client);
 
-	void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
 	void handle_get_request(Client &client);
 	void handle_post_request(Client &client);
 	void handle_delete_request(Client &client);

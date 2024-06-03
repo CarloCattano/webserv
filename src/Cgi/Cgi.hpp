@@ -1,15 +1,21 @@
 #pragma once
+#include "ServerCluster.hpp"
 #include <string>
+#include <sys/wait.h>
+#include <cstdlib>
+#include <cstdio>
 
-class Cgi {
-public:
-	Cgi();
-	~Cgi();
-	std::string run(const std::string &script);
+void handle_cgi_request(const Client &client, char *cgi_script_path);
 
-private:
-	std::string _cgi;
+// class Cgi {
+// public:
+// 	Cgi();
+// 	~Cgi();
+// 	std::string run(const std::string &script);
 
-	Cgi(const Cgi &src);
-	Cgi &operator=(const Cgi &src);
-};
+// private:
+// 	std::string _cgi;
+
+// 	Cgi(const Cgi &src);
+// 	Cgi &operator=(const Cgi &src);
+// };

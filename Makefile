@@ -6,7 +6,7 @@ NAME = webserv
 INC = -I./src/Cgi -I./src/Server -I./src/Config -I./src/Utils
 # LOCATION = -L./src/Cgi -L./src/Server -L./src/Config -L./src/Utils
 
-#Debug 
+#Debug
 ifeq ($(DEBUG), 1)
    CXXFLAGS += -g
 endif

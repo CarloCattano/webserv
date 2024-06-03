@@ -1,5 +1,4 @@
 #include "./ServerCluster.hpp"
-#include "../Cgi/Cgi.hpp"
 #include "../Utils/utils.hpp"
 #include <algorithm>
 #include <cstdio>
@@ -240,10 +239,8 @@ void ServerCluster::handle_post_request(Client &client) {
 		client.sendErrorPage(403);
 		return;
 	} else {
-		std::string cgi_script_path =
-			"." + client.getServer()->getCgiPath() + client.getRequest().uri;
-		/* handle_cgi_request(client, cgi_script_path); */
 		log("POST request");
+		handle_cgi_request(client, const_cast<char*>(full_path.c_str()));
 	}
 	client.setResponseStatusCode(200);
 	client.setResponseBody("POST request");
@@ -271,6 +268,7 @@ void ServerCluster::handle_delete_request(Client &client) {
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	}
 }
+
 void ServerCluster::stop(int signal) {
 	(void)signal;
 	log("\nServer stopped");
