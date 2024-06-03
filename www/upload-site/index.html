@@ -24,11 +24,8 @@
         <br>
         <p> Delete a file from the server </p>
         <br>
-        <div>
-            <form action="/deleteFile" method="delete">
-                <input type="text" name="fileToDelete" id="fileToDelete" placeholder="Enter the file name to delete" class="myInput">
-                <input type="submit" value="Delete File" name="submit">
-            </form>
-        </div>
+        <p> Run the following command to delete a file from the server: </p>
+        <p> curl -X DELETE http://localhost:3000/filename </p>
+        
   </body>
 </html>

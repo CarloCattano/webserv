@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../Client/Client.hpp"
-#include "./Server.hpp"
 #include <map>
 #include <sys/epoll.h>
+#include "../Client/Client.hpp"
+#include "./Server.hpp"
 
 class ServerCluster {
-  private:
+private:
 	std::map<int, Server> _server_map;
 	std::map<int, Client> _client_map;
 
@@ -14,7 +14,7 @@ class ServerCluster {
 	void logConfig(const Client &client);
 	bool allowed_in_path(const std::string &file_path, Client &client);
 
-  public:
+public:
 	ServerCluster(std::vector<Server> &servers);
 	~ServerCluster();
 
@@ -42,6 +42,8 @@ class ServerCluster {
 	// 	void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
 	// 	void handle_get_request(const Client &client, const std::string &requested_file_path);
 
-	FileUploader uploader;
+	/* FileUploader uploader; */
+	void handle_file_upload(Client &client);
+	std::string extract_boundary(const std::string &headers);
 	void switch_poll(int client_fd, uint32_t events);
 };

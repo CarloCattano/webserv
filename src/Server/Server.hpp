@@ -1,33 +1,37 @@
 #pragma once
-
-#include "../Utils/FileUpload.hpp"
-#include <netinet/in.h>
-#include <stdexcept>
 #include <string>
-#include <sys/socket.h>
 #include <vector>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 struct HttpRedirection {
 	std::string code;
 	std::string url;
 
-	HttpRedirection(std::string url) : code("302"), url(url) {}
+	HttpRedirection(std::string url) : code("302"), url(url)
+	{
+	}
 };
 
 struct Method {
 	bool is_allowed;
 	bool can_be_edited;
 
-	Method() : is_allowed(true), can_be_edited(true) {}
-	Method(bool is_allowed, bool can_be_edited)
-		: is_allowed(is_allowed), can_be_edited(can_be_edited) {}
+	Method() : is_allowed(true), can_be_edited(true)
+	{
+	}
+	Method(bool is_allowed, bool can_be_edited) : is_allowed(is_allowed), can_be_edited(can_be_edited)
+	{
+	}
 };
 
 struct Fastcgi_Param {
 	std::string key;
 	std::string value;
 
-	Fastcgi_Param(std::string key, std::string value) : key(key), value(value) {}
+	Fastcgi_Param(std::string key, std::string value) : key(key), value(value)
+	{
+	}
 };
 
 struct Route {
@@ -41,7 +45,8 @@ struct Route {
 	Method GET;
 	Method DELETE;
 
-	Route() : location(""), matching_style(""), root(""), autoindex(false) {
+	Route() : location(""), matching_style(""), root(""), autoindex(false)
+	{
 		redirections = std::vector<HttpRedirection>();
 		index_files = std::vector<std::string>();
 	}
@@ -50,7 +55,7 @@ struct Route {
 // to-do server only uses first server name
 // Everything is public atm
 class Server {
-  private:
+private:
 	unsigned int _port;
 	bool _default_server;
 	std::vector<std::string> _server_names;
@@ -67,7 +72,7 @@ class Server {
 	int _socket_fd;
 	struct sockaddr_in _server_address;
 
-  public:
+public:
 	Server();
 	Server(const Server &server);
 	Server &operator=(const Server &server);

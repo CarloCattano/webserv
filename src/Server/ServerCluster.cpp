@@ -1,5 +1,6 @@
 #include "./ServerCluster.hpp"
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <fcntl.h>
@@ -12,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "../Cgi/Cgi.hpp"
+#include "../Utils/FileUpload.hpp"
 #include "../Utils/utils.hpp"
 
 const int MAX_EVENTS = 42;
@@ -128,6 +130,9 @@ void ServerCluster::handle_request(Client &client)
 	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
 
 	if (bytes_read == -1) {
+		perror("recv");
+		close_client(client.getFd());
+		return;
 	}
 
 	client.appendRequestString(std::string(buffer, bytes_read));
@@ -152,6 +157,7 @@ void ServerCluster::handle_request(Client &client)
 	else {
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
+		close_client(client.getFd());
 	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
@@ -258,15 +264,16 @@ void ServerCluster::handle_post_request(Client &client)
 	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);
-		return;
-	}
-
-	if (isFolder(full_path)) {
-		client.sendErrorPage(403);
+		close_client(client.getFd());
 		return;
 	}
 	else {
-		std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri;
+		if (client.getRequest().uri == "/upload") {
+			handle_file_upload(client);
+			/* close_client(client.getFd()); */
+		}
+		/* std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri; */
+
 		/* handle_cgi_request(client, cgi_script_path); */
 	}
 	client.setResponseStatusCode(200);
@@ -274,18 +281,62 @@ void ServerCluster::handle_post_request(Client &client)
 	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 }
 
+void ServerCluster::handle_file_upload(Client &client)
+{
+	std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n"));
+	std::string body = client.getRequest().body;
+
+	std::string boundary = extract_boundary(headers);
+	FileUploader fileUploader;
+	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
+
+	if (formData.fileName.empty()) {
+		client.sendErrorPage(400);
+		return;
+	}
+
+	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
+
+	if (formData.fileContent.empty()) {
+		client.sendErrorPage(400);
+		return;
+	}
+
+	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
+	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
+	outFile.write(&formData.fileContent[0], formData.fileContent.size());
+	outFile.close();
+
+	client.setResponseStatusCode(200);
+	client.setResponseBody("File was uploaded successfully");
+	client.addResponseHeader("Content-Type", "text/html");
+	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+
+	// TODO - Check chunked transfer bigger than BUFFER_SIZE Files
+
+
+	/* if (client.getSentBytes() >= formData.fileContent.size()) { */
+	/* 	close_client(client.getFd()); */
+	/* 	switch_poll(client.getFd(), EPOLLIN); */
+	/* } */
+}
+
 void ServerCluster::handle_delete_request(Client &client)
 {
 	Response response;
 
-	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+	std::string full_path = "." + client.getServer()->getRoot() + "/upload" + client.getRequest().uri;
 
 	int is_allowed = allowed_in_path(full_path, client);
 
 	if (isFolder(full_path)) {
 		client.sendErrorPage(403);
 	}
-	else if (is_allowed == true) {
+	else if (is_allowed == true && isFile(full_path) == true) {
 		if (std::remove(full_path.c_str()) == 0) {
 		};
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
@@ -294,7 +345,25 @@ void ServerCluster::handle_delete_request(Client &client)
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	}
+	else {
+		client.sendErrorPage(404);
+	}
 }
+
+std::string ServerCluster::extract_boundary(const std::string &headers)
+{
+	std::string boundary;
+	size_t boundaryPos = headers.find("boundary=");
+	if (boundaryPos != std::string::npos) {
+		boundary = headers.substr(boundaryPos + 9);
+		size_t endPos = boundary.find("\r\n");
+		if (endPos != std::string::npos) {
+			boundary = boundary.substr(0, endPos);
+		}
+	}
+	return boundary;
+}
+
 void ServerCluster::stop(int signal)
 {
 	(void)signal;
