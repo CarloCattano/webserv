@@ -68,7 +68,7 @@ void ServerCluster::await_connections() {
 	int num_events;
 
 	while (1) { // TODO add a flag to run the server
-		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
+		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 5000);
 		if (num_events == -1)
 			continue;
 
@@ -97,6 +97,7 @@ void ServerCluster::await_connections() {
 					handle_response(client);
 				}
 			}
+			log_open_clients(_client_map);
 		}
 	}
 }
@@ -244,6 +245,7 @@ void ServerCluster::handle_post_request(Client &client) {
 		std::string cgi_script_path =
 			"." + client.getServer()->getCgiPath() + client.getRequest().uri;
 		/* handle_cgi_request(client, cgi_script_path); */
+		log(client.getRequest().uri);
 		log("POST request");
 	}
 	client.setResponseStatusCode(200);

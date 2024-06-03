@@ -1,5 +1,6 @@
+#pragma once
+
 #include "../Server/Server.hpp"
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <sys/epoll.h>
