@@ -16,7 +16,7 @@
 #include "../Utils/FileUpload.hpp"
 #include "../Utils/utils.hpp"
 
-const int MAX_EVENTS = 42;
+const int MAX_EVENTS = 500;
 
 ServerCluster::ServerCluster(std::vector<Server> &servers)
 {
@@ -74,7 +74,7 @@ void ServerCluster::await_connections()
 	int num_events;
 
 	while (1) {
-		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 5000);
+		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
 
@@ -91,8 +91,9 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 
-				if (events[i].events & EPOLLIN)
+				if (events[i].events & EPOLLIN) {
 					handle_request(client);
+				}
 				if (events[i].events & EPOLLOUT) {
 					handle_response(client);
 				}
@@ -102,7 +103,7 @@ void ServerCluster::await_connections()
 					close_client(event_fd);
 				}
 			}
-			/* log_open_clients(_client_map); */
+			/*log_open_clients(_client_map);*/
 		}
 	}
 }
@@ -120,6 +121,7 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events)
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) == -1) {
 		perror("epoll_ctl");
+		close(client_fd);
 	}
 }
 
@@ -135,15 +137,17 @@ void ServerCluster::handle_request(Client &client)
 		close_client(client.getFd());
 		return;
 	}
-
 	client.appendRequestString(std::string(buffer, bytes_read));
 
 	size_t end_of_header = client.getRequest().request.find("\r\n\r\n");
+
 	if (end_of_header == std::string::npos)
 		return;
 	if (!client.getRequest().finishedHead)
 		client.parseHead();
+
 	client.parseBody();
+
 	if (!client.getRequest().finished)
 		return;
 
@@ -157,24 +161,25 @@ void ServerCluster::handle_request(Client &client)
 		handle_delete_request(client);
 	else {
 		client.sendErrorPage(405);
-		close_client(client.getFd());
 	}
-
-	if (bytes_read == 0)
-		close_client(client.getFd());
 
 	switch_poll(client.getFd(), EPOLLOUT);
 }
 
 void ServerCluster::handle_response(Client &client)
 {
-	Response response = client.getResponse();
-
 	std::string response_string = client.responseToString();
-	client.setResponseSize(response_string.size());
-	client.setSentBytes(client.getSentBytes() + send(client.getFd(), response_string.c_str(), 4096, 0));
+	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
 
-	if (client.getSentBytes() >= response_string.size()) {
+	if (bytes_sent == -1) {
+		perror("send");
+		close_client(client.getFd());
+		return;
+	}
+
+	client.setSentBytes(client.getSentBytes() + bytes_sent);
+
+	if (client.getSentBytes() == response_string.size()) {
 		close_client(client.getFd());
 	}
 }
@@ -211,9 +216,10 @@ void ServerCluster::handle_get_request(Client &client)
 				client.sendErrorPage(404);
 				return;
 			}
-			// TODO - check image bug
+
 			std::string file_content = readFileToString(full_path);
 			std::string content_type = getContentType(full_path);
+
 			client.setResponseBody(file_content);
 			client.addResponseHeader("Content-Type", content_type);
 			client.addResponseHeader("Content-Length", intToString(file_content.size()));
@@ -273,7 +279,6 @@ void ServerCluster::handle_post_request(Client &client)
 	else {
 		if (client.getRequest().uri == "/upload") {
 			handle_file_upload(client);
-			/* close_client(client.getFd()); */
 		}
 		/* std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri; */
 		/* handle_cgi_request(client, cgi_script_path); */
@@ -314,11 +319,14 @@ void ServerCluster::handle_file_upload(Client &client)
 	outFile.write(&formData.fileContent[0], formData.fileContent.size());
 	outFile.close();
 
-	client.setResponseStatusCode(200);
-	client.setResponseBody("File was uploaded successfully");
+	client.setResponseStatusCode(303);
+	client.addResponseHeader("Location", "/uploaded.html");
 	client.addResponseHeader("Content-Type", "text/html");
-	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-	client.addResponseHeader("Connection", "keep-alive");
+	client.addResponseHeader("Content-Length", "0");
+	client.addResponseHeader("Connection", "close");
+	client.setResponseBody("");
+
+	switch_poll(client.getFd(), EPOLLOUT);
 }
 
 void ServerCluster::handle_delete_request(Client &client)
