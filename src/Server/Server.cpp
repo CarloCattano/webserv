@@ -32,7 +32,6 @@ Server &Server::operator=(const Server &server) {
 	_client_max_body_size = server._client_max_body_size;
 	_routes = server._routes;
 	_autoindex = server._autoindex;
-	_server_address = server._server_address;
 	_socket_fd = server._socket_fd;
 	_root = server._root;
 	_GET = server._GET;
@@ -54,17 +53,21 @@ void Server::setup() {
 
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));
 
-	_server_address.sin_family = AF_INET;
-	_server_address.sin_addr.s_addr = inet_addr(_server_names[0].data());
-	_server_address.sin_port = htons(_port);
+	sockaddr_in server_address;
+
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = inet_addr(_server_names[0].data());
+	server_address.sin_port = htons(_port);
 
 	// TODO decide on an exit strategy
-	if (bind(_socket_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1) {
+	if (bind(_socket_fd, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
 		std::cerr << "Error: " << _port << " is already in use, exiting .... \n----\n" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	if (listen(_socket_fd, SOMAXCONN) == -1)
-		perror("listen"); // EXIT FAILURE ?
+	if (listen(_socket_fd, SOMAXCONN) == -1){
+		perror("listen");
+		exit(EXIT_FAILURE);
+		}
 
 	std::cout << "Server started at http://" << _server_names[0] << ":" << _port << std::endl;
 }
@@ -81,8 +84,6 @@ std::vector<std::string> Server::getServerNames() { return this->_server_names; 
 std::vector<std::string> Server::getErrorPages() { return this->_error_pages; }
 
 long long Server::getClientMaxBodySize() { return this->_client_max_body_size; }
-
-struct sockaddr_in Server::getServerAddress() { return this->_server_address; }
 
 bool Server::getDefaultServer() { return this->_default_server; }
 
