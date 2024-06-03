@@ -158,6 +158,7 @@ void ServerCluster::handle_response(Client &client) {
 						send(client.getFd(), response_string.c_str(), 4096, 0));
 
 	if (client.getSentBytes() >= response_string.size()) {
+		close_client(client.getFd());
 	}
 }
 
