@@ -25,3 +25,6 @@ void populateContentTypes(std::map<std::string, std::string> &content_types);
 
 enum HttpMethod { GET, POST, DELETE, UNKNOWN };
 HttpMethod get_http_method(const char *buffer);
+
+bool isFolder(const std::string &path);
+bool isFile(const std::string &path);
