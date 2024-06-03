@@ -81,6 +81,21 @@ void Client::parseBody() {
 
 void Client::sendErrorPage(int statusCode) {
 	this->setResponseStatusCode(statusCode);
+
+	// TODO - add check for error pages in config and if not found, generate error page
+
+	std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
+							"</title></head>"
+							"<body><h1>Error " +
+							intToString(statusCode) +
+							"</h1>"
+							"<p>" +
+							getErrorString(statusCode) + "</p></body></html>";
+
+	this->setResponseBody(errorPage);
+	this->addResponseHeader("Content-Type", "text/html");
+	this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+
 	send(this->getFd(), this->responseToString().c_str(), this->responseToString().size(), 0);
 }
 

@@ -143,10 +143,7 @@ void ServerCluster::handle_request(Client &client) {
 		handle_delete_request(client);
 	else {
 		// TODO - check if 405 is in the server error pages
-		client.setResponseStatusCode(405); // TODO - generate or serve error pages from config
-		client.setResponseBody("Method Not Allowed");
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+		client.sendErrorPage(405);
 	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
@@ -164,11 +161,11 @@ void ServerCluster::handle_response(Client &client) {
 	}
 }
 
-int ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
+bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
 
 	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
-		return NO;
-	return YES;
+		return false;
+	return true;
 }
 
 void ServerCluster::handle_get_request(Client &client) {
@@ -187,12 +184,11 @@ void ServerCluster::handle_get_request(Client &client) {
 			client.addResponseHeader("Connection", "keep-alive");
 		} else {
 			if (!isFile(full_path)) {
-				client.setResponseStatusCode(404);
-				client.setResponseBody("File not found");
-				client.addResponseHeader("Content-Type", "text/html");
-				client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+				client.sendErrorPage(404);
 				return;
 			}
+			// its a file so we read it and send it to the client
+			// TODO - check image bug
 			std::string file_content = readFileToString(full_path);
 			std::string content_type = getContentType(full_path);
 			client.setResponseBody(file_content);
@@ -205,7 +201,7 @@ void ServerCluster::handle_get_request(Client &client) {
 		std::string file_content = readFileToString(full_path);
 		std::string content_type = getContentType(full_path);
 
-		if (isFolder(full_path) == true) {
+		if (isFolder(full_path)) {
 			std::string dir_list = generateDirectoryListing(full_path);
 			client.setResponseBody(dir_list);
 			client.setResponseStatusCode(200);
@@ -223,15 +219,12 @@ void ServerCluster::handle_get_request(Client &client) {
 				client.addResponseHeader("Content-Length", intToString(file_content.size()));
 			} else {
 				if (!isFile(full_path)) {
-					client.setResponseStatusCode(404);
-					client.setResponseBody("File not found");
-					client.addResponseHeader("Content-Type", "text/html");
-					client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+					client.sendErrorPage(404);
 					return;
 				}
 				file_content = readFileToString(full_path);
 				client.setResponseBody(file_content);
-				client.addResponseHeader("Content-Type", content_type);
+				client.addResponseHeader("Content-Type", content_type); // TODO BUG with images
 				client.addResponseHeader("Content-Length", intToString(file_content.size()));
 			}
 			client.setResponseStatusCode(200);
@@ -244,16 +237,18 @@ void ServerCluster::handle_post_request(Client &client) {
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
 	if (isFolder(full_path)) {
-		client.setResponseStatusCode(403);
-		client.setResponseBody("Forbidden");
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+		client.sendErrorPage(403);
+		return;
 	} else {
 		std::string cgi_script_path =
 			"." + client.getServer()->getCgiPath() + client.getRequest().uri;
 		/* handle_cgi_request(client, cgi_script_path); */
 		log("POST request");
 	}
+	client.setResponseStatusCode(200);
+	client.setResponseBody("POST request");
+	client.addResponseHeader("Content-Type", "text/html");
+	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 }
 
 void ServerCluster::handle_delete_request(Client &client) {
@@ -265,11 +260,8 @@ void ServerCluster::handle_delete_request(Client &client) {
 	int is_allowed = allowed_in_path(full_path, client);
 
 	if (isFolder(full_path)) {
-		client.setResponseStatusCode(403);
-		client.setResponseBody("Forbidden");
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-	} else if (is_allowed == YES) {
+		client.sendErrorPage(403);
+	} else if (is_allowed == true) {
 		if (std::remove(full_path.c_str()) == 0) {
 		};
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;

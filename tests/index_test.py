@@ -7,8 +7,8 @@ import time
 
 def test():
     try:
-        response = requests.get('http://'+ sys.argv[2], timeout=5)
-        #time of response
+        response = requests.put('http://'+ sys.argv[2], timeout=5)
+        print(response.text)
         print(response.status_code, response.elapsed.total_seconds().__round__(2))
     except Exception as e:
         print(e)
