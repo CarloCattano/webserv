@@ -175,6 +175,13 @@ void ServerCluster::handle_get_request(Client &client) {
 	Server *server = client.getServer();
 
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
+	// TODO - put back the check for max_body_size
+	if (client.getRequest().body.size() >
+		static_cast<unsigned long>(server->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
 
 	if (server->getAutoindex() == false) {
 		if (isFolder(full_path) == true) {
@@ -203,7 +210,7 @@ void ServerCluster::handle_get_request(Client &client) {
 		std::string file_content = readFileToString(full_path);
 		std::string content_type = getContentType(full_path);
 
-		if (isFolder(full_path)) {
+		if (isFolder(full_path) && client.getRequest().uri != "/") {
 			std::string dir_list = generateDirectoryListing(full_path);
 			client.setResponseBody(dir_list);
 			client.setResponseStatusCode(200);
@@ -211,7 +218,9 @@ void ServerCluster::handle_get_request(Client &client) {
 			client.addResponseHeader("Content-Length", intToString(dir_list.size()));
 			client.addResponseHeader("Connection", "keep-alive");
 		} else {
+			std::cout << client.getRequest().uri << std::endl;
 			if (client.getRequest().uri == "/") {
+				log("Sending auto index page");
 				full_path += "index.html";
 				file_content = readFileToString(full_path);
 				content_type = getContentType(full_path);

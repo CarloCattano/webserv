@@ -1,11 +1,11 @@
 #include "Client.hpp"
 #include "../Utils/utils.hpp"
+#include <algorithm>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
-
 #define EXIT_FAILURE 1
 
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
@@ -83,20 +83,28 @@ void Client::sendErrorPage(int statusCode) {
 	this->setResponseStatusCode(statusCode);
 
 	// TODO - add check for error pages in config and if not found, generate error page
+	// if error code in config found then response -> *.html
 
-	std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
-							"</title></head>"
-							"<body><h1>Error " +
-							intToString(statusCode) +
-							"</h1>"
-							"<p>" +
-							getErrorString(statusCode) + "</p></body></html>";
+	std::vector<std::string> error_pages = this->getServer()->getErrorPages();
+	if (std::find(error_pages.begin(), error_pages.end(), intToString(statusCode) + ".html") !=
+		error_pages.end()) {
+		// TODO - craft response with www/error_pages/{statusCode}.html
+	} else {
 
-	this->setResponseBody(errorPage);
-	this->addResponseHeader("Content-Type", "text/html");
-	this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+		std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
+								"</title></head>"
+								"<body><h1>Error " +
+								intToString(statusCode) +
+								"</h1>"
+								"<p>" +
+								getErrorString(statusCode) + "</p></body></html>";
 
-	send(this->getFd(), this->responseToString().c_str(), this->responseToString().size(), 0);
+		this->setResponseBody(errorPage);
+		this->addResponseHeader("Content-Type", "text/html");
+		this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+
+		send(this->getFd(), this->responseToString().c_str(), this->responseToString().size(), 0);
+	}
 }
 
 std::string Client::responseToString() {
