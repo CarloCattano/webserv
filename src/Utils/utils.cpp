@@ -168,3 +168,21 @@ std::string generateDirectoryListing(const std::string &path) {
 	html << "</ul></body></html>";
 	return html.str();
 }
+
+bool isFolder(const std::string &path) {
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0) // file does not exist
+		return false;
+	if (S_ISDIR(buffer.st_mode)) // file is a directory
+		return true;
+	return false;
+}
+
+bool isFile(const std::string &path) {
+	struct stat buffer;
+	if (stat(path.c_str(), &buffer) != 0) // file does not exist
+		return false;
+	if (S_ISREG(buffer.st_mode)) // file is a regular file
+		return true;
+	return false;
+}
