@@ -4,7 +4,6 @@ CXXFLAGS = -Wall -Werror -Wextra -std=c++98
 OBJS = $(SRCS:.cpp=.o)
 NAME = webserv
 INC = -I./src/Cgi -I./src/Server -I./src/Config -I./src/Utils
-# LOCATION = -L./src/Cgi -L./src/Server -L./src/Config -L./src/Utils
 
 #Debug 
 ifeq ($(DEBUG), 1)
