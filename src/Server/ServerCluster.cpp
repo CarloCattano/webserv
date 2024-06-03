@@ -91,18 +91,18 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 
-				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
-					close_client(event_fd);
-					continue;
-				}
 				if (events[i].events & EPOLLIN)
 					handle_request(client);
 				if (events[i].events & EPOLLOUT) {
 					handle_response(client);
 				}
+
+				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
+					close_client(event_fd);
+				}
 			}
-			log_open_clients(_client_map);
+			/* log_open_clients(_client_map); */
 		}
 	}
 }
@@ -125,9 +125,10 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events)
 
 void ServerCluster::handle_request(Client &client)
 {
-	char buffer[4096];
+	unsigned int buffer_size = 4096;
+	char buffer[buffer_size];
 
-	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
+	int bytes_read = recv(client.getFd(), buffer, buffer_size, 0);
 
 	if (bytes_read == -1) {
 		perror("recv");
@@ -155,10 +156,12 @@ void ServerCluster::handle_request(Client &client)
 	else if (client.getRequest().method == "DELETE")
 		handle_delete_request(client);
 	else {
-		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 		close_client(client.getFd());
 	}
+
+	if (bytes_read == 0)
+		close_client(client.getFd());
 
 	switch_poll(client.getFd(), EPOLLOUT);
 }
@@ -273,7 +276,6 @@ void ServerCluster::handle_post_request(Client &client)
 			/* close_client(client.getFd()); */
 		}
 		/* std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri; */
-
 		/* handle_cgi_request(client, cgi_script_path); */
 	}
 	client.setResponseStatusCode(200);
@@ -308,6 +310,7 @@ void ServerCluster::handle_file_upload(Client &client)
 
 	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
+
 	outFile.write(&formData.fileContent[0], formData.fileContent.size());
 	outFile.close();
 
@@ -315,14 +318,7 @@ void ServerCluster::handle_file_upload(Client &client)
 	client.setResponseBody("File was uploaded successfully");
 	client.addResponseHeader("Content-Type", "text/html");
 	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-
-	// TODO - Check chunked transfer bigger than BUFFER_SIZE Files
-
-
-	/* if (client.getSentBytes() >= formData.fileContent.size()) { */
-	/* 	close_client(client.getFd()); */
-	/* 	switch_poll(client.getFd(), EPOLLIN); */
-	/* } */
+	client.addResponseHeader("Connection", "keep-alive");
 }
 
 void ServerCluster::handle_delete_request(Client &client)
