@@ -174,9 +174,9 @@ int ServerCluster::allowed_in_path(const std::string &file_path, Client &client)
 
 bool isFolder(const std::string &path) {
 	struct stat buffer;
-	if (stat(path.c_str(), &buffer) != 0)
+	if (stat(path.c_str(), &buffer) != 0) // file does not exist
 		return false;
-	if (S_ISDIR(buffer.st_mode))
+	if (S_ISDIR(buffer.st_mode)) // file is a directory
 		return true;
 	return false;
 }
@@ -218,7 +218,7 @@ void ServerCluster::handle_delete_request(Client &client) {
 // 		return;
 // 	}
 
-// 	int is_allowed = allowed_in_path(full_path, const_cast<Client &>(client));
+// 	int is_allowed = /cgi-bin/allowed_in_path(full_path, const_cast<Client &>(client));
 
 // 	if (is_allowed == -1) {
 // 		response.ErrorResponse(client.fd, 403);
@@ -240,28 +240,55 @@ void ServerCluster::handle_get_request(Client &client) {
 
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
 
-	if (server->getAutoindex() == false && isFolder(full_path)) {
-		std::string dir_list = generateDirectoryListing(full_path);
-		client.setResponseBody(dir_list);
-		client.setResponseStatusCode(200);
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Content-Length", intToString(dir_list.size()));
-		client.addResponseHeader("Connection", "keep-alive");
+	if (server->getAutoindex() == false) {
+		if (isFolder(full_path) == true) {
+			std::string dir_list = generateDirectoryListing(full_path);
+			client.setResponseBody(dir_list);
+			client.setResponseStatusCode(200);
+			client.addResponseHeader("Content-Type", "text/html");
+			client.addResponseHeader("Content-Length", intToString(dir_list.size()));
+			client.addResponseHeader("Connection", "keep-alive");
+		} else {
+			std::string file_content = readFileToString(full_path);
+			std::string content_type = getContentType(full_path);
+			client.setResponseBody(file_content);
+			client.addResponseHeader("Content-Type", content_type);
+			client.addResponseHeader("Content-Length", intToString(file_content.size()));
+			client.setResponseStatusCode(200);
+			client.addResponseHeader("Connection", "keep-alive");
+		}
 	} else {
 		std::string file_content = readFileToString(full_path);
 		std::string content_type = getContentType(full_path);
 
-		if (client.getRequest().uri.find("/") == std::string::npos) {
-			full_path += "/index.html";
-			file_content = readFileToString(full_path);
-			client.setResponseBody(file_content);
-		} else
-			client.setResponseBody(file_content);
+		if (isFolder(full_path) == true) {
+			std::string dir_list = generateDirectoryListing(full_path);
+			client.setResponseBody(dir_list);
+			client.setResponseStatusCode(200);
+			client.addResponseHeader("Content-Type", "text/html");
+			client.addResponseHeader("Content-Length", intToString(dir_list.size()));
+			client.addResponseHeader("Connection", "keep-alive");
+		} else {
+			if (client.getRequest().uri == "/") {
+				log("requested / folder");
+				log("full path: " + full_path);
+				full_path += "index.html";
+				file_content = readFileToString(full_path);
+				content_type = getContentType(full_path);
 
-		client.setResponseStatusCode(200);
-		client.addResponseHeader("Content-Type", content_type);
-		client.addResponseHeader("Content-Length", intToString(file_content.size()));
-		client.addResponseHeader("Connection", "keep-alive");
+				client.addResponseHeader("Content-Type", content_type);
+				client.setResponseBody(file_content);
+				client.addResponseHeader("Content-Length", intToString(file_content.size()));
+			} else {
+				file_content = readFileToString(full_path);
+				client.setResponseBody(file_content);
+				client.addResponseHeader("Content-Type", content_type);
+				client.addResponseHeader("Content-Length", intToString(file_content.size()));
+			}
+
+			client.setResponseStatusCode(200);
+			client.addResponseHeader("Connection", "keep-alive");
+		}
 	}
 }
 
