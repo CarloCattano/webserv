@@ -1,4 +1,4 @@
-#include "./HandleRequest.hpp"
+#include "./ServerCluster.hpp"
 
 // void handle_response2(Client &client) {
 // 	Response response = client.getResponse();
@@ -12,17 +12,21 @@
 // 	}
 // }
 
-void handle_request(Client &client) {
+void ServerCluster::handle_request(Client &client) {
 	char buffer[4096];
 
 	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
 
 	if (bytes_read == -1) {
+		perror("recv");
+		close_client(client.getFd());
+		return;
 	}
 
 	client.appendRequestString(std::string(buffer, bytes_read));
 
 	size_t end_of_header = client.getRequest().request.find("\r\n\r\n");
+
 	if (end_of_header == std::string::npos)
 		return;
 	if (!client.getRequest().finishedHead)
@@ -51,13 +55,20 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-void handle_get_request(Client &client) {
+void ServerCluster::handle_get_request(Client &client) {
 
 	Server 		*server = client.getServer();
 	Response 	response;
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
 	std::string	body;
 	std::string	content_type;
+
+	// To-Do does this belong here ??
+	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
 
 	if (isFolder(full_path) && directory_contains_index_file(full_path))
 		full_path += "index.html";
@@ -77,36 +88,94 @@ void handle_get_request(Client &client) {
 	update_response(client, body, content_type);
 }
 
-void handle_post_request(Client &client) {
+// void ServerCluster::handle_post_request(Client &client) {
+// 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+
+// 	if (isFolder(full_path)) {
+// 		client.sendErrorPage(403);
+// 		return;
+// 	} else {
+// 		log("POST request");
+// 		handle_cgi_request(client, const_cast<char*>(full_path.c_str()));
+// 	}
+// }
+
+void ServerCluster::handle_post_request(Client &client)
+{
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
-	if (isFolder(full_path)) {
-		client.sendErrorPage(403);
+	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		close_client(client.getFd());
 		return;
-	} else {
-		log("POST request");
-		handle_cgi_request(client, const_cast<char*>(full_path.c_str()));
 	}
 
-	// its causing issues when i dont do this and handle response is called...
-	// client.setResponseBody("POST request");
-	// client.setResponseStatusCode(200);
-	// client.addResponseHeader("Content-Type", "text/html");
-	// client.addResponseHeader("Content-Length", intToString(13));
-	// client.addResponseHeader("Connection", "keep-alive");
+	else {
+		if (client.getRequest().uri == "/upload") {
+			handle_file_upload(client);
+		}
+		/* std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri; */
+		/* handle_cgi_request(client, cgi_script_path); */
+	}
+	client.setResponseStatusCode(200);
+	client.addResponseHeader("Content-Type", "text/html");
+	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 }
 
-void handle_delete_request(Client &client) {
+void ServerCluster::handle_file_upload(Client &client)
+{
+	std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n"));
+	std::string body = client.getRequest().body;
 
+	std::string boundary = extract_boundary(headers);
+	FileUploader fileUploader;
+	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
+
+	if (formData.fileName.empty()) {
+		client.sendErrorPage(400);
+		return;
+	}
+
+	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
+
+	if (formData.fileContent.empty()) {
+		client.sendErrorPage(400);
+		return;
+	}
+
+	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
+	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
+
+	outFile.write(&formData.fileContent[0], formData.fileContent.size());
+	outFile.close();
+
+	client.setResponseStatusCode(303);
+	client.addResponseHeader("Location", "/uploaded.html");
+	client.addResponseHeader("Content-Type", "text/html");
+	client.addResponseHeader("Content-Length", "0");
+	client.addResponseHeader("Connection", "close");
+	client.setResponseBody("");
+
+	switch_poll(client.getFd(), EPOLLOUT);
+}
+
+void ServerCluster::handle_delete_request(Client &client)
+{
 	Response response;
 
-	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+	std::string full_path = "." + client.getServer()->getRoot() + "/upload" + client.getRequest().uri;
 
 	int is_allowed = allowed_in_path(full_path, client);
 
 	if (isFolder(full_path)) {
 		client.sendErrorPage(403);
-	} else if (is_allowed == true) {
+	}
+	else if (is_allowed == true && isFile(full_path) == true) {
 		if (std::remove(full_path.c_str()) == 0) {
 		};
 		std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl;
@@ -115,9 +184,26 @@ void handle_delete_request(Client &client) {
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	}
+	else {
+		client.sendErrorPage(404);
+	}
 }
 
-bool allowed_in_path(const std::string &file_path, Client &client) {
+std::string ServerCluster::extract_boundary(const std::string &headers)
+{
+	std::string boundary;
+	size_t boundaryPos = headers.find("boundary=");
+	if (boundaryPos != std::string::npos) {
+		boundary = headers.substr(boundaryPos + 9);
+		size_t endPos = boundary.find("\r\n");
+		if (endPos != std::string::npos) {
+			boundary = boundary.substr(0, endPos);
+		}
+	}
+	return boundary;
+}
+
+bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
 
 	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
 		return false;

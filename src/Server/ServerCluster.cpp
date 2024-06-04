@@ -76,13 +76,6 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 
-				if (events[i].events & EPOLLIN) {
-					handle_request(client);
-				}
-				if (events[i].events & EPOLLOUT) {
-					handle_response(client);
-				}
-
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
 					std::cout << "Closing Client: " << event_fd << std::endl;

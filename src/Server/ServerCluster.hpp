@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 #include <signal.h>
 #include <stdio.h>
@@ -18,7 +19,8 @@
 #include "../Client/Client.hpp"
 #include "../Cgi/Cgi.hpp"
 #include "./Server.hpp"
-#include "./HandleRequest.hpp"
+#include "../Utils/FileUpload.hpp"
+#include "../Utils/utils.hpp"
 
 class ServerCluster {
 private:
@@ -37,11 +39,21 @@ public:
 	void handle_new_client_connection(int server_fd);
 	int accept_new_connection(int server_fd);
 
+	void handle_request(Client &client);
+	void handle_response(Client &client);
+
+	// void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
+	void handle_get_request(Client &client);
+	void handle_post_request(Client &client);
+	void handle_delete_request(Client &client);
+	Client get_client_obj(epoll_event &event);
+
+
 	/* FileUploader uploader; */
 	void handle_file_upload(Client &client);
 	std::string extract_boundary(const std::string &headers);
 	void switch_poll(int client_fd, uint32_t events);
 
 
-	void handle_response(Client &client);
+	bool allowed_in_path(const std::string &file_path, Client &client);
 };
