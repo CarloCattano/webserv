@@ -73,11 +73,10 @@ class Client {
 	void setRequestFinished(bool finishedBody);
 
 	// getters and setters for response
-
 	void setResponseSize(int size);
 	void setResponseStatusCode(int statusCode);
-	void setResponseBody(std::string body);
 	void setResponseHeaders(std::map<std::string, std::string> headers);
 	void addResponseHeader(std::string key, std::string value);
+	void setResponseBody(std::string body);
 	void setFinishedSending(bool finishedSending);
 };

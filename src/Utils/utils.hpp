@@ -28,3 +28,4 @@ HttpMethod get_http_method(const char *buffer);
 
 bool isFolder(const std::string &path);
 bool isFile(const std::string &path);
+bool directory_contains_index_file(const std::string& directoryPath);

@@ -186,3 +186,25 @@ bool isFile(const std::string &path) {
 		return true;
 	return false;
 }
+
+bool directory_contains_index_file(const std::string& directoryPath) {
+    DIR *dir = opendir(directoryPath.c_str());
+    if (!dir) {
+        std::cerr << "Error opening directory: " << directoryPath << std::endl;
+        return false;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
+            if ("index.html" == entry->d_name) {
+                closedir(dir);
+                return true;
+            }
+        }
+    }
+
+    closedir(dir);
+    return false;
+}
+

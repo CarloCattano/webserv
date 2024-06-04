@@ -5,7 +5,8 @@
 #include <cstdlib>
 #include <cstdio>
 
-void handle_cgi_request(const Client &client, char *cgi_script_path);
+void handle_cgi_request(Client &client, char *cgi_script_path);
+std::string execute_cgi_script(char *cgi_script_path);
 
 // class Cgi {
 // public:
