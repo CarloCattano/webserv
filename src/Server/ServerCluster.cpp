@@ -79,15 +79,20 @@ void ServerCluster::await_connections() {
 					close_client(event_fd);
 					continue;
 				}
-				// handle_request(client);
-				// handle_response(client);
 
 				if (events[i].events & EPOLLIN) {
 					handle_request(client);
 				}
 
 				if (events[i].events & EPOLLOUT) {
-					handle_response(client);
+
+					// handle response will block cgi script...
+					// I have tried to move handle response into
+					// handle request and only call when needed, without sucess
+
+					if (client.getRequest().method != "POST")
+						handle_response(client);
+
 				}
 
 				switch_poll(client.getFd(), EPOLLOUT);

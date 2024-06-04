@@ -197,7 +197,7 @@ bool directory_contains_index_file(const std::string& directoryPath) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
-            if ("index.html" == entry->d_name) {
+            if (strcmp("index.html", entry->d_name) == 0) {
                 closedir(dir);
                 return true;
             }
@@ -207,4 +207,3 @@ bool directory_contains_index_file(const std::string& directoryPath) {
     closedir(dir);
     return false;
 }
-

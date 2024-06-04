@@ -1,5 +1,17 @@
 #include "./HandleRequest.hpp"
 
+// void handle_response2(Client &client) {
+// 	Response response = client.getResponse();
+
+// 	std::string response_string = client.responseToString();
+// 	client.setResponseSize(response_string.size());
+// 	client.setSentBytes(client.getSentBytes() +
+// 						send(client.getFd(), response_string.c_str(), 4096, 0));
+
+// 	if (client.getSentBytes() >= response_string.size()) {
+// 	}
+// }
+
 void handle_request(Client &client) {
 	char buffer[4096];
 
@@ -31,11 +43,12 @@ void handle_request(Client &client) {
 	}
 }
 
-bool doesAutoIndexApply(std::string full_path, Server *server) {
-	if (isFolder(full_path) && server->getAutoindex() && directory_contains_index_file(full_path))
-		return (true);
-	else
-		return (false);
+void update_response(Client &client, std::string body, std::string content_type) {
+	client.setResponseBody(body);
+	client.addResponseHeader("Content-Type", content_type);
+	client.addResponseHeader("Content-Length", intToString(body.size()));
+	client.setResponseStatusCode(200);
+	client.addResponseHeader("Connection", "keep-alive");
 }
 
 void handle_get_request(Client &client) {
@@ -49,58 +62,19 @@ void handle_get_request(Client &client) {
 	if (isFolder(full_path) && directory_contains_index_file(full_path))
 		full_path += "index.html";
 
-
-	if (isFolder(full_path) == true) {
-		if (server->getAutoindex() == true) {
-			std::string dir_list = generateDirectoryListing(full_path);
-			body = dir_list;
-			content_type = "text/html";
-		} else {
-			....
-		}
+	if (isFolder(full_path) == true && server->getAutoindex() == true) {
+		body = generateDirectoryListing(full_path);
+		content_type = "text/html";
 	}
-	else if (server->getAutoindex() == false) {
-		if (!isFile(full_path)) {
-			client.sendErrorPage(404);
-			return;
-		}
-		// its a file so we read it and send it to the client
-		// TODO - check image bug
-		body = readFileToString(full_path);
-		content_type = getContentType(full_path);
-	} else {
-		std::string file_content = readFileToString(full_path);
-		std::string content_type = getContentType(full_path);
-
-
-			if (client.getRequest().uri == "/") {
-				full_path += "index.html";
-				file_content = readFileToString(full_path);
-				content_type = getContentType(full_path);
-
-				client.addResponseHeader("Content-Type", content_type);
-				client.setResponseBody(file_content);
-				client.addResponseHeader("Content-Length", intToString(file_content.size()));
-
-			} else {
-				if (!isFile(full_path)) {
-					client.sendErrorPage(404);
-					return;
-				}
-				file_content = readFileToString(full_path);
-
-				client.setResponseBody(file_content);
-				client.addResponseHeader("Content-Type", content_type); // TODO BUG with images
-				client.addResponseHeader("Content-Length", intToString(file_content.size()));
-			}
+	else if (isFile(full_path)) {
+		body = readFileToString(full_path);;
+		content_type = getContentType(full_path);;
 	}
-
-		client.setResponseBody(body);
-		client.addResponseHeader("Content-Type", content_type);
-		client.addResponseHeader("Content-Length", intToString(body.size()));
-		client.setResponseStatusCode(200);
-		client.addResponseHeader("Connection", "keep-alive");
-
+	else {
+		client.sendErrorPage(404);
+		return;
+	}
+	update_response(client, body, content_type);
 }
 
 void handle_post_request(Client &client) {
@@ -114,12 +88,12 @@ void handle_post_request(Client &client) {
 		handle_cgi_request(client, const_cast<char*>(full_path.c_str()));
 	}
 
-	// its causing issues when i dont do this...
-	client.setResponseBody("POST request");
-	client.setResponseStatusCode(200);
-	client.addResponseHeader("Content-Type", "text/html");
-	client.addResponseHeader("Content-Length", intToString(13));
-	client.addResponseHeader("Connection", "keep-alive");
+	// its causing issues when i dont do this and handle response is called...
+	// client.setResponseBody("POST request");
+	// client.setResponseStatusCode(200);
+	// client.addResponseHeader("Content-Type", "text/html");
+	// client.addResponseHeader("Content-Length", intToString(13));
+	// client.addResponseHeader("Connection", "keep-alive");
 }
 
 void handle_delete_request(Client &client) {
