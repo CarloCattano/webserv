@@ -21,13 +21,13 @@
 #include "./HandleRequest.hpp"
 
 class ServerCluster {
-  private:
+private:
 	std::map<int, Server> _server_map;
 	std::map<int, Client> _client_map;
 
 	int _epoll_fd;
 
-  public:
+public:
 	ServerCluster(std::vector<Server> &servers);
 	~ServerCluster();
 	void start();
@@ -36,9 +36,12 @@ class ServerCluster {
 	static void stop(int signal);
 	void handle_new_client_connection(int server_fd);
 	int accept_new_connection(int server_fd);
+
+	/* FileUploader uploader; */
+	void handle_file_upload(Client &client);
+	std::string extract_boundary(const std::string &headers);
 	void switch_poll(int client_fd, uint32_t events);
-	// Whats this?? To-DO
-	FileUploader uploader;
+
 
 	void handle_response(Client &client);
 };

@@ -3,7 +3,8 @@
 
 const int MAX_EVENTS = 42;
 
-ServerCluster::ServerCluster(std::vector<Server> &servers) {
+ServerCluster::ServerCluster(std::vector<Server> &servers)
+{
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
 		perror("epoll_create1");
@@ -24,7 +25,8 @@ ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	}
 }
 
-int ServerCluster::accept_new_connection(int server_fd) {
+int ServerCluster::accept_new_connection(int server_fd)
+{
 	int client_fd = accept(server_fd, NULL, NULL);
 
 	if (client_fd == -1) {
@@ -35,8 +37,8 @@ int ServerCluster::accept_new_connection(int server_fd) {
 	return (client_fd);
 }
 
-void ServerCluster::handle_new_client_connection(int server_fd) {
-
+void ServerCluster::handle_new_client_connection(int server_fd)
+{
 	int client_fd = accept_new_connection(server_fd);
 
 	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
@@ -44,23 +46,24 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 	_client_map[client_fd] = *client;
 }
 
-void ServerCluster::close_client(int fd) {
+void ServerCluster::close_client(int fd)
+{
 	_client_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 }
 
-void ServerCluster::await_connections() {
+void ServerCluster::await_connections()
+{
 	struct epoll_event events[MAX_EVENTS];
 	int num_events;
 
-	while (1) { // TODO add a flag to run the server
+	while (1) {
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
 
 		for (int i = 0; i < num_events; i++) {
-
 			int event_fd = events[i].data.fd;
 			if (event_fd == -1) {
 				perror("events[i].data.fd");
@@ -69,15 +72,21 @@ void ServerCluster::await_connections() {
 
 			if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
-
-			} else {
+			}
+			else {
 				Client &client = _client_map[event_fd];
+
+				if (events[i].events & EPOLLIN) {
+					handle_request(client);
+				}
+				if (events[i].events & EPOLLOUT) {
+					handle_response(client);
+				}
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
 					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
 					std::cout << "Closing Client: " << event_fd << std::endl;
 					close_client(event_fd);
-					continue;
 				}
 
 				if (events[i].events & EPOLLIN) {
@@ -102,7 +111,8 @@ void ServerCluster::await_connections() {
 	}
 }
 
-void ServerCluster::switch_poll(int client_fd, uint32_t events) {
+void ServerCluster::switch_poll(int client_fd, uint32_t events)
+{
 	struct epoll_event ev;
 	ev.events = events;
 	ev.data.fd = client_fd;
@@ -114,6 +124,7 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) == -1) {
 		perror("epoll_ctl");
+		close(client_fd);
 	}
 }
 
@@ -122,11 +133,18 @@ void ServerCluster::handle_response(Client &client) {
 
 
 	std::string response_string = client.responseToString();
-	client.setResponseSize(response_string.size());
-	client.setSentBytes(client.getSentBytes() +
-						send(client.getFd(), response_string.c_str(), 4096, 0));
+	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
 
-	if (client.getSentBytes() >= response_string.size()) {
+	if (bytes_sent == -1) {
+		perror("send");
+		close_client(client.getFd());
+		return;
+	}
+
+	client.setSentBytes(client.getSentBytes() + bytes_sent);
+
+	if (client.getSentBytes() == response_string.size()) {
+		close_client(client.getFd());
 	}
 }
 
@@ -139,13 +157,15 @@ void ServerCluster::stop(int signal) {
 /* takes care of the signal when a child process is terminated
 	and the parent process is not waiting for it
 	so it doesn't become a zombie process */
-void handleSigchild(int sig) {
+void handleSigchild(int sig)
+{
 	(void)sig;
 	while (waitpid(-1, NULL, WNOHANG) > 0)
 		continue;
 }
 
-void ServerCluster::start() {
+void ServerCluster::start()
+{
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
 		perror("signal(SIGCHLD) error");
 
@@ -153,7 +173,8 @@ void ServerCluster::start() {
 	ServerCluster::await_connections();
 }
 
-ServerCluster::~ServerCluster() {
+ServerCluster::~ServerCluster()
+{
 	// for (size_t i = 0; i < _servers.size(); i++) {
 	//     close(_servers[i].getSocketFd());
 	// }

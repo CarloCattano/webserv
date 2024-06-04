@@ -187,6 +187,15 @@ bool isFile(const std::string &path) {
 	return false;
 }
 
+void log_open_clients(std::map<int, Client> &clients) {
+	std::cout << "Open clients: " << clients.size() << std::endl;
+	std::cout << "Client fds: ";
+	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); it++) {
+		std::cout << GREEN << it->first << " ";
+	}
+	std::cout << RESET << std::endl;
+}
+
 bool directory_contains_index_file(const std::string& directoryPath) {
     DIR *dir = opendir(directoryPath.c_str());
     if (!dir) {

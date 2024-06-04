@@ -1,5 +1,4 @@
 #include "FileUpload.hpp"
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,60 +7,50 @@
 
 #define BUFFER_SIZE 1024
 
-FileUploader::FileUploader() {}
+MultipartFormData FileUploader::parse_multipart_form_data(const std::string &boundary, const std::string &body)
+{
+	MultipartFormData formData;
+	std::string boundaryMarker = "--" + boundary;
+	std::string endBoundaryMarker = "--" + boundary + "--";
 
-FileUploader::~FileUploader() {}
+	size_t pos = body.find(boundaryMarker);
+	size_t endPos = body.find(endBoundaryMarker);
 
-void FileUploader::handle_file_upload(int client_fd, const std::string &filename, int file_size,
-									  const char *start) {
-	char buffer[BUFFER_SIZE];
-
-	ssize_t total_bytes_received = 0; // Total bytes received from the client
-	ssize_t bytes_received;
-
-	std::string cleanFile;
-
-	if (filename[0] == '"' && filename[filename.size() - 1] == '"') {
-		cleanFile = filename.substr(1, filename.size() - 2);
-	} else {
-		cleanFile = filename;
+	if (pos == std::string::npos || endPos == std::string::npos) {
+		return formData;
 	}
 
-	// prepend path to cleanFile
-	cleanFile = "./www/website1/upload/" + cleanFile;
+	pos += boundaryMarker.size() + 2; // Move past boundary and \r\n
+	std::string part = body.substr(pos, endPos - pos);
 
-	int outfile = open(cleanFile.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
-	if (outfile == -1) {
-		perror("open");
-		return;
-	}
+	size_t headerEnd = part.find("\r\n\r\n");
+	if (headerEnd != std::string::npos) {
+		std::string headers = part.substr(0, headerEnd);
+		std::string content = part.substr(headerEnd + 4);
 
-	total_bytes_received += write(outfile, start, strlen(start));
+		size_t fileNamePos = headers.find("filename=\"");
+		if (fileNamePos != std::string::npos) {
+			fileNamePos += 10;
+			size_t fileNameEnd = headers.find("\"", fileNamePos);
+			formData.fileName = headers.substr(fileNamePos, fileNameEnd - fileNamePos);
 
-	while (total_bytes_received < file_size) {
-		bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_DONTWAIT);
-		if (bytes_received > 0) {
-			ssize_t bytes_written = write(outfile, buffer, bytes_received);
-			if (bytes_written == -1) {
-				perror("write");
-				close(outfile);
-				return;
+			size_t contentEnd = content.rfind("\r\n--");
+			if (contentEnd != std::string::npos) {
+				formData.fileContent.assign(content.begin(), content.begin() + contentEnd);
 			}
-			total_bytes_received += bytes_written;
-		} else if (bytes_received == 0) {
-			break;
+			else {
+				formData.fileContent.assign(content.begin(), content.end());
+			}
 		}
 	}
-	// TODO , check the real file size and compare it with the file_size to
-	// exit the function if the file is not fully uploaded
-	//
-	write(outfile, "\0", 1); // TODO WHAT ?
-	close(outfile);
 
-	/* if (total_bytes_received == file_size) { */
-	/* 	std::cout << "File '" << filename << "' uploaded successfully." << std::endl; */
-	/* } */
-	/* else { */
-	/* 	std::cerr << "Incomplete upload for file '" << filename << "'." << std::endl; */
-	/* } */
+	return formData;
+}
+
+FileUploader::FileUploader()
+{
+}
+
+FileUploader::~FileUploader()
+{
 }

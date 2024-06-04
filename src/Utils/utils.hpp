@@ -1,4 +1,5 @@
 #pragma once
+#include "../Client/Client.hpp"
 #include <map>
 #include <string>
 
@@ -29,3 +30,4 @@ HttpMethod get_http_method(const char *buffer);
 bool isFolder(const std::string &path);
 bool isFile(const std::string &path);
 bool directory_contains_index_file(const std::string& directoryPath);
+void log_open_clients(std::map<int, Client> &client_map);

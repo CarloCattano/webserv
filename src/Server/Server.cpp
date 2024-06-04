@@ -14,7 +14,6 @@ Server::Server()
 	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"),
 	  _client_max_body_size(1073741824), _autoindex(false), _root("/www/website1"), _cgi_path(""),
 	  _cgi_extension("") {
-	// _server_names = std::vector<std::string>();
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
 }
@@ -64,10 +63,10 @@ void Server::setup() {
 		std::cerr << "Error: " << _port << " is already in use, exiting .... \n----\n" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	if (listen(_socket_fd, SOMAXCONN) == -1){
+	if (listen(_socket_fd, SOMAXCONN) == -1) {
 		perror("listen");
 		exit(EXIT_FAILURE);
-		}
+	}
 
 	std::cout << "Server started at http://" << _server_names[0] << ":" << _port << std::endl;
 }

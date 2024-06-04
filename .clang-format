@@ -18,25 +18,25 @@ AlwaysBreakTemplateDeclarations: true
 BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:
-  AfterClass: true
+  AfterClass: false
   AfterControlStatement: true
   AfterEnum: true
-  AfterFunction: true
+  AfterFunction: false
   AfterNamespace: true
-  AfterObjCDeclaration: true
+  AfterObjCDeclaration: false
   AfterStruct: true
   AfterUnion: true
   BeforeCatch: true
   BeforeElse: true
   IndentBraces: false
-  SplitEmptyFunction: true
-  SplitEmptyRecord: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
   SplitEmptyNamespace: true
 BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Stroustrup
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit: 100
+ColumnLimit: 120
 CommentPragmas: '^ IWYU pragma:'
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
@@ -63,7 +63,7 @@ IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 MacroBlockBegin: ''
 MacroBlockEnd: ''
-MaxEmptyLinesToKeep: 1
+MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
 ObjCBlockIndentWidth: 4
 ObjCSpaceAfterProperty: true
@@ -93,8 +93,4 @@ SpacesInSquareBrackets: false
 Standard: Cpp03
 TabWidth: 4
 UseTab: Always
-
-# Custom settings for allowing braces after function signature and in next line
-BraceWrapping:
-  AfterFunction: false # Allows function braces on the next line
 

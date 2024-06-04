@@ -1,12 +1,14 @@
-#include "Client.hpp"
-#include "../Utils/utils.hpp"
+#include "./Client.hpp"
+#include <algorithm>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
-
+#include "../Utils/utils.hpp"
 #define EXIT_FAILURE 1
+
+// clang-format off
 
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
@@ -82,20 +84,30 @@ void Client::parseBody() {
 void Client::sendErrorPage(int statusCode) {
 	this->setResponseStatusCode(statusCode);
 
-	// TODO - add check for error pages in config and if not found, generate error page
+	std::vector<std::string> error_pages = this->getServer()->getErrorPages();
 
-	std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
-							"</title></head>"
-							"<body><h1>Error " +
-							intToString(statusCode) +
-							"</h1>"
-							"<p>" +
-							getErrorString(statusCode) + "</p></body></html>";
+	if (std::find(error_pages.begin(), error_pages.end(), intToString(statusCode)) !=
+		error_pages.end()) {
+		std::string errorPage = "." + this->getServer()->getRoot() + "/error_pages/" +
+								intToString(statusCode) + ".html";
 
-	this->setResponseBody(errorPage);
-	this->addResponseHeader("Content-Type", "text/html");
-	this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+		std::string errorPageContent = readFileToString(errorPage);
+		setResponseBody(errorPageContent);
+		this->addResponseHeader("Content-Type", "text/html");
+		this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+	} else {
+		std::string errorPage = "<html><head><title>Error " + intToString(statusCode) +
+								"</title></head>"
+								"<body><h1>Error " +
+								intToString(statusCode) +
+								"</h1>"
+								"<p>" +
+								getErrorString(statusCode) + "</p></body></html>";
 
+		this->setResponseBody(errorPage);
+		this->addResponseHeader("Content-Type", "text/html");
+		this->addResponseHeader("Content-Length", intToString(this->response.body.size()));
+	}
 	send(this->getFd(), this->responseToString().c_str(), this->responseToString().size(), 0);
 }
 
