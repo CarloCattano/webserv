@@ -12,7 +12,8 @@
 // 	}
 // }
 
-void ServerCluster::handle_request(Client &client) {
+void ServerCluster::handle_request(Client &client)
+{
 	char buffer[4096];
 
 	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
@@ -37,17 +38,21 @@ void ServerCluster::handle_request(Client &client) {
 
 	if (client.getRequest().method == "GET") {
 		handle_get_request(client);
-	} else if (client.getRequest().method == "POST") {
+	}
+	else if (client.getRequest().method == "POST") {
 		handle_post_request(client);
-	} else if (client.getRequest().method == "DELETE")
+	}
+	else if (client.getRequest().method == "DELETE")
 		handle_delete_request(client);
 	else {
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 	}
+	switch_poll(client.getFd(), EPOLLOUT);
 }
 
-void update_response(Client &client, std::string body, std::string content_type) {
+void update_response(Client &client, std::string body, std::string content_type)
+{
 	client.setResponseBody(body);
 	client.addResponseHeader("Content-Type", content_type);
 	client.addResponseHeader("Content-Length", intToString(body.size()));
@@ -55,13 +60,13 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-void ServerCluster::handle_get_request(Client &client) {
-
-	Server 		*server = client.getServer();
-	Response 	response;
+void ServerCluster::handle_get_request(Client &client)
+{
+	Server *server = client.getServer();
+	Response response;
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
-	std::string	body;
-	std::string	content_type;
+	std::string body;
+	std::string content_type;
 
 	// To-Do does this belong here ??
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
@@ -78,8 +83,10 @@ void ServerCluster::handle_get_request(Client &client) {
 		content_type = "text/html";
 	}
 	else if (isFile(full_path)) {
-		body = readFileToString(full_path);;
-		content_type = getContentType(full_path);;
+		body = readFileToString(full_path);
+		;
+		content_type = getContentType(full_path);
+		;
 	}
 	else {
 		client.sendErrorPage(404);
@@ -203,8 +210,8 @@ std::string ServerCluster::extract_boundary(const std::string &headers)
 	return boundary;
 }
 
-bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
-
+bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client)
+{
 	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
 		return false;
 	return true;

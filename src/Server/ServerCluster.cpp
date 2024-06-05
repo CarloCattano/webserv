@@ -87,18 +87,13 @@ void ServerCluster::await_connections()
 				}
 
 				if (events[i].events & EPOLLOUT) {
-
 					// handle response will block cgi script...
 					// I have tried to move handle response into
 					// handle request and only call when needed, without sucess
 
 					if (client.getRequest().method != "POST")
 						handle_response(client);
-
 				}
-
-				switch_poll(client.getFd(), EPOLLOUT);
-
 			}
 		}
 	}
@@ -121,7 +116,8 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events)
 	}
 }
 
-void ServerCluster::handle_response(Client &client) {
+void ServerCluster::handle_response(Client &client)
+{
 	Response response = client.getResponse();
 
 
@@ -141,7 +137,8 @@ void ServerCluster::handle_response(Client &client) {
 	}
 }
 
-void ServerCluster::stop(int signal) {
+void ServerCluster::stop(int signal)
+{
 	(void)signal;
 	log("\nServer stopped");
 	exit(0);
