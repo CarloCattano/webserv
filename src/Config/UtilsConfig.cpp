@@ -63,6 +63,8 @@ void print_server_routes(std::vector<Route> routes) {
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
 		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
+		std::cout << "\t\tcgi_path: " << routes[i].cgi_path << std::endl;
+		std::cout << "\t\tcgi_extension: " << routes[i].cgi_extension << std::endl;
 	}
 	std::cout << std::endl;
 }
@@ -79,7 +81,6 @@ void print_server_obj(Server &obj) {
         std::cout << "\tError pages: ";
         print_vector(obj.getErrorPages());
     }
-	// obj.setRoot("test");
 	std::cout << "\tRoot " << obj.getRoot() << std::endl;
     std::cout << "\tAutoIndex: " << obj.getAutoindex() << std::endl;
 	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;

@@ -19,7 +19,6 @@ void    set_allowed_methods(Server &server, std::vector<std::string> key_with_va
     else
         return;
 
-
     size_t  i = 1;
     while (i < key_with_values.size()) {
         std::string key = key_with_values[i];

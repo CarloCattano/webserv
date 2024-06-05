@@ -1,117 +1,103 @@
-#include "Cgi.hpp"
-#include <cstdlib>
-#include <iostream>
-#include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "./Cgi.hpp"
+#include "../Utils/utils.hpp"
 
-Cgi::Cgi()
-{
-}
+#define READ_END 0
+#define WRITE_END 1
 
-Cgi::~Cgi()
-{
-}
+void handle_response(Client &client) {
+	Response response = client.getResponse();
 
-Cgi &Cgi::operator=(const Cgi &src)
-{
-	if (this != &src) {
-		this->_cgi = src._cgi;
+	std::string response_string = client.responseToString();
+	client.setResponseSize(response_string.size());
+	client.setSentBytes(client.getSentBytes() +
+						send(client.getFd(), response_string.c_str(), 4096, 0));
+
+	if (client.getSentBytes() >= response_string.size()) {
 	}
-	return *this;
 }
 
-Cgi::Cgi(const Cgi &src)
-{
-	*this = src;
-}
+void handle_cgi_request(Client &client, char *cgi_script_path) {
+	(void)client;
 
-std::string relativePath(std::string path)
-{
-	// add main folder abs path
-	std::string mainFolder = "/home/carlo/42/webserv/";
-	std::string prefix = "website/cgi-bin/"; // TODO : parse from config
-	std::string result = mainFolder + prefix + path;
-	return result;
-}
+	pid_t	pid;
 
-/**
- * c++98 must be used and popen is forbiden, so this is the reason why we use fork and exec
- * the problem is that waitpid is blocking the process, so we need
- * to find a way to make it non-blocking
- **/
+	pid = fork();
+	if (pid == -1)
+		throw (std::runtime_error("Fork failed."));
+	if (pid == 0)
+	{
+		std::string output = execute_cgi_script(cgi_script_path);
+		std::cout << output << std::endl;
+		client.setResponseBody(output);
+		client.setResponseStatusCode(200);
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(output.size()));
+		client.addResponseHeader("Connection", "keep-alive");
 
-std::string runCommand(const std::string &scriptPath)
-{
-	const int TIMEOUT_SECONDS = 20;
-	std::string result = "";
-	if (scriptPath.empty()) {
-		throw std::invalid_argument("Empty script path");
-	}
+		
+		handle_response(client);
 
-	int pipe_fd[2];
-	if (pipe(pipe_fd) == -1) {
-		std::cerr << "Failed to create pipe" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 
-	pid_t pid = fork();
-	if (pid == -1) {
-		std::cerr << "Failed to fork process" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 
-	if (pid == 0) {
-		close(pipe_fd[0]); // Close read
-
-		// stdout to write
-		if (dup2(pipe_fd[1], STDOUT_FILENO) == -1) {
-			std::cerr << "Failed to redirect stdout" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-
-		alarm(TIMEOUT_SECONDS);
-
-		char pyBin[] = "/usr/bin/python3";
-
-		char *av[] = { pyBin, strdup(scriptPath.c_str()), NULL };
-
-		if (execve(pyBin, av, NULL) == -1) {
-			std::cerr << "Failed to execute Python script" << std::endl;
-			exit(EXIT_FAILURE);
-		}
 		exit(EXIT_SUCCESS);
 	}
-	else {
-		close(pipe_fd[1]);
 
-		char buffer[1024]; // output from the child process
 
-		ssize_t bytes_read;
+		// int status;
+		// if (waitpid(pid, &status, 0) == -1)
+		// 	throw std::runtime_error("Waitpid 2 failed.");
 
-		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0) {
-			result.append(buffer, bytes_read);
-		}
+		// if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		// 	throw std::runtime_error("Child process failed.");
+}
 
-		close(pipe_fd[0]);
+std::string execute_cgi_script(char *cgi_script_path) {
+	int 	pipe_fd[2];
+	pid_t 	pid;
 
-		int status;
+	if (pipe(pipe_fd) == -1)
+		throw (std::runtime_error("Pipe creation failed."));
 
-		// waitpid is blocking the process, so we need to find a way to make it non-blocking
-		// we can use WNOHANG flag to make it non-blocking
-		// == 0 means that the child process is still running and we need to wait but we continue
-		// the loop
-		// != 0 means that the child process is done and we can return the result
-		while (waitpid(pid, &status, WNOHANG) == 0) {
-			continue;
-		}
+	char *av[] = {cgi_script_path, NULL};
+
+	pid = fork();
+	if (pid == -1)
+		throw (std::runtime_error("Fork failed."));
+
+	if (pid == 0)
+	{
+		close(pipe_fd[READ_END]);
+        dup2(pipe_fd[WRITE_END], STDOUT_FILENO);
+        close(pipe_fd[WRITE_END]);
+        execve(cgi_script_path, av, NULL);
+		exit(EXIT_FAILURE);
+    }
+	else
+	{
+		char 	buffer[1024];
+		std::string	result;
+        ssize_t	bytes_read = 1;
+
+		close(pipe_fd[WRITE_END]);
+
+        while (bytes_read > 0) {
+			bytes_read = read(pipe_fd[READ_END], buffer, sizeof(buffer));
+			if (bytes_read == -1)
+				throw (std::runtime_error("Error reading from pipe."));
+			buffer[bytes_read] = '\0';
+			result += buffer;
+        }
+        close(pipe_fd[WRITE_END]);
+
+		return (result);
 	}
-	return result;
 }
 
-std::string Cgi::run(const std::string &scriptPath)
-{
-	std::string result = "";
-	result = runCommand(scriptPath);
-	return result;
-}
+		// wait(NULL);
+
+		// int status;
+		// if (waitpid(pid, &status, 0) == -1)
+		// 	throw std::runtime_error("Waitpid 1 failed.");
+
+		// if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		// 	throw std::runtime_error("Child process failed.");
