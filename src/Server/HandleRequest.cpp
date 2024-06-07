@@ -97,7 +97,8 @@ void ServerCluster::handle_post_request(Client &client)
 {
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
-	if (client.getRequest().uri == "/upload") {
+	if (client.getRequest().uri.find("/upload") != std::string::npos) {
+		Error("handle_file_upload");
 		handle_file_upload(client);
 		return;
 	}
@@ -120,38 +121,41 @@ void ServerCluster::handle_post_request(Client &client)
 
 void ServerCluster::handle_file_upload(Client &client)
 {
-	log("Handling file upload");
-
-	client.sendErrorPage(200);
-
 	std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n"));
 	std::string body = client.getRequest().body;
 
 	std::string boundary = extract_boundary(headers);
+	// TODO
 	FileUploader fileUploader;
 	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
-
-	if (formData.fileName.empty()) {
-		client.sendErrorPage(400);
-		return;
-	}
-
-	log("Ready to upload file: " + formData.fileName);
 
 	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
 
+
 	outFile.write(&formData.fileContent[0], formData.fileContent.size());
 	outFile.close();
 
+	/* client.setResponseStatusCode(303); */
+	/* client.addResponseHeader("Location", "/uploaded.html"); */
+	/* client.addResponseHeader("Content-Type", "text/html"); */
+	/* client.addResponseHeader("Content-Length", "0"); */
+	/* client.addResponseHeader("Connection", "close"); */
+	/* client.setResponseBody("File Uploaded Successfully"); */
+
+	/* log("Ready to upload file: " + formData.fileName); */
+
+	// send a redirect to the client
 	client.setResponseStatusCode(303);
 	client.addResponseHeader("Location", "/uploaded.html");
 	client.addResponseHeader("Content-Type", "text/html");
-	client.addResponseHeader("Content-Length", "0");
 	client.addResponseHeader("Connection", "close");
-	client.setResponseBody("");
 
-	switch_poll(client.getFd(), EPOLLOUT);
+	// read the file uploaded.html and send it to the client
+	std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+	client.setResponseBody(readFileToString(full_path));
+
+	/* switch_poll(client.getFd(), EPOLLOUT); */
 }
 
 void ServerCluster::handle_delete_request(Client &client)

@@ -8,9 +8,9 @@
 - [c] Upload some file to the server and get it back.
        - hangs on submission
 
-- [c] POST  request is hanging on a cgi to folder or non existent
-        - wait for barra execve error handling
 
+- [V] POST  request is hanging on a cgi to folder or non existent
+        - wait for barra execve error handling
 - [V] track all read/recv/write/send returns for errors
 
 

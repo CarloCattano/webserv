@@ -66,7 +66,7 @@ size_t stringToSizeT(std::string str) {
 
 bool checkFinishedBody(Request request) {
 	if (request.headers.find("Content-Length") != request.headers.end()) {
-		if (request.body.size() == stringToSizeT(request.headers["Content-Length"]))
+		if (request.body.size() - 1 >= stringToSizeT(request.headers["Content-Length"]))
 			return true;
 		return false;
 	}
