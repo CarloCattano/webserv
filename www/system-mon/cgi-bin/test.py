@@ -10,7 +10,7 @@ print(f"<title>Counting to 10</title>")
 print(f"</head>")
 print(f"<body>")
 
-for i in range(30):
+for i in range(10):
     print(f"<hr>")
     print(f"<p>{i}</p>")
     print(f"<hr>")
