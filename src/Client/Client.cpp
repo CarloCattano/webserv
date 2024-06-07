@@ -6,6 +6,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
+#include <signal.h>
 #define EXIT_FAILURE 1
 
 // clang-format off
@@ -122,12 +123,28 @@ std::string Client::responseToString() {
 	return response;
 }
 
+void Client::checkTimeout(int timeout) {
+	if (this->pid_start_time_map.size() == 0)
+		return;
+	std::map<int, int>::iterator it = this->pid_start_time_map.begin();
+	while (it != this->pid_start_time_map.end()) {
+		if (time(NULL) - it->second > timeout) {
+			sendErrorPage(504);
+			kill(it->first, SIGKILL);
+			this->pid_start_time_map.erase(it++);
+		} else {
+			++it;
+		}
+	}
+}
+
 // client getters
 int Client::getFd() const { return this->fd; }
 Server *Client::getServer() const { return this->server; }
 Request Client::getRequest() const { return this->request; }
 Response Client::getResponse() const { return this->response; }
 size_t Client::getSentBytes() const { return this->sentBytes; }
+std::map<int, int> Client::getPidStartTimeMap() const { return this->pid_start_time_map; }
 
 // client setters
 void Client::setFd(int fd) { this->fd = fd; }
@@ -135,6 +152,9 @@ void Client::setServer(Server *server) { this->server = server; }
 void Client::setRequest(Request &request) { this->request = request; }
 void Client::setResponse(Response &response) { this->response = response; }
 void Client::setSentBytes(size_t sentBytes) { this->sentBytes = sentBytes; }
+void Client::setPidStartTimeMap(std::map<int, int> pid_start_time_map) { this->pid_start_time_map = pid_start_time_map; }
+void Client::addPidStartTimeMap(int pid, int start_time) { this->pid_start_time_map[pid] = start_time; }
+void Client::removePidStartTimeMap(int pid) { this->pid_start_time_map.erase(pid); }
 
 // request setters
 void Client::setRequestString(std::string request) { this->request.request = request; }

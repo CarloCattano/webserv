@@ -16,8 +16,7 @@ std::string get_file_content(const std::string &filename) {
 		}
 		file.close();
 	} else {
-		std::cerr << "Failed to open the file." << std::endl;
-		// throw error????
+		throw std::runtime_error("Unable to open file: " + filename);
 	}
 	file_content += '\0';
 	return (file_content);
