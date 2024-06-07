@@ -6,12 +6,12 @@ rework
 
 ## Current open fronts:
 
-- [c ] File Upload 
-- [c ] track all read/recv/write/send returns
-- [c ] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
-- [c ] Upload some file to the server and get it back.
-        - hangs on submission
-- [c ] POST  request is hanging on a cgi to folder or non existent
+- [c] File Upload 
+- [c] track all read/recv/write/send returns
+- [c] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
+- [c] Upload some file to the server and get it back.
+       - hangs on submission
+- [c] POST  request is hanging on a cgi to folder or non existent
 
 
 

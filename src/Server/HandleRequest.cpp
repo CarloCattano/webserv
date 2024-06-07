@@ -97,21 +97,31 @@ void ServerCluster::handle_post_request(Client &client)
 {
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
-
 	if (client.getRequest().uri == "/upload") {
 		handle_file_upload(client);
+		return;
 	}
-	Cgi cgi;
-	Error("cgi from post");
-	cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
 
-	client.setResponseStatusCode(200);
-	client.addResponseHeader("Content-Type", "text/html");
-	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+	if (full_path.find(client.getServer()->getCgiPath()) != std::string::npos &&
+		full_path.find(".py") != std::string::npos) {
+		Cgi cgi;
+		cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
+
+		client.setResponseStatusCode(200);
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+		return;
+	}
+
+	client.sendErrorPage(501);
 }
 
 void ServerCluster::handle_file_upload(Client &client)
 {
+	log("Handling file upload");
+
+	client.sendErrorPage(200);
+
 	std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n"));
 	std::string body = client.getRequest().body;
 
@@ -123,6 +133,8 @@ void ServerCluster::handle_file_upload(Client &client)
 		client.sendErrorPage(400);
 		return;
 	}
+
+	log("Ready to upload file: " + formData.fileName);
 
 	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);

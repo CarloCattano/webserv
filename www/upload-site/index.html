@@ -14,12 +14,18 @@
       <br>
         <p> Upload a file to the server </p>
         <br>
-        <div>
-            <form action="/upload" method="post" enctype="multipart/form-data">
+        <!-- <div> -->
+        <!--     <form action="/upload" method="post" enctype="multipart/form-data"> -->
+        <!--     <input type="file" name="fileToUpload" id="fileToUpload"> -->
+        <!--     <input type="submit" value="Upload File" name="submit"> -->
+        <!--     </form> -->
+        <!-- </div> -->
+        <!-- submit file form with redirection to  uploaded.html via href -->
+        <form action="/upload" method="post" enctype="multipart/form-data">
             <input type="file" name="fileToUpload" id="fileToUpload">
             <input type="submit" value="Upload File" name="submit">
-            </form>
-        </div>
+            <a href="/uploaded.html"></a>
+        </form>
         <br>
         <br>
         <p> Delete a file from the server </p>
