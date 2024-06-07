@@ -1,7 +1,7 @@
 #include "./ServerCluster.hpp"
 #include "../Utils/utils.hpp"
 
-const int MAX_EVENTS = 42;
+const int MAX_EVENTS = 4090;
 const int BUFFER_SIZE = 4096; // TODO check pipe max buff
 
 ServerCluster::ServerCluster(std::vector<Server> &servers)
@@ -92,7 +92,7 @@ void ServerCluster::await_connections()
 			}
 			else {
 				Client &client = _client_map[event_fd];
-				
+
 				check_timeout(client, 5);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
@@ -104,6 +104,7 @@ void ServerCluster::await_connections()
 				// TO-DO is it possible to send a response with empty body?
 				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
 					handle_response(client);
+				log_open_clients(_client_map);
 			}
 		}
 	}
@@ -209,7 +210,6 @@ void ServerCluster::start()
 
 void ServerCluster::check_timeout(Client &client, int timeout)
 {
-
 	std::map<int, int> pid_start_time_map = client.getPidStartTimeMap();
 	std::map<int, int>::iterator it = pid_start_time_map.begin();
 
