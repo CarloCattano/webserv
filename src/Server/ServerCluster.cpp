@@ -101,10 +101,8 @@ void ServerCluster::await_connections()
 				if (events[i].events & EPOLLIN)
 					handle_request(client);
 
-				// TO-DO is it possible to send a response with empty body?
 				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
 					handle_response(client);
-				log_open_clients(_client_map);
 			}
 		}
 	}

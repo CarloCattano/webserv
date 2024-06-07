@@ -1,6 +1,6 @@
+#include <string>
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
-
 void ServerCluster::handle_request(Client &client)
 {
 	char buffer[4096];
@@ -26,8 +26,6 @@ void ServerCluster::handle_request(Client &client)
 		return;
 
 	std::string request_uri = client.getRequest().uri;
-
-	std::cout << "Client request: " << client.getRequest().uri << std::endl;
 
 	Server *server = client.getServer();
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
@@ -107,7 +105,6 @@ void ServerCluster::handle_post_request(Client &client)
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
 	if (client.getRequest().uri.find("/upload") != std::string::npos) {
-		Error("handle_file_upload");
 		handle_file_upload(client);
 		return;
 	}
@@ -128,43 +125,77 @@ void ServerCluster::handle_post_request(Client &client)
 	client.sendErrorPage(501);
 }
 
+// todo - keep track of written bytes amount and come back to me baby
 void ServerCluster::handle_file_upload(Client &client)
 {
-	std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n"));
+	/* std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n")); */
 	std::string body = client.getRequest().body;
 
-	std::string boundary = extract_boundary(headers);
-	// TODO
+
+	std::string boundary = extract_boundary(body);
 	FileUploader fileUploader;
 	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
+
+	std::string content_length = client.getRequest().headers["Content-Length"];
+
+	if (formData.fileName.empty()) {
+		Error("Upload formData.fileName is empty");
+		client.sendErrorPage(400);
+		return;
+	}
 
 	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
 
+	if (!outFile.is_open()) {
+		Error("Failed to open file for writing");
+		return;
+	}
 
-	outFile.write(&formData.fileContent[0], formData.fileContent.size());
-	outFile.close();
+	if (formData.fileContent.size() == 0) {
+		Error("File content is empty");
+		return;
+	}
 
-	/* client.setResponseStatusCode(303); */
-	/* client.addResponseHeader("Location", "/uploaded.html"); */
-	/* client.addResponseHeader("Content-Type", "text/html"); */
-	/* client.addResponseHeader("Content-Length", "0"); */
-	/* client.addResponseHeader("Connection", "close"); */
-	/* client.setResponseBody("File Uploaded Successfully"); */
+	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
 
-	/* log("Ready to upload file: " + formData.fileName); */
+	std::string content_length_numbers = content_length.substr(0, content_length.find("\r\n"));
+	std::istringstream iss(content_length_numbers);
+	int content_length_int;
+	iss >> content_length_int;
 
-	// send a redirect to the client
-	client.setResponseStatusCode(303);
-	client.addResponseHeader("Location", "/uploaded.html");
-	client.addResponseHeader("Content-Type", "text/html");
-	client.addResponseHeader("Connection", "close");
+	log("Content length: " + content_length);
+	log("Full content length: " + intToString(client.getRequest().request.size()));
+	log("File content size: " + intToString(client.getRequest().body.size()));
+	/* log("File name: " + formData.fileName); */
 
-	// read the file uploaded.html and send it to the client
-	std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
-	client.setResponseBody(readFileToString(full_path));
+	if (content_length > intToString(client.getRequest().request.size())) {
+		client.setResponseStatusCode(303);
+		client.addResponseHeader("Location", "/uploaded.html");
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Connection", "close");
+		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		client.setResponseBody(readFileToString(full_path));
+		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+	}
+	else if (content_length == intToString(formData.fileContent.size())) {
+		Error("Content-Length matches file size");
+		outFile.write(&formData.fileContent[0], formData.fileContent.size());
+		outFile.close();
 
-	/* switch_poll(client.getFd(), EPOLLOUT); */
+		client.setResponseStatusCode(303);
+		client.addResponseHeader("Location", "/uploaded.html");
+		client.addResponseHeader("Content-Type", "text/html");
+		client.addResponseHeader("Connection", "close");
+		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		client.setResponseBody(readFileToString(full_path));
+		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
+		switch_poll(client.getFd(), EPOLLOUT);
+	}
 }
 
 void ServerCluster::handle_delete_request(Client &client)
