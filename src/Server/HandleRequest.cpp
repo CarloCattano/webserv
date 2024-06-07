@@ -44,6 +44,7 @@ void ServerCluster::handle_request(Client &client)
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 	}
+
 	switch_poll(client.getFd(), EPOLLOUT);
 }
 
@@ -119,12 +120,6 @@ void ServerCluster::handle_file_upload(Client &client)
 	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
 
 	if (formData.fileName.empty()) {
-		client.sendErrorPage(400);
-		return;
-	}
-
-
-	if (formData.fileContent.empty()) {
 		client.sendErrorPage(400);
 		return;
 	}
