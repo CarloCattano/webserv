@@ -196,7 +196,7 @@ void log_open_clients(std::map<int, Client> &clients) {
 	std::cout << RESET << std::endl;
 }
 
-bool directory_contains_index_file(const std::string& directoryPath) {
+bool directory_contains_file(const std::string& directoryPath, std::string file_name) {
     DIR *dir = opendir(directoryPath.c_str());
     if (!dir) {
         std::cerr << "Error opening directory: " << directoryPath << std::endl;
@@ -206,7 +206,7 @@ bool directory_contains_index_file(const std::string& directoryPath) {
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
-            if (strcmp("index.html", entry->d_name) == 0) {
+            if (strcmp(file_name.c_str(), entry->d_name) == 0) {
                 closedir(dir);
                 return true;
             }

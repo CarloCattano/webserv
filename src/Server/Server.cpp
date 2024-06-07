@@ -86,15 +86,63 @@ long long Server::getClientMaxBodySize() { return this->_client_max_body_size; }
 
 bool Server::getDefaultServer() { return this->_default_server; }
 
-bool Server::getAutoindex() { return this->_autoindex; }
+bool Server::getAutoindex(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route)
+		return (route->autoindex);
+	else
+		return this->_autoindex;
+}
 
 std::string Server::getRoot() { return this->_root; }
 
-Method Server::getGet() { return this->_GET; }
+Route* Server::get_route(std::string location) {
+	if (location[location.size() - 1] == '/')
+		location.resize(location.size() - 1);
+	for (size_t i = 0; i < _routes.size(); ++i) {
+		if (_routes[i].location == location)
+			return (&_routes[i]);
+    }
+	return (NULL);
+}
 
-Method Server::getPost() { return this->_POST; }
+Method Server::getGet(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
 
-Method Server::getDelete() { return this->_DELETE; }
+	if (route)
+		return (route->GET);
+	else
+		return this->_GET;
+}
+
+Method Server::getPost(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route)
+		return (route->GET);
+	else
+		return this->_POST;
+}
+
+Method Server::getDelete(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route)
+		return (route->GET);
+	else
+		return this->_DELETE;
+}
+
+std::string Server::get_index_file_name(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route)
+		return (route->index_file);
+	else
+		return "index.html";
+
+}
 
 std::string Server::getCgiPath() { return this->_cgi_path; }
 

@@ -40,20 +40,18 @@ struct Route {
 	std::string root;
 	std::vector<HttpRedirection> redirections;
 	bool autoindex;
-	std::vector<std::string> index_files;
+	std::string index_file;
 	Method POST;
 	Method GET;
 	Method DELETE;
 	std::string cgi_path;
 	std::string cgi_extension;
-	Route() : location(""), matching_style(""), root(""), autoindex(false), cgi_path(""), cgi_extension("") {
+	Route() : location(""), matching_style(""), root(""), autoindex(false), index_file(""), cgi_path(""), cgi_extension("") {
 		redirections = std::vector<HttpRedirection>();
-		index_files = std::vector<std::string>();
 	}
 };
 
 // to-do server only uses first server name
-// Everything is public atm
 class Server {
 private:
 	unsigned int _port;
@@ -84,15 +82,16 @@ public:
 	std::vector<std::string> getErrorPages();
 	long long getClientMaxBodySize();
 	std::vector<Route> getRoutes();
-	bool getAutoindex();
+	bool getAutoindex(std::string *location);
 	int getSocketFd();
 	struct sockaddr_in getServerAddress();
 	std::string getRoot();
-	Method getGet();
-	Method getPost();
-	Method getDelete();
+	Method getGet(std::string *location);
+	Method getPost(std::string *location);
+	Method getDelete(std::string *location);
 	std::string getCgiPath();
 	std::string getCgiExtension();
+	Route* get_route(std::string location);
 
 	// setters
 	void setPort(unsigned int port);
@@ -111,6 +110,7 @@ public:
 	void setDelete(Method method);
 	void setCgiPath(std::string path);
 	void setCgiExtension(std::string extension);
+	std::string get_index_file_name(std::string *location);
 
 	void setup();
 };
