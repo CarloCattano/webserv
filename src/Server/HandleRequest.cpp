@@ -1,16 +1,5 @@
+#include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
-
-// void handle_response2(Client &client) {
-// 	Response response = client.getResponse();
-
-// 	std::string response_string = client.responseToString();
-// 	client.setResponseSize(response_string.size());
-// 	client.setSentBytes(client.getSentBytes() +
-// 						send(client.getFd(), response_string.c_str(), 4096, 0));
-
-// 	if (client.getSentBytes() >= response_string.size()) {
-// 	}
-// }
 
 void ServerCluster::handle_request(Client &client)
 {
@@ -68,7 +57,16 @@ void ServerCluster::handle_get_request(Client &client)
 	std::string body;
 	std::string content_type;
 
-	// To-Do does this belong here ??
+	if (full_path.find(server->getCgiPath()) != std::string::npos && full_path.find(".py") != std::string::npos) {
+		Cgi cgi;
+
+		if (full_path[full_path.size() - 1] == '?')
+			full_path = full_path.substr(0, full_path.size() - 1);
+		cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
+		update_response(client, _cgi_response_map[client.getFd()], "text/html");
+		return;
+	}
+
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);
@@ -95,18 +93,6 @@ void ServerCluster::handle_get_request(Client &client)
 	update_response(client, body, content_type);
 }
 
-// void ServerCluster::handle_post_request(Client &client) {
-// 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
-
-// 	if (isFolder(full_path)) {
-// 		client.sendErrorPage(403);
-// 		return;
-// 	} else {
-// 		log("POST request");
-// 		handle_cgi_request(client, const_cast<char*>(full_path.c_str()));
-// 	}
-// }
-
 void ServerCluster::handle_post_request(Client &client)
 {
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
@@ -122,8 +108,9 @@ void ServerCluster::handle_post_request(Client &client)
 		if (client.getRequest().uri == "/upload") {
 			handle_file_upload(client);
 		}
-		/* std::string cgi_script_path = "." + client.getServer()->getCgiPath() + client.getRequest().uri; */
-		/* handle_cgi_request(client, cgi_script_path); */
+		Cgi cgi;
+		cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
+		return;
 	}
 	client.setResponseStatusCode(200);
 	client.addResponseHeader("Content-Type", "text/html");

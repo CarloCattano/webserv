@@ -82,7 +82,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 {
 	char buffer[BUFFER_SIZE];
 	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
-
 	if (bytes_read == -1) {
 		perror("handle_pipe_event read");
 		close(pipe_fd);
@@ -92,6 +91,7 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 	}
 	if (bytes_read > 0) {
 		_cgi_response_map[pipe_fd] += std::string(buffer, bytes_read);
+		switch_poll(pipe_fd, EPOLLIN);
 	}
 	else if (bytes_read == 0) {
 		std::string res = _cgi_response_map[pipe_fd];
@@ -102,24 +102,16 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 		response += "\r\n";
 		response += res;
 
-		log("ServerCluster line 105");
-		log(res);
-
-		const int fd = get_client_fd_from_pipe_fd(pipe_fd, _client_fd_to_pipe_map);
-		Client &client = _client_map[fd];
-
-		_cgi_response_map.erase(pipe_fd);
-		_client_fd_to_pipe_map.erase(fd);
-
-		client.setResponseStatusCode(200);
-		client.setResponseBody(res.c_str());
-		client.addResponseHeader("Content-Length", intToString(res.size()));
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
-
 		pipes.erase(pipes.begin() + pipe_index);
+
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
+
+		int fd = get_client_fd_from_pipe_fd(pipe_fd, _client_fd_to_pipe_map);
+
+		send(fd, response.c_str(), response.size(), 0);
+
 		close(pipe_fd);
+		return;
 	}
 }
 
@@ -166,6 +158,7 @@ void ServerCluster::await_connections()
 					}
 
 					if (events[i].events & EPOLLOUT) {
+						// if (client.getRequest().method != "POST")
 						handle_response(client);
 					}
 				}
@@ -195,6 +188,7 @@ void ServerCluster::handle_response(Client &client)
 {
 	Response response = client.getResponse();
 
+
 	std::string response_string = client.responseToString();
 	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
 
@@ -221,17 +215,17 @@ void ServerCluster::stop(int signal)
 /* takes care of the signal when a child process is terminated
 	and the parent process is not waiting for it
 	so it doesn't become a zombie process */
-/* void handleSigchild(int sig) */
-/* { */
-/* 	(void)sig; */
-/* 	while (waitpid(-1, NULL, WNOHANG) > 0) */
-/* 		continue; */
-/* } */
+void handleSigchild(int sig)
+{
+	(void)sig;
+	while (waitpid(-1, NULL, WNOHANG) > 0)
+		continue;
+}
 
 void ServerCluster::start()
 {
-	/* if (signal(SIGCHLD, handleSigchild) == SIG_ERR) */
-	/* 	perror("signal(SIGCHLD) error"); */
+	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
+		perror("signal(SIGCHLD) error");
 
 	signal(SIGINT, stop);
 	ServerCluster::await_connections();

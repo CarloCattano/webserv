@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import time
 import os
 
@@ -24,34 +25,35 @@ def generate_html():
     greeting = get_greeting()
 
     html_content = f"""
-    <!doctype html>
-    <html>
-    <head>
-        <title>Greetings</title>
-        <link rel='stylesheet' href='../styles.css'>
-    </head>
-    <body>
-        <h1>Greetings</h1>
-        <hr>
-        <p>{greeting}</p>
-        <br>
-        <h2>System load average : {load_avg} %</h2>
-        <img src='../assets/cpu.gif' />
-        <hr>
-        <form>
-            <input type='button' value='Back' onclick='goBack()'>
-        </form>
-        <script>
-            function goBack() {{
-                window.history.back();
-            }}
-        </script>
-    </body>
-    </html>
-    """
+<!doctype html>
+<html>
+<head>
+    <title>Greetings</title>
+    <link rel='stylesheet' href='../styles.css'>
+</head>
+<body>
+    <h1>Greetings</h1>
+    <hr>
+    <p>{greeting}</p>
+    <br>
+    <h2>System load average : {load_avg} %</h2>
+    <img src='../assets/cpu.gif' />
+    <hr>
+    <form>
+        <input type='button' value='Back' onclick='goBack()'>
+    </form>
+    <script>
+        function goBack() {{
+            window.history.back();
+        }}
+    </script>
+</body>
+</html>
+"""
 
     return html_content
 
 response_html = generate_html()
 
 print(response_html)
+exit(0)

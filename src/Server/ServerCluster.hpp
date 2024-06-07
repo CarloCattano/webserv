@@ -24,8 +24,19 @@
 
 class ServerCluster {
 private:
-	std::map<int, Server> _server_map;
-	std::map<int, Client> _client_map;
+	std::map<int, Server> 		_server_map;
+	std::map<int, Client> 		_client_map;
+
+	// --------------- 
+	std::map<int, Server> 		_client_fd_to_server_map;
+	std::vector<int> 			pipes;
+	std::map<int, int> 			_client_fd_to_pipe_map;
+	std::map<int, std::string> 	_cgi_response_map;
+
+	int get_client_fd_from_pipe_fd(int pipe_fd, std::map<int, int> &client_fd_to_pipe_map);
+	void handle_pipe_event(int pipe_fd, int pipe_index);
+
+	// ---------------
 
 	int _epoll_fd;
 
@@ -56,4 +67,6 @@ public:
 
 
 	bool allowed_in_path(const std::string &file_path, Client &client);
+
+	void add_client_fd_to_epoll(int client_fd);
 };
