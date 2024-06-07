@@ -54,6 +54,7 @@ void ServerCluster::close_client(int fd)
 	close(fd);
 }
 
+// ------------ CGI CHANGES ---------------------
 void ServerCluster::add_client_fd_to_epoll(int client_fd)
 {
 	struct epoll_event ev;
@@ -77,6 +78,44 @@ int ServerCluster::get_client_fd_from_pipe_fd(int pipe_fd, std::map<int, int> &c
 	return -1;
 }
 
+void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
+{
+	char buffer[BUFFER_SIZE];
+	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
+	if (bytes_read == -1) {
+		perror("handle_pipe_event read");
+		close(pipe_fd);
+		pipes.erase(pipes.begin() + pipe_index);
+		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
+		return;
+	}
+	if (bytes_read > 0) {
+		_cgi_response_map[pipe_fd] += std::string(buffer, bytes_read);
+		switch_poll(pipe_fd, EPOLLIN);
+	}
+	else if (bytes_read == 0) {
+		std::string res = _cgi_response_map[pipe_fd];
+		std::string response = "HTTP/1.1 200 OK\r\n";
+		response += "Content-Type: text/html\r\n";
+		response += "Content-Length: " + intToString(res.size()) + "\r\n";
+		response += "Connection: keep-alive\r\n";
+		response += "\r\n";
+		response += res;
+
+		pipes.erase(pipes.begin() + pipe_index);
+
+		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
+
+		int fd = get_client_fd_from_pipe_fd(pipe_fd, _client_fd_to_pipe_map);
+
+		send(fd, response.c_str(), response.size(), 0);
+
+		close(pipe_fd);
+		return;
+	}
+}
+
+// ----------------------------------------------
 
 void ServerCluster::await_connections()
 {
@@ -94,71 +133,37 @@ void ServerCluster::await_connections()
 				perror("events[i].data.fd");
 				continue;
 			}
-
 			bool is_pipe_fd = std::find(pipes.begin(), pipes.end(), event_fd) != pipes.end();
 
 			if (is_pipe_fd) {
 				int pipe_index = std::find(pipes.begin(), pipes.end(), event_fd) - pipes.begin();
 				handle_pipe_event(event_fd, pipe_index);
-			}
-			else if (_server_map.count(event_fd)) {
-				handle_new_client_connection(event_fd);
+				continue;
 			}
 			else {
-				Client &client = _client_map[event_fd];
-
-				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
-					close_client(event_fd);
+				if (_server_map.count(event_fd)) {
+					handle_new_client_connection(event_fd);
 				}
+				else {
+					Client &client = _client_map[event_fd];
 
-				if (events[i].events & EPOLLIN) {
-					handle_request(client);
-				}
+					if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
+						epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
+						std::cout << "Closing Client: " << event_fd << std::endl;
+						close_client(event_fd);
+					}
 
-				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0) {
-					handle_response(client);
+					if (events[i].events & EPOLLIN) {
+						handle_request(client);
+					}
+
+					if (events[i].events & EPOLLOUT) {
+						// if (client.getRequest().method != "POST")
+						handle_response(client);
+					}
 				}
 			}
 		}
-	}
-}
-
-void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
-
-{
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
-
-	if (bytes_read == -1) {
-		perror("handle_pipe_event read");
-		close(pipe_fd);
-		pipes.erase(pipes.begin() + pipe_index);
-		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
-		return;
-	}
-	if (bytes_read > 0) {
-		_cgi_response_map[pipe_fd] += std::string(buffer, bytes_read);
-	}
-	else if (bytes_read == 0) {
-		std::string res = _cgi_response_map[pipe_fd];
-
-		const int fd = get_client_fd_from_pipe_fd(pipe_fd, _client_fd_to_pipe_map);
-		Client &client = _client_map[fd];
-
-		_cgi_response_map.erase(pipe_fd);
-		_client_fd_to_pipe_map.erase(fd);
-
-		client.setResponseStatusCode(200);
-		client.setResponseBody(res.c_str());
-		client.addResponseHeader("Content-Length", intToString(res.size()));
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
-
-		// TODO - get rind of pipe index
-		pipes.erase(pipes.begin() + pipe_index);
-		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
-		close(pipe_fd);
 	}
 }
 
@@ -182,6 +187,7 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events)
 void ServerCluster::handle_response(Client &client)
 {
 	Response response = client.getResponse();
+
 
 	std::string response_string = client.responseToString();
 	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);

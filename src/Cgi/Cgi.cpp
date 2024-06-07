@@ -1,103 +1,90 @@
-#include "./Cgi.hpp"
+#include "Cgi.hpp"
+#include <cstdlib>
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "../Utils/utils.hpp"
 
-#define READ_END 0
-#define WRITE_END 1
-
-void handle_response(Client &client) {
-	Response response = client.getResponse();
-
-	std::string response_string = client.responseToString();
-	client.setResponseSize(response_string.size());
-	client.setSentBytes(client.getSentBytes() +
-						send(client.getFd(), response_string.c_str(), 4096, 0));
-
-	if (client.getSentBytes() >= response_string.size()) {
-	}
+Cgi::Cgi()
+{
 }
 
-void handle_cgi_request(Client &client, char *cgi_script_path) {
-	(void)client;
-
-	pid_t	pid;
-
-	pid = fork();
-	if (pid == -1)
-		throw (std::runtime_error("Fork failed."));
-	if (pid == 0)
-	{
-		std::string output = execute_cgi_script(cgi_script_path);
-		std::cout << output << std::endl;
-		client.setResponseBody(output);
-		client.setResponseStatusCode(200);
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Content-Length", intToString(output.size()));
-		client.addResponseHeader("Connection", "keep-alive");
-
-		
-		handle_response(client);
-
-
-
-		exit(EXIT_SUCCESS);
-	}
-
-
-		// int status;
-		// if (waitpid(pid, &status, 0) == -1)
-		// 	throw std::runtime_error("Waitpid 2 failed.");
-
-		// if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-		// 	throw std::runtime_error("Child process failed.");
+Cgi::~Cgi()
+{
 }
 
-std::string execute_cgi_script(char *cgi_script_path) {
-	int 	pipe_fd[2];
-	pid_t 	pid;
-
-	if (pipe(pipe_fd) == -1)
-		throw (std::runtime_error("Pipe creation failed."));
-
-	char *av[] = {cgi_script_path, NULL};
-
-	pid = fork();
-	if (pid == -1)
-		throw (std::runtime_error("Fork failed."));
-
-	if (pid == 0)
-	{
-		close(pipe_fd[READ_END]);
-        dup2(pipe_fd[WRITE_END], STDOUT_FILENO);
-        close(pipe_fd[WRITE_END]);
-        execve(cgi_script_path, av, NULL);
-		exit(EXIT_FAILURE);
-    }
-	else
-	{
-		char 	buffer[1024];
-		std::string	result;
-        ssize_t	bytes_read = 1;
-
-		close(pipe_fd[WRITE_END]);
-
-        while (bytes_read > 0) {
-			bytes_read = read(pipe_fd[READ_END], buffer, sizeof(buffer));
-			if (bytes_read == -1)
-				throw (std::runtime_error("Error reading from pipe."));
-			buffer[bytes_read] = '\0';
-			result += buffer;
-        }
-        close(pipe_fd[WRITE_END]);
-
-		return (result);
+Cgi &Cgi::operator=(const Cgi &src)
+{
+	if (this != &src) {
+		this->_cgi = src._cgi;
 	}
+	return *this;
 }
 
-		// wait(NULL);
+Cgi::Cgi(const Cgi &src)
+{
+	*this = src;
+}
 
-		// int status;
-		// if (waitpid(pid, &status, 0) == -1)
-		// 	throw std::runtime_error("Waitpid 1 failed.");
+void Cgi::handle_cgi_request(Client &client,
+							 const std::string &cgi_script_path,
+							 std::vector<int> &pipes,
+							 std::map<int, int> &_client_fd_to_pipe_map,
+							 int _epoll_fd)
+{
+	int pipe_fd[2];
+	int fd = client.getFd();
 
-		// if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-		// 	throw std::runtime_error("Child process failed.");
+	if (pipe(pipe_fd) == -1) {
+		perror("pipe2");
+		return;
+	}
+
+	pid_t pid;
+
+	if ((pid = fork()) == -1) {
+		perror("fork");
+		return;
+	}
+
+	if (pid == 0) {
+		close(pipe_fd[0]);
+
+		dup2(pipe_fd[1], STDOUT_FILENO);
+		close(pipe_fd[1]);
+
+		char *av[] = { const_cast<char *>("/usr/bin/python3"), strdup(cgi_script_path.c_str()), NULL };
+		execve(av[0], av, NULL);
+		exit(1);
+	}
+	else {
+		close(pipe_fd[1]);
+
+		struct epoll_event ev;
+		ev.events = EPOLLIN;
+		ev.data.fd = pipe_fd[0];
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, pipe_fd[0], &ev) == -1) {
+			perror("epoll_ctl");
+			return;
+		}
+
+		pipes.push_back(pipe_fd[0]);
+		_client_fd_to_pipe_map[fd] = pipe_fd[0];
+
+		// TODO - REMOVE ?
+		int status;
+		if (waitpid(pid, &status, WNOHANG) > 0) {
+			log("Cgi child done!");
+			// clean up pipes and epoll
+			close(pipe_fd[0]);
+			pipes.pop_back();
+			_client_fd_to_pipe_map.erase(fd);
+			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
+			Error("pipe Done");
+			return;
+		}
+	}
+}
