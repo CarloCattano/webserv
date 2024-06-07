@@ -32,6 +32,8 @@ class Client {
 	Response response;
 	size_t sentBytes;
 	std::stringstream responseStream;
+	std::map<int, int> pid_start_time_map;
+	std::map<int, int> pid_pipefd_map;
 
   public:
 	Client();
@@ -45,6 +47,7 @@ class Client {
 	std::string getErrorString(int code);
 	std::string responseToString();
 	void sendErrorPage(int code);
+	void checkTimeout(int timeout);
 
 	// general getters and setters
 	int getFd() const;
@@ -53,6 +56,8 @@ class Client {
 	Response getResponse() const;
 	epoll_event *getEvent() const;
 	size_t getSentBytes() const;
+	std::map<int, int> getPidStartTimeMap() const;
+	std::map<int, int> getPidPipefdMap() const;
 
 	void setFd(int fd);
 	void setServer(Server *server);
@@ -60,6 +65,11 @@ class Client {
 	void setResponse(Response &response);
 	void setEvent(epoll_event *event);
 	void setSentBytes(size_t sentBytes);
+	void setPidStartTimeMap(std::map<int, int> pid_start_time_map);
+	void addPidStartTimeMap(int pid, int start_time);
+	void removePidStartTimeMap(int pid);
+	void addPidPipefdMap(int pid, int pipefd);
+	void removePidPipefdMap(int pid);
 
 	// getters and setters for request
 	void setRequestString(std::string request);

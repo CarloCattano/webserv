@@ -7,9 +7,9 @@ Config::Config() {}
 Config::~Config() {}
 
 void    set_allowed_methods(Server &server, std::vector<std::string> key_with_values) {
-	Method POST = server.getPost();
-	Method GET = server.getGet();
-	Method DELETE = server.getDelete();
+	Method POST = server.getPost(NULL);
+	Method GET = server.getGet(NULL);
+	Method DELETE = server.getDelete(NULL);
     bool new_state;
 
     if (key_with_values[0] == "allow")

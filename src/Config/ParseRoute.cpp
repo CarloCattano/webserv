@@ -79,7 +79,7 @@ int parse_route(Server &virtual_server, std::string str, int i)
 		else if (key == "autoindex" && value_count == 1 && toLowerCase(values[0]) == "true")
 			route.autoindex = true;
 		else if (key == "index" && value_count >= 1)
-			route.index_files = values;
+			route.index_file = values[0];
 		else if (key == "deny" || key == "allow")
             set_allowed_methods(route, key_with_values);
         else if (key == "cgi_path" && value_count >= 1)

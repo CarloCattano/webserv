@@ -60,4 +60,8 @@ public:
 	bool allowed_in_path(const std::string &file_path, Client &client);
 
 	void add_client_fd_to_epoll(int client_fd);
+
+	void check_timeout(Client &client, int timeout);
+	int  get_pipefd_from_clientfd(int client_fd);
+
 };

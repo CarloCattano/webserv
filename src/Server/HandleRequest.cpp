@@ -25,6 +25,10 @@ void ServerCluster::handle_request(Client &client)
 	if (!client.getRequest().finished)
 		return;
 
+	std::string request_uri = client.getRequest().uri;
+
+	std::cout << "Client request: " << client.getRequest().uri << std::endl;
+
 	Server *server = client.getServer();
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
 		log("Body size is too big");
@@ -32,13 +36,13 @@ void ServerCluster::handle_request(Client &client)
 		return;
 	}
 
-	if (client.getRequest().method == "GET") {
+	if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client);
 	}
-	else if (client.getRequest().method == "POST") {
+	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		handle_post_request(client);
 	}
-	else if (client.getRequest().method == "DELETE")
+	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
 		handle_delete_request(client);
 	else {
 		// TODO - check if 405 is in the server error pages
@@ -61,7 +65,8 @@ void ServerCluster::handle_get_request(Client &client)
 {
 	Response response;
 	Server *server = client.getServer();
-	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
+	std::string request_uri = client.getRequest().uri;
+	std::string full_path = "." + server->getRoot() + request_uri;
 	std::string body;
 	std::string content_type;
 
@@ -75,10 +80,14 @@ void ServerCluster::handle_get_request(Client &client)
 		return;
 	}
 
-	if (isFolder(full_path) && directory_contains_index_file(full_path))
-		full_path += "index.html";
+	std::string index_file_name = server->get_index_file_name(&request_uri);
+	if (isFolder(full_path) && directory_contains_file(full_path, index_file_name)) {
+		if (full_path[full_path.size() - 1] != '/')
+			full_path += '/';
+		full_path += index_file_name;
+	}
 
-	if (isFolder(full_path) == true && server->getAutoindex() == true) {
+	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
 		body = generateDirectoryListing(full_path);
 		content_type = "text/html";
 	}

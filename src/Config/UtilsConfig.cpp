@@ -16,8 +16,7 @@ std::string get_file_content(const std::string &filename) {
 		}
 		file.close();
 	} else {
-		std::cerr << "Failed to open the file." << std::endl;
-		// throw error????
+		throw std::runtime_error("Unable to open file: " + filename);
 	}
 	file_content += '\0';
 	return (file_content);
@@ -51,15 +50,8 @@ void print_server_routes(std::vector<Route> routes) {
 			std::cout << "\t\t\tCode: " << routes[i].redirections[j].code << std::endl;
 			std::cout << "\t\t\tUrl: " << routes[i].redirections[j].url << std::endl;
 		}
-		if (routes[i].autoindex)
-			std::cout << "\t\tAutoIndex: " << "true" << std::endl;
-		for (size_t j = 0; j < routes[i].index_files.size(); ++j) {
-			if (j == 0)
-				std::cout << "\t\tIndexFiles:";
-			std::cout << " " << routes[i].index_files[j];
-			if (j == routes[i].index_files.size() - 1)
-				std::cout << std::endl;
-		}
+		std::cout << "\t\tAutoIndex: " << routes[i].autoindex << std::endl;
+		std::cout << "\t\tIndex File: " << routes[i].index_file << std::endl;
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
 		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
@@ -82,11 +74,11 @@ void print_server_obj(Server &obj) {
         print_vector(obj.getErrorPages());
     }
 	std::cout << "\tRoot " << obj.getRoot() << std::endl;
-    std::cout << "\tAutoIndex: " << obj.getAutoindex() << std::endl;
+    std::cout << "\tAutoIndex: " << obj.getAutoindex(NULL) << std::endl;
 	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
-	std::cout << "\tPOST: " << obj.getPost().is_allowed << std::endl;
-	std::cout << "\tGET: " << obj.getGet().is_allowed << std::endl;
-	std::cout << "\tDELETE: " << obj.getDelete().is_allowed << std::endl;
+	std::cout << "\tPOST: " << obj.getPost(NULL).is_allowed << std::endl;
+	std::cout << "\tGET: " << obj.getGet(NULL).is_allowed << std::endl;
+	std::cout << "\tDELETE: " << obj.getDelete(NULL).is_allowed << std::endl;
 	std::cout << "\tcgi_path: " << obj.getCgiPath() << std::endl;
 	std::cout << "\tcgi_extension: " << obj.getCgiExtension() << std::endl;
     if (obj.getRoutes().size() > 0)
