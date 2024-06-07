@@ -69,17 +69,5 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 		}
 
 		_pipeFd_clientFd_map[pipe_fd[0]] = client_fd;
-
-		// TODO - REMOVE ?
-		int status;
-		if (waitpid(pid, &status, WNOHANG) > 0) {
-			log("Cgi child done!");
-			// clean up pipes and epoll
-			close(pipe_fd[0]);
-			_pipeFd_clientFd_map.erase(pipe_fd[0]);
-			epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
-			Error("pipe Done");
-			return;
-		}
 	}
 }
