@@ -123,26 +123,6 @@ std::string Client::responseToString() {
 	return response;
 }
 
-void Client::checkTimeout(int timeout) {
-	if (this->pid_start_time_map.size() == 0)
-		return;
-	std::map<int, int>::iterator it = this->pid_start_time_map.begin();
-	while (it != this->pid_start_time_map.end()) {
-		if (time(NULL) - it->second > timeout) {
-			sendErrorPage(504);
-			kill(it->first, SIGKILL);
-			this->pid_start_time_map.erase(it++);
-
-			close(pipe_fd[0]);
-			_pipeFd_clientFd_map.erase(pipe_fd[0]);
-			epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
-			
-		} else {
-			++it;
-		}
-	}
-}
-
 // client getters
 int Client::getFd() const { return this->fd; }
 Server *Client::getServer() const { return this->server; }
@@ -150,6 +130,7 @@ Request Client::getRequest() const { return this->request; }
 Response Client::getResponse() const { return this->response; }
 size_t Client::getSentBytes() const { return this->sentBytes; }
 std::map<int, int> Client::getPidStartTimeMap() const { return this->pid_start_time_map; }
+std::map<int, int> Client::getPidPipefdMap() const { return this->pid_pipefd_map; }
 
 // client setters
 void Client::setFd(int fd) { this->fd = fd; }
@@ -160,6 +141,8 @@ void Client::setSentBytes(size_t sentBytes) { this->sentBytes = sentBytes; }
 void Client::setPidStartTimeMap(std::map<int, int> pid_start_time_map) { this->pid_start_time_map = pid_start_time_map; }
 void Client::addPidStartTimeMap(int pid, int start_time) { this->pid_start_time_map[pid] = start_time; }
 void Client::removePidStartTimeMap(int pid) { this->pid_start_time_map.erase(pid); }
+void Client::addPidPipefdMap(int pid, int pipefd) { this->pid_pipefd_map[pid] = pipefd; }
+void Client::removePidPipefdMap(int pid) { this->pid_pipefd_map.erase(pid); }
 
 // request setters
 void Client::setRequestString(std::string request) { this->request.request = request; }
