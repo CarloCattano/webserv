@@ -60,6 +60,7 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 		close(pipe_fd[1]);
 
 		client.addPidStartTimeMap(pid, time(NULL));
+		client.addPidPipefdMap(pid, pipe_fd[0]);
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = pipe_fd[0];
