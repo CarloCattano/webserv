@@ -22,7 +22,7 @@ rework
 - [j] The CGI should be run in the correct directory for relative path file access.
 
 ## General:
-- [b] Timeout for requests/connections/cgiscipts - timer
+- [b] Timeout for requests/connections/cgiscripts - timer
 - [b] redirected URL.
 - [b] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
         -track fds flag on valgrind
