@@ -1,42 +1,38 @@
 #pragma once
 
-#include <map>
-#include <sys/epoll.h>
 #include <algorithm>
 #include <cstdio>
-#include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <string>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "../Client/Client.hpp"
 #include "../Cgi/Cgi.hpp"
-#include "./Server.hpp"
+#include "../Client/Client.hpp"
 #include "../Utils/FileUpload.hpp"
 #include "../Utils/utils.hpp"
+#include "./Server.hpp"
 
 class ServerCluster {
 private:
-	std::map<int, Server> 		_server_map;
-	std::map<int, Client> 		_client_map;
+	std::map<int, Server> _server_map;
+	std::map<int, Client> _client_map;
 
-	// --------------- 
-	std::map<int, Server> 		_client_fd_to_server_map;
-	std::vector<int> 			pipes;
-	std::map<int, int> 			_client_fd_to_pipe_map;
-	std::map<int, std::string> 	_cgi_response_map;
+	std::map<int, Server> _client_fd_to_server_map;
+	std::vector<int> pipes;
+	std::map<int, int> _client_fd_to_pipe_map;
+	std::map<int, std::string> _cgi_response_map;
 
 	int get_client_fd_from_pipe_fd(int pipe_fd, std::map<int, int> &client_fd_to_pipe_map);
 	void handle_pipe_event(int pipe_fd, int pipe_index);
-
-	// ---------------
 
 	int _epoll_fd;
 

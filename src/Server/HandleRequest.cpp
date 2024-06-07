@@ -25,6 +25,13 @@ void ServerCluster::handle_request(Client &client)
 	if (!client.getRequest().finished)
 		return;
 
+	Server *server = client.getServer();
+	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
+
 	if (client.getRequest().method == "GET") {
 		handle_get_request(client);
 	}
@@ -51,8 +58,8 @@ void update_response(Client &client, std::string body, std::string content_type)
 
 void ServerCluster::handle_get_request(Client &client)
 {
-	Server *server = client.getServer();
 	Response response;
+	Server *server = client.getServer();
 	std::string full_path = "." + server->getRoot() + client.getRequest().uri;
 	std::string body;
 	std::string content_type;
@@ -67,12 +74,6 @@ void ServerCluster::handle_get_request(Client &client)
 		return;
 	}
 
-	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
-		log("Body size is too big");
-		client.sendErrorPage(413);
-		return;
-	}
-
 	if (isFolder(full_path) && directory_contains_index_file(full_path))
 		full_path += "index.html";
 
@@ -82,9 +83,7 @@ void ServerCluster::handle_get_request(Client &client)
 	}
 	else if (isFile(full_path)) {
 		body = readFileToString(full_path);
-		;
 		content_type = getContentType(full_path);
-		;
 	}
 	else {
 		client.sendErrorPage(404);
@@ -97,21 +96,14 @@ void ServerCluster::handle_post_request(Client &client)
 {
 	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
 
-	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
-		log("Body size is too big");
-		client.sendErrorPage(413);
-		close_client(client.getFd());
-		return;
-	}
 
-	else {
-		if (client.getRequest().uri == "/upload") {
-			handle_file_upload(client);
-		}
-		Cgi cgi;
-		cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
-		return;
+	if (client.getRequest().uri == "/upload") {
+		handle_file_upload(client);
 	}
+	Cgi cgi;
+	Error("cgi from post");
+	cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
+
 	client.setResponseStatusCode(200);
 	client.addResponseHeader("Content-Type", "text/html");
 	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
@@ -131,11 +123,6 @@ void ServerCluster::handle_file_upload(Client &client)
 		return;
 	}
 
-	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
-		log("Body size is too big");
-		client.sendErrorPage(413);
-		return;
-	}
 
 	if (formData.fileContent.empty()) {
 		client.sendErrorPage(400);

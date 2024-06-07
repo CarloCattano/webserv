@@ -35,11 +35,10 @@ void Cgi::handle_cgi_request(Client &client,
 							 std::map<int, int> &_client_fd_to_pipe_map,
 							 int _epoll_fd)
 {
-	int pipe_in[2];
-	int pipe_out[2];
+	int pipe_fd[2];
 	int fd = client.getFd();
 
-	if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1) {
+	if (pipe(pipe_fd) == -1) {
 		perror("pipe2");
 		return;
 	}
@@ -52,44 +51,40 @@ void Cgi::handle_cgi_request(Client &client,
 	}
 
 	if (pid == 0) {
-		close(pipe_in[1]);
-		close(pipe_out[0]);
+		close(pipe_fd[0]);
 
-		dup2(pipe_in[0], STDIN_FILENO);
-		dup2(pipe_out[1], STDOUT_FILENO);
+		dup2(pipe_fd[1], STDOUT_FILENO);
+		close(pipe_fd[1]);
 
 		char *av[] = { const_cast<char *>("/usr/bin/python3"), strdup(cgi_script_path.c_str()), NULL };
 		execve(av[0], av, NULL);
 		exit(1);
 	}
 	else {
-		close(pipe_in[0]);
-		close(pipe_out[1]);
+		close(pipe_fd[1]);
 
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
-		ev.data.fd = pipe_out[0];
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, pipe_out[0], &ev) == -1) {
+		ev.data.fd = pipe_fd[0];
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, pipe_fd[0], &ev) == -1) {
 			perror("epoll_ctl");
 			return;
 		}
 
-		pipes.push_back(pipe_out[0]);
-		_client_fd_to_pipe_map[fd] = pipe_out[0];
+		pipes.push_back(pipe_fd[0]);
+		_client_fd_to_pipe_map[fd] = pipe_fd[0];
 
+		// TODO - REMOVE ?
 		int status;
-
 		if (waitpid(pid, &status, WNOHANG) > 0) {
 			log("Cgi child done!");
 			// clean up pipes and epoll
-			close(pipe_out[0]);
-			close(pipe_in[1]);
+			close(pipe_fd[0]);
 			pipes.pop_back();
 			_client_fd_to_pipe_map.erase(fd);
-			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_out[0], NULL);
+			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
 			Error("pipe Done");
 			return;
 		}
-		close(pipe_in[1]);
 	}
 }
