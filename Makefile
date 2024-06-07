@@ -18,7 +18,7 @@ $(NAME): $(OBJS)
 %.o: %.cpp
 	$(CXX) -c $< $(CXXFLAGS) $(INC) -o $@
 
-run : all clean
+run : all
 	@if pgrep $(NAME) ; then pkill $(NAME) ; fi
 	./$(NAME) server.conf
 
