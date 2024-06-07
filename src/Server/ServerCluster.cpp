@@ -67,17 +67,6 @@ void ServerCluster::add_client_fd_to_epoll(int client_fd)
 	}
 }
 
-int ServerCluster::get_client_fd_from_pipe_fd(int pipe_fd, std::map<int, int> &client_fd_to_pipe_map)
-{
-	for (std::map<int, int>::iterator it = client_fd_to_pipe_map.begin(); it != client_fd_to_pipe_map.end(); ++it) {
-		if (it->second == pipe_fd) {
-			return it->first;
-		}
-	}
-	return -1;
-}
-
-
 void ServerCluster::await_connections()
 {
 	struct epoll_event events[MAX_EVENTS];
@@ -95,11 +84,8 @@ void ServerCluster::await_connections()
 				continue;
 			}
 
-			bool is_pipe_fd = std::find(pipes.begin(), pipes.end(), event_fd) != pipes.end();
-
-			if (is_pipe_fd) {
-				int pipe_index = std::find(pipes.begin(), pipes.end(), event_fd) - pipes.begin();
-				handle_pipe_event(event_fd, pipe_index);
+			if (_pipeFd_clientFd_map.find(event_fd) != _pipeFd_clientFd_map.end()) {
+				handle_pipe_event(event_fd);
 			}
 			else if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
@@ -107,24 +93,21 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 
-				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR) {
-					epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, event_fd, NULL);
+				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
-				}
 
-				if (events[i].events & EPOLLIN) {
+				if (events[i].events & EPOLLIN)
 					handle_request(client);
-				}
 
-				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0) {
+				// TO-DO is it possible to send a response with empty body?
+				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
 					handle_response(client);
-				}
 			}
 		}
 	}
 }
 
-void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
+void ServerCluster::handle_pipe_event(int pipe_fd)
 
 {
 	char buffer[BUFFER_SIZE];
@@ -133,7 +116,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 	if (bytes_read == -1) {
 		perror("handle_pipe_event read");
 		close(pipe_fd);
-		pipes.erase(pipes.begin() + pipe_index);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		return;
 	}
@@ -143,11 +125,10 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 	else if (bytes_read == 0) {
 		std::string res = _cgi_response_map[pipe_fd];
 
-		const int fd = get_client_fd_from_pipe_fd(pipe_fd, _client_fd_to_pipe_map);
-		Client &client = _client_map[fd];
+		Client &client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
 
 		_cgi_response_map.erase(pipe_fd);
-		_client_fd_to_pipe_map.erase(fd);
+		_pipeFd_clientFd_map.erase(pipe_fd);
 
 		client.setResponseStatusCode(200);
 		client.setResponseBody(res.c_str());
@@ -156,7 +137,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd, int pipe_index)
 		client.addResponseHeader("Connection", "close");
 
 		// TODO - get rind of pipe index
-		pipes.erase(pipes.begin() + pipe_index);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
 	}
