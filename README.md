@@ -1,22 +1,17 @@
 # WEBSERV
  by ccattano bmacmaho jalbers
 
-
-rework
-
 ## Current open fronts:
 
 - [c] File Upload 
-
 - [c] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
-
 - [c] Upload some file to the server and get it back.
        - hangs on submission
 
 - [c] POST  request is hanging on a cgi to folder or non existent
         - wait for barra execve error handling
 
-- [V] track all read/recv/write/send returns
+- [V] track all read/recv/write/send returns for errors
 
 
 - [j] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)

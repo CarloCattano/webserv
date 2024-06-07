@@ -102,6 +102,9 @@ void ServerCluster::handle_post_request(Client &client)
 		return;
 	}
 
+	if (!isFile(full_path))
+		return client.sendErrorPage(404);
+
 	if (full_path.find(client.getServer()->getCgiPath()) != std::string::npos &&
 		full_path.find(".py") != std::string::npos) {
 		Cgi cgi;
@@ -112,7 +115,6 @@ void ServerCluster::handle_post_request(Client &client)
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 		return;
 	}
-
 	client.sendErrorPage(501);
 }
 
