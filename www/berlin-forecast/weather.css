@@ -1,0 +1,49 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+.weather-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.current-weather, .forecast-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.weather-icon {
+    width: 50px;
+    height: 50px;
+    margin-right: 20px;
+}
+
+.weather-info p {
+    margin: 0;
+}
+
+.forecast-list {
+    list-style: none;
+    padding: 0;
+}
+
+.forecast-item {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.forecast-item:last-child {
+    border-bottom: none;
+}
