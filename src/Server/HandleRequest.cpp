@@ -69,7 +69,7 @@ void ServerCluster::handle_get_request(Client &client)
 
 		if (full_path[full_path.size() - 1] == '?')
 			full_path = full_path.substr(0, full_path.size() - 1);
-		cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
+		cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
 		update_response(client, _cgi_response_map[client.getFd()], "text/html");
 		return;
 	}
@@ -102,7 +102,7 @@ void ServerCluster::handle_post_request(Client &client)
 	}
 	Cgi cgi;
 	Error("cgi from post");
-	cgi.handle_cgi_request(client, full_path, pipes, _client_fd_to_pipe_map, _epoll_fd);
+	cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
 
 	client.setResponseStatusCode(200);
 	client.addResponseHeader("Content-Type", "text/html");
