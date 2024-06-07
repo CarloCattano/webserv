@@ -132,6 +132,11 @@ void Client::checkTimeout(int timeout) {
 			sendErrorPage(504);
 			kill(it->first, SIGKILL);
 			this->pid_start_time_map.erase(it++);
+
+			close(pipe_fd[0]);
+			_pipeFd_clientFd_map.erase(pipe_fd[0]);
+			epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
+			
 		} else {
 			++it;
 		}

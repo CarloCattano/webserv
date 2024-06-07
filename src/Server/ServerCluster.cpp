@@ -93,7 +93,7 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 				
-				client.checkTimeout(5);
+				int pid = client.checkTimeout(5);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
