@@ -4,8 +4,7 @@
 const int MAX_EVENTS = 1024;
 const int BUFFER_SIZE = 4096; // TODO check pipe max buff
 
-ServerCluster::ServerCluster(std::vector<Server> &servers)
-{
+ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
 		perror("epoll_create1");
@@ -26,8 +25,7 @@ ServerCluster::ServerCluster(std::vector<Server> &servers)
 	}
 }
 
-int ServerCluster::accept_new_connection(int server_fd)
-{
+int ServerCluster::accept_new_connection(int server_fd) {
 	int client_fd = accept(server_fd, NULL, NULL);
 
 	if (client_fd == -1) {
@@ -38,8 +36,7 @@ int ServerCluster::accept_new_connection(int server_fd)
 	return (client_fd);
 }
 
-void ServerCluster::handle_new_client_connection(int server_fd)
-{
+void ServerCluster::handle_new_client_connection(int server_fd) {
 	int client_fd = accept_new_connection(server_fd);
 
 	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
@@ -47,15 +44,13 @@ void ServerCluster::handle_new_client_connection(int server_fd)
 	_client_map[client_fd] = *client;
 }
 
-void ServerCluster::close_client(int fd)
-{
+void ServerCluster::close_client(int fd) {
 	_client_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 }
 
-void ServerCluster::add_client_fd_to_epoll(int client_fd)
-{
+void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	struct epoll_event ev;
 
 	ev.events = EPOLLIN;
@@ -67,8 +62,7 @@ void ServerCluster::add_client_fd_to_epoll(int client_fd)
 	}
 }
 
-void ServerCluster::await_connections()
-{
+void ServerCluster::await_connections() {
 	struct epoll_event events[MAX_EVENTS];
 	int num_events;
 
@@ -86,11 +80,9 @@ void ServerCluster::await_connections()
 
 			if (_pipeFd_clientFd_map.find(event_fd) != _pipeFd_clientFd_map.end()) {
 				handle_pipe_event(event_fd);
-			}
-			else if (_server_map.count(event_fd)) {
+			} else if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
-			}
-			else {
+			} else {
 				Client &client = _client_map[event_fd];
 
 				check_timeout(client, 5);
@@ -122,8 +114,7 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 	}
 	if (bytes_read > 0) {
 		_cgi_response_map[pipe_fd] += std::string(buffer, bytes_read);
-	}
-	else if (bytes_read == 0) {
+	} else if (bytes_read == 0) {
 		std::string res = _cgi_response_map[pipe_fd];
 
 		Client &client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
@@ -143,8 +134,7 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 	}
 }
 
-void ServerCluster::switch_poll(int client_fd, uint32_t events)
-{
+void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	struct epoll_event ev;
 	ev.events = events;
 	ev.data.fd = client_fd;
@@ -160,8 +150,7 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events)
 	}
 }
 
-void ServerCluster::handle_response(Client &client)
-{
+void ServerCluster::handle_response(Client &client) {
 	Response response = client.getResponse();
 
 	std::string response_string = client.responseToString();
@@ -180,8 +169,7 @@ void ServerCluster::handle_response(Client &client)
 	}
 }
 
-void ServerCluster::stop(int signal)
-{
+void ServerCluster::stop(int signal) {
 	(void)signal;
 	log("\nServer stopped");
 	exit(0);
@@ -190,15 +178,13 @@ void ServerCluster::stop(int signal)
 /* takes care of the signal when a child process is terminated
 	and the parent process is not waiting for it
 	so it doesn't become a zombie process */
-void handleSigchild(int sig)
-{
+void handleSigchild(int sig) {
 	(void)sig;
 	while (waitpid(-1, NULL, WNOHANG) > 0)
 		continue;
 }
 
-void ServerCluster::start()
-{
+void ServerCluster::start() {
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
 		perror("signal(SIGCHLD) error");
 
@@ -206,8 +192,7 @@ void ServerCluster::start()
 	ServerCluster::await_connections();
 }
 
-void ServerCluster::check_timeout(Client &client, int timeout)
-{
+void ServerCluster::check_timeout(Client &client, int timeout) {
 	std::map<int, int> pid_start_time_map = client.getPidStartTimeMap();
 	std::map<int, int>::iterator it = pid_start_time_map.begin();
 
@@ -224,13 +209,11 @@ void ServerCluster::check_timeout(Client &client, int timeout)
 	}
 }
 
-int ServerCluster::get_pipefd_from_clientfd(int client_fd)
-{
+int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 	return _pipeFd_clientFd_map[client_fd];
 }
 
-ServerCluster::~ServerCluster()
-{
+ServerCluster::~ServerCluster() {
 	// for (size_t i = 0; i < _servers.size(); i++) {
 	//     close(_servers[i].getSocketFd());
 	// }

@@ -113,7 +113,8 @@ bool Server::getDefaultServer()
 	return this->_default_server;
 }
 
-bool Server::getAutoindex(std::string *location) {
+bool Server::getAutoindex(std::string *location)
+{
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
@@ -122,19 +123,24 @@ bool Server::getAutoindex(std::string *location) {
 		return this->_autoindex;
 }
 
-std::string Server::getRoot() { return this->_root; }
+std::string Server::getRoot()
+{
+	return this->_root;
+}
 
-Route* Server::get_route(std::string location) {
+Route *Server::get_route(std::string location)
+{
 	if (location[location.size() - 1] == '/')
 		location.resize(location.size() - 1);
 	for (size_t i = 0; i < _routes.size(); ++i) {
 		if (_routes[i].location == location)
 			return (&_routes[i]);
-    }
+	}
 	return (NULL);
 }
 
-Method Server::getGet(std::string *location) {
+Method Server::getGet(std::string *location)
+{
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
@@ -143,7 +149,8 @@ Method Server::getGet(std::string *location) {
 		return this->_GET;
 }
 
-Method Server::getPost(std::string *location) {
+Method Server::getPost(std::string *location)
+{
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
@@ -152,7 +159,8 @@ Method Server::getPost(std::string *location) {
 		return this->_POST;
 }
 
-Method Server::getDelete(std::string *location) {
+Method Server::getDelete(std::string *location)
+{
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
@@ -161,17 +169,20 @@ Method Server::getDelete(std::string *location) {
 		return this->_DELETE;
 }
 
-std::string Server::get_index_file_name(std::string *location) {
+std::string Server::get_index_file_name(std::string *location)
+{
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
 		return (route->index_file);
 	else
 		return "index.html";
-
 }
 
-std::string Server::getCgiPath() { return this->_cgi_path; }
+std::string Server::getCgiPath()
+{
+	return this->_cgi_path;
+}
 
 std::string Server::getCgiExtension()
 {

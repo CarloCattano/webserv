@@ -29,10 +29,8 @@ Cgi::Cgi(const Cgi &src)
 	*this = src;
 }
 
-void Cgi::handle_cgi_request(Client &client,
-							 const std::string &cgi_script_path,
-							 std::map<int, int> &_pipeFd_clientFd_map,
-							 int epoll_fd)
+void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
+							 std::map<int, int> &_pipeFd_clientFd_map, int epoll_fd)
 {
 	int pipe_fd[2];
 	int client_fd = client.getFd();

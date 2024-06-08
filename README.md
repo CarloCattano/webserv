@@ -31,4 +31,3 @@
 
 # bugs
 - excess found with some requests with ```bash curl localhost:4222/index.html -v```
-
