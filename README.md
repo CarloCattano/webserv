@@ -1,6 +1,5 @@
 # WEBSERV
  by ccattano bmacmaho jalbers
-
 ## Current open fronts:
 
 * Carlo :
@@ -15,21 +14,21 @@
 - [X] track all read/recv/write/send returns for errors
 - [X] Upload some file to the server and get it back.
 
-
-
 * Joseph:
-- [j] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
+- [ ] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
 
-- [j] Setup routes in a server to different directories.
-- [j] Setup a default file to search for if you ask for a directory
-- [j] Setup a list of methods accepted for a certain route (e.g., try to delete something with and without permission).
-- [j] redirected URL.
-- [j] The CGI should be run in the correct directory for relative path file access.
+- [ ] Setup routes in a server to different directories.
+- [ ] Setup a default file to search for if you ask for a directory
+- [ ] Setup a list of methods accepted for a certain route (e.g., try to delete something with and without permission).
+- [ ] redirected URL.
+- [ ] The CGI should be run in the correct directory for relative path file access.
 
 * Barra:
 - [ ] File Upload 
-    - [b] Bug with uploaded/downloaded images
+    - [ ] Bug with uploaded/downloaded images
 - [ ] Timeout for connections - timer
 - [ ] Check if there is no hanging connection.
 
+# bugs
+- excess found with some requests with ```bash curl localhost:4222/index.html -v```
 
