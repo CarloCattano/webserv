@@ -45,6 +45,8 @@ void parse_location(int value_count, std::vector<std::string> &values, Route &ro
 	if (value_count == 3)
 		route.matching_style = values[0];
 	route.location = values[value_count - 2];
+	if (route.location[route.location.size() - 1] != '/')
+		route.location += '/';
 }
 
 void parse_redirection(std::vector<std::string> &values, int value_count, Route &route)

@@ -122,11 +122,18 @@ bool Server::getAutoindex(std::string *location) {
 		return this->_autoindex;
 }
 
-std::string Server::getRoot() { return this->_root; }
+std::string Server::getRoot(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route && route->root != "")
+		return (route->root);
+	else
+		return this->_root;
+}
 
 Route* Server::get_route(std::string location) {
-	if (location[location.size() - 1] == '/')
-		location.resize(location.size() - 1);
+	if (location[location.size() - 1] != '/')
+		location += '/';
 	for (size_t i = 0; i < _routes.size(); ++i) {
 		if (_routes[i].location == location)
 			return (&_routes[i]);
@@ -169,6 +176,15 @@ std::string Server::get_index_file_name(std::string *location) {
 	else
 		return "index.html";
 
+}
+
+std::string Server::get_full_path(std::string location) {
+	Route 			*route = get_route(location);
+	std::string		full_path = "." + this->getRoot(&location);
+
+	if (!route || (route && route->root == ""))
+		full_path += location;
+	return (full_path);
 }
 
 std::string Server::getCgiPath() { return this->_cgi_path; }
