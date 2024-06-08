@@ -3,18 +3,11 @@
 
 ## Current open fronts:
 
-- [c] File Upload 
 - [c] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
 
-- [c] Upload some file to the server and get it back.
-       - hangs on submission
-
-- [C] Bug with uploaded/downloaded images
-
-- [V] POST  request is hanging on a cgi to folder or non existent
-        - wait for barra execve error handling
-- [V] track all read/recv/write/send returns for errors
-
+- [X] POST  request is hanging on a cgi to folder or non existent
+- [X] track all read/recv/write/send returns for errors
+- [X] Upload some file to the server and get it back.
 
 
 - [j] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
@@ -26,10 +19,13 @@
 - [j] The CGI should be run in the correct directory for relative path file access.
 
 ## General:
+- [b] File Upload 
+    - [b] Bug with uploaded/downloaded images
+
 - [b] Timeout for requests/connections/cgiscipts - timer
 - [b] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
         -track fds flag on valgrind
 - [b] Check if there is no hanging connection.
-- [B] Search for the HTTP response status codes list on the internet. During this evaluation, if any status codes is wrong, don't give any related points.
+- [b] Search for the HTTP response status codes list on the internet. During this evaluation, if any status codes is wrong, don't give any related points.
         - create execve error hadling
 
