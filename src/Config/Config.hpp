@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Server/Server.hpp"
+#include <stdlib.h>
 
 class Config {
   private:

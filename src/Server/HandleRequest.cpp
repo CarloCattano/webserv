@@ -1,6 +1,7 @@
 #include <string>
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
+
 void ServerCluster::handle_request(Client &client)
 {
 	char buffer[4096];
@@ -28,26 +29,47 @@ void ServerCluster::handle_request(Client &client)
 	std::string request_uri = client.getRequest().uri;
 
 	Server *server = client.getServer();
+
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);
 		return;
 	}
 
-	if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
+	HttpRedirection redirection = server->getRedirection(&request_uri);
+
+	if (redirection.code) {
+		handle_redirection(client, server, redirection);
+	}
+	else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	}
 	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		handle_post_request(client, server);
 	}
-	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
+	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
+	}
 	else {
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
+}
+
+void ServerCluster::handle_redirection(Client &client, Server *server, HttpRedirection redirection) {
+	(void)server;
+	if (redirection.url == "")
+		client.sendErrorPage(redirection.code);
+	else {
+		std::string url = redirection.url[0] == '/' ? server->getRoot(NULL) + redirection.url : redirection.url;
+		// std::cout << "Test: " << url << std::endl;
+		client.setResponseStatusCode(redirection.code);
+		client.addResponseHeader("Content-Length", "10");
+		client.addResponseHeader("Location", redirection.url);
+		client.setResponseBody("something");
+	}
 }
 
 void update_response(Client &client, std::string body, std::string content_type)
@@ -77,13 +99,13 @@ void ServerCluster::handle_get_request(Client &client, Server *server)
 		return;
 	}
 
-
-	std::string index_file_name = server->get_index_file_name(&request_uri);
+	std::string index_file_name = server->getIndexFile(&request_uri);
 	if (isFolder(full_path) && directory_contains_file(full_path, index_file_name)) {
 		if (full_path[full_path.size() - 1] != '/')
 			full_path += '/';
 		full_path += index_file_name;
 	}
+
 
 	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
 		body = generateDirectoryListing(full_path);
