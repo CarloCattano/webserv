@@ -88,7 +88,7 @@ void ServerCluster::handle_get_request(Client &client, Server *server) {
 	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
 		body = generateDirectoryListing(full_path);
 		content_type = "text/html";
-	} else if (isFile(full_path)) {
+	} else if (isFile(full_path) && server->getAutoindex(&request_uri) == true) {
 		body = readFileToString(full_path);
 		content_type = getContentType(full_path);
 	} else {
