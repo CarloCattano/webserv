@@ -125,7 +125,7 @@ bool Server::getAutoindex(std::string *location) {
 std::string Server::getRoot(std::string *location) {
 	Route *route = location ? get_route(*location) : NULL;
 
-	if (route)
+	if (route && route->root != "")
 		return (route->root);
 	else
 		return this->_root;
@@ -178,14 +178,13 @@ std::string Server::get_index_file_name(std::string *location) {
 
 }
 
-std::string Server::get_full_path(std::string *location) {
-	Route *route = location ? get_route(*location) : NULL;
+std::string Server::get_full_path(std::string location) {
+	Route 			*route = get_route(location);
+	std::string		full_path = "." + this->getRoot(&location);
 
-	if (route)
-		return (route->index_file);
-	else
-		return "index.html";
-
+	if (!route || (route && route->root == ""))
+		full_path += location;
+	return (full_path);
 }
 
 std::string Server::getCgiPath() { return this->_cgi_path; }

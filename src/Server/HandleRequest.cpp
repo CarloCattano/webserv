@@ -35,13 +35,13 @@ void ServerCluster::handle_request(Client &client)
 	}
 
 	if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
-		handle_get_request(client);
+		handle_get_request(client, server);
 	}
 	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
-		handle_post_request(client);
+		handle_post_request(client, server);
 	}
 	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
-		handle_delete_request(client);
+		handle_delete_request(client, server);
 	else {
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
@@ -59,12 +59,11 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-void ServerCluster::handle_get_request(Client &client)
+void ServerCluster::handle_get_request(Client &client, Server *server)
 {
 	Response response;
-	Server *server = client.getServer();
 	std::string request_uri = client.getRequest().uri;
-	std::string full_path = "." + server->getRoot(&request_uri) + request_uri;
+	std::string full_path = server->get_full_path(client.getRequest().uri);
 	std::string body;
 	std::string content_type;
 
@@ -77,6 +76,7 @@ void ServerCluster::handle_get_request(Client &client)
 		update_response(client, _cgi_response_map[client.getFd()], "text/html");
 		return;
 	}
+
 
 	std::string index_file_name = server->get_index_file_name(&request_uri);
 	if (isFolder(full_path) && directory_contains_file(full_path, index_file_name)) {
@@ -100,10 +100,9 @@ void ServerCluster::handle_get_request(Client &client)
 	update_response(client, body, content_type);
 }
 
-void ServerCluster::handle_post_request(Client &client)
+void ServerCluster::handle_post_request(Client &client, Server *server)
 {
-	std::string request_uri = client.getRequest().uri;
-	std::string full_path = "." + client.getServer()->getRoot(&request_uri) + client.getRequest().uri;
+	std::string full_path = server->get_full_path(client.getRequest().uri);
 
 	if (client.getRequest().uri.find("/upload") != std::string::npos) {
 		handle_file_upload(client);
@@ -180,7 +179,7 @@ void ServerCluster::handle_file_upload(Client &client)
 		client.addResponseHeader("Location", "/uploaded.html");
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
 		client.setResponseBody(readFileToString(full_path));
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	}
@@ -193,19 +192,19 @@ void ServerCluster::handle_file_upload(Client &client)
 		client.addResponseHeader("Location", "/uploaded.html");
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
 		client.setResponseBody(readFileToString(full_path));
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 		switch_poll(client.getFd(), EPOLLOUT);
 	}
 }
 
-void ServerCluster::handle_delete_request(Client &client)
+void ServerCluster::handle_delete_request(Client &client, Server *server)
 {
 	Response response;
 
 	std::string request_uri = client.getRequest().uri;
-	std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/upload" + request_uri;
+	std::string full_path = "." + server->getRoot(&request_uri) + "/upload" + request_uri;
 	std::cout << "full path" << full_path << std::endl;
 	int is_allowed = allowed_in_path(full_path, client);
 

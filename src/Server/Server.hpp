@@ -111,7 +111,7 @@ public:
 	void setCgiPath(std::string path);
 	void setCgiExtension(std::string extension);
 	std::string get_index_file_name(std::string *location);
-	std::string get_full_path(std::string *location);
+	std::string get_full_path(std::string location);
 
 	void setup();
 };
