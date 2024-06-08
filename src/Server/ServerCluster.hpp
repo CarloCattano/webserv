@@ -1,24 +1,13 @@
 #pragma once
 
-#include <algorithm>
-#include <cstdio>
-#include <fstream>
-#include <iostream>
 #include <map>
 #include <string>
 #include <fcntl.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "../Cgi/Cgi.hpp"
 #include "../Client/Client.hpp"
-#include "../Utils/FileUpload.hpp"
-#include "../Utils/utils.hpp"
 #include "./Server.hpp"
 
 /** @brief ServerCluster class

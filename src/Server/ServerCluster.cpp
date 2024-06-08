@@ -1,6 +1,7 @@
 #include "./ServerCluster.hpp"
 #include <iostream>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"

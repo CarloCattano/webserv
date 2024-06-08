@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon">
+    <title>File Server</title>
+  </head>
+  <body>
+ 
+      <h1>Upload / Delete files</h1>
+      <br>
+        <p> Upload a file to the server </p>
+        <br>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="fileToUpload" id="fileToUpload">
+            <input type="submit" value="Upload File" name="submit">
+        </form>
+        <br>
+        <br>
+         <p>
+             <a href="/upload">View all uploads</a>
+         </p>
+        <p> Delete a file from the server </p>
+        <br>
+        <p> Run the following command to delete a file from the server: </p>
+        <p> curl -X DELETE http://localhost:3000/filename </p>
+  </body>
+</html>

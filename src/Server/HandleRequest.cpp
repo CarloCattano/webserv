@@ -1,5 +1,10 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include "../Cgi/Cgi.hpp"
+#include "../Utils/FileUpload.hpp"
+#include "../Utils/utils.hpp"
 #include "./ServerCluster.hpp"
 
 void ServerCluster::handle_request(Client &client) {
