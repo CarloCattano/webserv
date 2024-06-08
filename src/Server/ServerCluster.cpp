@@ -1,7 +1,7 @@
 #include "./ServerCluster.hpp"
 #include "../Utils/utils.hpp"
 
-const int MAX_EVENTS = 4090;
+const int MAX_EVENTS = 1024;
 const int BUFFER_SIZE = 4096; // TODO check pipe max buff
 
 ServerCluster::ServerCluster(std::vector<Server> &servers)
