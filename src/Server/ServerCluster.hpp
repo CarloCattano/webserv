@@ -82,10 +82,10 @@ public:
 	 */
 	void handle_response(Client &client);
 
-	// void handle_cgi_request(const Client &client, const std::string &cgi_script_path);
-	void handle_get_request(Client &client);
-	void handle_post_request(Client &client);
-	void handle_delete_request(Client &client);
+	void handle_get_request(Client &client, Server *server);
+	void handle_post_request(Client &client, Server *server);
+	void handle_delete_request(Client &client, Server *server);
+	Client get_client_obj(epoll_event &event);
 
 	/* FileUploader uploader; */
 	void handle_file_upload(Client &client);

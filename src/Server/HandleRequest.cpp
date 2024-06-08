@@ -34,11 +34,11 @@ void ServerCluster::handle_request(Client &client) {
 	}
 
 	if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
-		handle_get_request(client);
+		handle_get_request(client, server);
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
-		handle_post_request(client);
+		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
-		handle_delete_request(client);
+		handle_delete_request(client, server);
 	else
 		client.sendErrorPage(405);
 
@@ -53,13 +53,15 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-void ServerCluster::handle_get_request(Client &client) {
+
+void ServerCluster::handle_get_request(Client &client, Server *server) {
 	Response response;
-	Server *server = client.getServer();
 	std::string request_uri = client.getRequest().uri;
-	std::string full_path = "." + server->getRoot() + request_uri;
+	std::string full_path = server->get_full_path(client.getRequest().uri);
 	std::string body;
 	std::string content_type;
+
+	// compare config method allowed with request method
 
 	if (full_path.find(server->getCgiPath()) != std::string::npos && full_path.find(".py") != std::string::npos) {
 		Cgi cgi;
@@ -91,8 +93,8 @@ void ServerCluster::handle_get_request(Client &client) {
 	update_response(client, body, content_type);
 }
 
-void ServerCluster::handle_post_request(Client &client) {
-	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+void ServerCluster::handle_post_request(Client &client, Server *server) {
+	std::string full_path = server->get_full_path(client.getRequest().uri);
 
 	if (client.getRequest().uri.find("/upload") != std::string::npos) {
 		handle_file_upload(client);
@@ -112,7 +114,7 @@ void ServerCluster::handle_post_request(Client &client) {
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 		return;
 	}
-	client.sendErrorPage(501);
+	client.sendErrorPage(401);
 }
 
 // todo - keep track of written bytes amount and come back to me baby
@@ -131,7 +133,8 @@ void ServerCluster::handle_file_upload(Client &client) {
 		return;
 	}
 
-	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
+	std::string request_uri = client.getRequest().uri;
+	std::string upload_path = "." + client.getServer()->getRoot(&request_uri) + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
 
 	if (!outFile.is_open()) {
@@ -154,7 +157,7 @@ void ServerCluster::handle_file_upload(Client &client) {
 		client.addResponseHeader("Location", "/uploaded.html");
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
 		client.setResponseBody(readFileToString(full_path));
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 	} else if (content_length == intToString(formData.fileContent.size())) {
@@ -166,18 +169,19 @@ void ServerCluster::handle_file_upload(Client &client) {
 		client.addResponseHeader("Location", "/uploaded.html");
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot() + "/uploaded.html";
+		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
 		client.setResponseBody(readFileToString(full_path));
 		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 		switch_poll(client.getFd(), EPOLLOUT);
 	}
 }
 
-void ServerCluster::handle_delete_request(Client &client) {
+
+void ServerCluster::handle_delete_request(Client &client, Server *server) {
 	Response response;
 
-	std::string full_path = "." + client.getServer()->getRoot() + "/upload" + client.getRequest().uri;
-
+	std::string request_uri = client.getRequest().uri;
+	std::string full_path = "." + server->getRoot(&request_uri) + "/upload" + request_uri;
 	int is_allowed = allowed_in_path(full_path, client);
 
 	if (isFolder(full_path)) {
@@ -185,7 +189,6 @@ void ServerCluster::handle_delete_request(Client &client) {
 	} else if (is_allowed == true && isFile(full_path) == true) {
 		if (std::remove(full_path.c_str()) == 0) {
 		};
-		/* std::cout << "file " << full_path.c_str() << " was deleted from the server" << std::endl; */
 		client.setResponseStatusCode(200);
 		client.setResponseBody("File was deleted successfully");
 		client.addResponseHeader("Content-Type", "text/html");
@@ -208,8 +211,10 @@ std::string ServerCluster::extract_boundary(const std::string &headers) {
 	return boundary;
 }
 
+
 bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client) {
-	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
+	std::string request_uri = client.getRequest().uri;
+	if (file_path.find(client.getServer()->getRoot(&request_uri)) == std::string::npos)
 		return false;
 	return true;
 }

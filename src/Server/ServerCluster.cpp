@@ -1,8 +1,16 @@
 #include "./ServerCluster.hpp"
+#include <iostream>
+#include <signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "../Utils/utils.hpp"
+
 #define error(x) std::cerr << RED << x << RESET << std::endl
+
 const int MAX_EVENTS = 1024;
-const int BUFFER_SIZE = 4096; // TODO check pipe max buff
+const int BUFFER_SIZE = 4096;
+
+volatile static sig_atomic_t gSigStatus;
 
 ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
@@ -66,13 +74,16 @@ void ServerCluster::await_connections() {
 	struct epoll_event events[MAX_EVENTS];
 	int num_events;
 
-	while (1) {
+	gSigStatus = 1;
+
+	while (gSigStatus) {
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
 
 		for (int i = 0; i < num_events; i++) {
 			int event_fd = events[i].data.fd;
+
 			if (event_fd == -1) {
 				error("events[i].data.fd");
 				continue;
@@ -128,7 +139,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 		client.addResponseHeader("Content-Type", "text/html");
 		client.addResponseHeader("Connection", "close");
 
-		// TODO - get rind of pipe index
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
 	}
@@ -171,13 +181,17 @@ void ServerCluster::handle_response(Client &client) {
 
 void ServerCluster::stop(int signal) {
 	(void)signal;
-	log("\nServer stopped");
-	exit(0);
+	gSigStatus = 0;
 }
 
-/* takes care of the signal when a child process is terminated
-	and the parent process is not waiting for it
-	so it doesn't become a zombie process */
+/**
+ * @brief A _"gream reaper"_ function that waits for child processes to terminate
+ *          and prevents them from becoming zombie processes.
+ *          by calling waitpid with WNOHANG flag, it will return immediately if no child
+ *          process has terminated. If a child process has terminated, it will be reaped
+ *          and the parent process will continue to run.
+ * @param sig the signal that is being handled
+ */
 void handleSigchild(int sig) {
 	(void)sig;
 	while (waitpid(-1, NULL, WNOHANG) > 0)
@@ -214,7 +228,25 @@ int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 }
 
 ServerCluster::~ServerCluster() {
-	// for (size_t i = 0; i < _servers.size(); i++) {
-	//     close(_servers[i].getSocketFd());
-	// }
+	close(_epoll_fd);
+	for (std::map<int, Client>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+		close(it->first);
+	}
+	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
+		close(it->first);
+	}
+	for (std::map<int, int>::iterator it = _pipeFd_clientFd_map.begin(); it != _pipeFd_clientFd_map.end(); it++) {
+		close(it->first);
+	}
+	for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
+		close(it->first);
+	}
+
+	// clear containers
+	_client_map.clear();
+	_server_map.clear();
+	_pipeFd_clientFd_map.clear();
+	_cgi_response_map.clear();
+
+	log("ServerCluster destroyed");
 }

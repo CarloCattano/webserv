@@ -85,7 +85,7 @@ public:
 	bool getAutoindex(std::string *location);
 	int getSocketFd();
 	struct sockaddr_in getServerAddress();
-	std::string getRoot();
+	std::string getRoot(std::string *location);
 	Method getGet(std::string *location);
 	Method getPost(std::string *location);
 	Method getDelete(std::string *location);
@@ -111,6 +111,7 @@ public:
 	void setCgiPath(std::string path);
 	void setCgiExtension(std::string extension);
 	std::string get_index_file_name(std::string *location);
+	std::string get_full_path(std::string location);
 
 	void setup();
 };
