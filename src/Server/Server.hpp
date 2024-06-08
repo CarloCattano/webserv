@@ -61,6 +61,7 @@ private:
 	long long _client_max_body_size;
 	std::vector<Route> _routes;
 	bool _autoindex;
+	std::string _index_file;
 	std::string _root;
 	Method _POST;
 	Method _GET;
@@ -83,6 +84,7 @@ public:
 	long long getClientMaxBodySize();
 	std::vector<Route> getRoutes();
 	bool getAutoindex(std::string *location);
+	std::string getIndexFile(std::string *location);
 	int getSocketFd();
 	struct sockaddr_in getServerAddress();
 	std::string getRoot(std::string *location);
@@ -102,6 +104,7 @@ public:
 	void setRoutes(std::vector<Route> routes);
 	void addRoute(Route route);
 	void setAutoindex(bool autoindex);
+	void setIndexFile(std::string index_file_name);
 	void setSocketFd(int socket_fd);
 	void setServerAddress(struct sockaddr_in server_address);
 	void setRoot(std::string root);
@@ -110,7 +113,6 @@ public:
 	void setDelete(Method method);
 	void setCgiPath(std::string path);
 	void setCgiExtension(std::string extension);
-	std::string get_index_file_name(std::string *location);
 	std::string get_full_path(std::string location);
 
 	void setup();

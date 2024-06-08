@@ -12,7 +12,7 @@
 
 Server::Server()
 	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824),
-	  _autoindex(false), _root("/www/berlin-forecast"), _cgi_path(""), _cgi_extension("")
+	  _autoindex(false), _index_file("index.html"), _root("/www/berlin-forecast"), _cgi_path(""), _cgi_extension("")
 {
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
@@ -35,6 +35,7 @@ Server &Server::operator=(const Server &server)
 	_client_max_body_size = server._client_max_body_size;
 	_routes = server._routes;
 	_autoindex = server._autoindex;
+	_index_file = server._index_file;
 	_socket_fd = server._socket_fd;
 	_root = server._root;
 	_GET = server._GET;
@@ -168,14 +169,13 @@ Method Server::getDelete(std::string *location) {
 		return this->_DELETE;
 }
 
-std::string Server::get_index_file_name(std::string *location) {
+std::string Server::getIndexFile(std::string *location) {
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
 		return (route->index_file);
 	else
-		return "index.html";
-
+		return this->_index_file;
 }
 
 std::string Server::get_full_path(std::string location) {
@@ -243,6 +243,10 @@ void Server::addRoute(Route route)
 void Server::setRoutes(std::vector<Route> routes)
 {
 	this->_routes = routes;
+}
+
+void Server::setIndexFile(std::string index_file_name) {
+	this->_index_file = index_file_name;
 }
 
 void Server::setRoot(std::string root)

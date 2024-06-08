@@ -74,6 +74,7 @@ void print_server_obj(Server &obj) {
         print_vector(obj.getErrorPages());
     }
 	std::cout << "\tRoot " << obj.getRoot(NULL) << std::endl;
+    std::cout << "\tIndexFile: " << obj.getIndexFile(NULL) << std::endl;
     std::cout << "\tAutoIndex: " << obj.getAutoindex(NULL) << std::endl;
 	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
 	std::cout << "\tPOST: " << obj.getPost(NULL).is_allowed << std::endl;

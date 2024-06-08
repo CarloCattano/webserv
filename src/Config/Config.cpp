@@ -83,6 +83,8 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 		parse_client_max_body_size(size, server, key_with_values);
 	else if (key == "autoindex" && size >= 2 && key_with_values[1] == "true")
 		server.setAutoindex(true);
+	else if (key == "index" && size >= 2)
+		server.setIndexFile(key_with_values[1]);
 	else if (key == "root" && size >= 2)
 		server.setRoot(key_with_values[1]);
 	else if (key == "deny" || key == "allow")

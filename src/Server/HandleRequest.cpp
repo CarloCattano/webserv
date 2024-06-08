@@ -28,6 +28,7 @@ void ServerCluster::handle_request(Client &client)
 	std::string request_uri = client.getRequest().uri;
 
 	Server *server = client.getServer();
+
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);
@@ -77,13 +78,13 @@ void ServerCluster::handle_get_request(Client &client, Server *server)
 		return;
 	}
 
-
-	std::string index_file_name = server->get_index_file_name(&request_uri);
+	std::string index_file_name = server->getIndexFile(&request_uri);
 	if (isFolder(full_path) && directory_contains_file(full_path, index_file_name)) {
 		if (full_path[full_path.size() - 1] != '/')
 			full_path += '/';
 		full_path += index_file_name;
 	}
+
 
 	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
 		body = generateDirectoryListing(full_path);
