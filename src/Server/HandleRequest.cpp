@@ -65,7 +65,7 @@ void ServerCluster::handle_get_request(Client &client)
 	Response response;
 	Server *server = client.getServer();
 	std::string request_uri = client.getRequest().uri;
-	std::string full_path = "." + server->getRoot() + request_uri;
+	std::string full_path = "." + server->getRoot(&request_uri) + request_uri;
 	std::string body;
 	std::string content_type;
 
@@ -103,7 +103,8 @@ void ServerCluster::handle_get_request(Client &client)
 
 void ServerCluster::handle_post_request(Client &client)
 {
-	std::string full_path = "." + client.getServer()->getRoot() + client.getRequest().uri;
+	std::string request_uri = client.getRequest().uri;
+	std::string full_path = "." + client.getServer()->getRoot(&request_uri) + client.getRequest().uri;
 
 	if (client.getRequest().uri == "/upload") {
 		handle_file_upload(client);
@@ -137,7 +138,8 @@ void ServerCluster::handle_file_upload(Client &client)
 		return;
 	}
 
-	std::string upload_path = "." + client.getServer()->getRoot() + "/upload/" + formData.fileName;
+	std::string request_uri = client.getRequest().uri;
+	std::string upload_path = "." + client.getServer()->getRoot(&request_uri) + "/upload/" + formData.fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
 
 	outFile.write(&formData.fileContent[0], formData.fileContent.size());
@@ -157,8 +159,9 @@ void ServerCluster::handle_delete_request(Client &client)
 {
 	Response response;
 
-	std::string full_path = "." + client.getServer()->getRoot() + "/upload" + client.getRequest().uri;
-
+	std::string request_uri = client.getRequest().uri;
+	std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/upload" + request_uri;
+	std::cout << "full path" << full_path << std::endl;
 	int is_allowed = allowed_in_path(full_path, client);
 
 	if (isFolder(full_path)) {
@@ -194,7 +197,8 @@ std::string ServerCluster::extract_boundary(const std::string &headers)
 
 bool ServerCluster::allowed_in_path(const std::string &file_path, Client &client)
 {
-	if (file_path.find(client.getServer()->getRoot()) == std::string::npos)
+	std::string request_uri = client.getRequest().uri;
+	if (file_path.find(client.getServer()->getRoot(&request_uri)) == std::string::npos)
 		return false;
 	return true;
 }

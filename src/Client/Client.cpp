@@ -54,6 +54,7 @@ void Client::parseHead() {
 		std::vector<std::string> header = splitString(headLines[i], ": ");
 		this->addRequestHeader(header[0], header[1]);
 	}
+
 	this->setRequestFinishedHead(true);
 }
 
@@ -88,9 +89,11 @@ void Client::sendErrorPage(int statusCode) {
 
 	if (std::find(error_pages.begin(), error_pages.end(), intToString(statusCode)) !=
 		error_pages.end()) {
-		std::string errorPage = "." + this->getServer()->getRoot() + "/error_pages/" +
+		// To-Do Joseph, is getRoot NULL okay?
+		std::string errorPage = "./www/error_pages/" +
 								intToString(statusCode) + ".html";
 
+		std::cout << "Error page: " << errorPage << std::endl;
 		std::string errorPageContent = readFileToString(errorPage);
 		setResponseBody(errorPageContent);
 		this->addResponseHeader("Content-Type", "text/html");
