@@ -6,9 +6,10 @@
 - [ ] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
 - [ ] Search for the HTTP response status codes list on the internet. During this evaluation, if any status codes is wrong, don't give any related points.
         - create execve error hadling
-- [ ] ~Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).~
-- [ ] Execve error handling
+- [ ] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
         -track fds flag on valgrind
+
+- [X] Execve error handling
 
 - [X] POST  request is hanging on a cgi to folder or non existent
 - [X] track all read/recv/write/send returns for errors

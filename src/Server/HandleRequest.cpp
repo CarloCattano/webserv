@@ -117,9 +117,7 @@ void ServerCluster::handle_post_request(Client &client) {
 
 // todo - keep track of written bytes amount and come back to me baby
 void ServerCluster::handle_file_upload(Client &client) {
-	/* std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n")); */
 	std::string body = client.getRequest().body;
-
 
 	std::string boundary = extract_boundary(body);
 	FileUploader fileUploader;
@@ -146,21 +144,10 @@ void ServerCluster::handle_file_upload(Client &client) {
 		return;
 	}
 
-	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
-		log("Body size is too big");
-		client.sendErrorPage(413);
-		return;
-	}
-
 	std::string content_length_numbers = content_length.substr(0, content_length.find("\r\n"));
 	std::istringstream iss(content_length_numbers);
 	int content_length_int;
 	iss >> content_length_int;
-
-	log("Content length: " + content_length);
-	log("Full content length: " + intToString(client.getRequest().request.size()));
-	log("File content size: " + intToString(client.getRequest().body.size()));
-	/* log("File name: " + formData.fileName); */
 
 	if (content_length > intToString(client.getRequest().request.size())) {
 		client.setResponseStatusCode(303);
