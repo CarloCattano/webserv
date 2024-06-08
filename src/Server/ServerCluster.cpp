@@ -229,24 +229,25 @@ int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 
 ServerCluster::~ServerCluster() {
 	close(_epoll_fd);
-	for (std::map<int, Client>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
-		close(it->first);
-	}
-	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
-		close(it->first);
-	}
+
 	for (std::map<int, int>::iterator it = _pipeFd_clientFd_map.begin(); it != _pipeFd_clientFd_map.end(); it++) {
 		close(it->first);
 	}
 	for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
 		close(it->first);
 	}
+	for (std::map<int, Client>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+		close(it->first);
+		delete &it->second;
+	}
+	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
+		close(it->first);
+	}
 
-	// clear containers
+	log_open_clients(_client_map);
+
 	_client_map.clear();
 	_server_map.clear();
 	_pipeFd_clientFd_map.clear();
 	_cgi_response_map.clear();
-
-	log("ServerCluster destroyed");
 }
