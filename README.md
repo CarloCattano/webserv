@@ -25,7 +25,7 @@
 - [j] The CGI should be run in the correct directory for relative path file access.
 
 ## General:
-- [b] File Upload
+- [X] File Upload
     - [b] Bug with uploaded/downloaded images
 - [b] Timeout for requests/connections/cgiscipts - timer
 - [b] Check if there is no hanging connection.

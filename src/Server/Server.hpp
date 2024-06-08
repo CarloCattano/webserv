@@ -5,10 +5,10 @@
 #include <sys/socket.h>
 
 struct HttpRedirection {
-	std::string code;
+	int			code;
 	std::string url;
 
-	HttpRedirection(std::string url) : code("302"), url(url)
+	HttpRedirection() : code(0), url("")
 	{
 	}
 };
@@ -38,7 +38,7 @@ struct Route {
 	std::string location;
 	std::string matching_style;
 	std::string root;
-	std::vector<HttpRedirection> redirections;
+	HttpRedirection redirection;
 	bool autoindex;
 	std::string index_file;
 	Method POST;
@@ -46,9 +46,7 @@ struct Route {
 	Method DELETE;
 	std::string cgi_path;
 	std::string cgi_extension;
-	Route() : location(""), matching_style(""), root(""), autoindex(false), index_file(""), cgi_path(""), cgi_extension("") {
-		redirections = std::vector<HttpRedirection>();
-	}
+	Route() : location(""), matching_style(""), root(""), redirection(HttpRedirection()), autoindex(false), index_file(""), cgi_path(""), cgi_extension("") {}
 };
 
 // to-do server only uses first server name
@@ -63,6 +61,7 @@ private:
 	bool _autoindex;
 	std::string _index_file;
 	std::string _root;
+	HttpRedirection _redirection;
 	Method _POST;
 	Method _GET;
 	Method _DELETE;
@@ -88,6 +87,7 @@ public:
 	int getSocketFd();
 	struct sockaddr_in getServerAddress();
 	std::string getRoot(std::string *location);
+	HttpRedirection getRedirection(std::string *location);
 	Method getGet(std::string *location);
 	Method getPost(std::string *location);
 	Method getDelete(std::string *location);
@@ -108,6 +108,7 @@ public:
 	void setSocketFd(int socket_fd);
 	void setServerAddress(struct sockaddr_in server_address);
 	void setRoot(std::string root);
+	void setRedirection(int code, std::string url);
 	void setGet(Method method);
 	void setPost(Method method);
 	void setDelete(Method method);

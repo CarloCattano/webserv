@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include "Config.hpp"
+
 void set_allowed_methods(Route &route, std::vector<std::string> key_with_values)
 {
 	bool new_state;
@@ -51,10 +52,11 @@ void parse_location(int value_count, std::vector<std::string> &values, Route &ro
 
 void parse_redirection(std::vector<std::string> &values, int value_count, Route &route)
 {
-	HttpRedirection redirection(values[value_count - 1]);
-	if (value_count == 2)
-		redirection.code = values[0];
-	route.redirections.push_back(redirection);
+	if (isNumeric(values[0])) {
+		route.redirection.code = atoi(values[0].c_str());
+		if (value_count == 2)
+			route.redirection.url = values[value_count - 1];
+	}
 }
 
 int parse_route(Server &virtual_server, std::string str, int i)
@@ -76,7 +78,7 @@ int parse_route(Server &virtual_server, std::string str, int i)
 			parse_location(value_count, values, route);
 		else if (key == "root" && value_count == 1)
 			route.root = values[0];
-		else if (key == "return" && value_count >= 1 && value_count <= 2)
+		else if (key == "return" && value_count >= 1)
 			parse_redirection(values, value_count, route);
 		else if (key == "autoindex" && value_count == 1 && toLowerCase(values[0]) == "true")
 			route.autoindex = true;

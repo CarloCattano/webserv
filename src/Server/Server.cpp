@@ -12,7 +12,8 @@
 
 Server::Server()
 	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824),
-	  _autoindex(false), _index_file("index.html"), _root("/www/berlin-forecast"), _cgi_path(""), _cgi_extension("")
+		_autoindex(false), _index_file("index.html"), _root("/www/berlin-forecast"), _redirection(HttpRedirection()),
+		_cgi_path(""), _cgi_extension("")
 {
 	_error_pages = std::vector<std::string>();
 	_routes = std::vector<Route>();
@@ -38,6 +39,7 @@ Server &Server::operator=(const Server &server)
 	_index_file = server._index_file;
 	_socket_fd = server._socket_fd;
 	_root = server._root;
+	_redirection = server._redirection;
 	_GET = server._GET;
 	_POST = server._POST;
 	_DELETE = server._DELETE;
@@ -130,6 +132,15 @@ std::string Server::getRoot(std::string *location) {
 		return (route->root);
 	else
 		return this->_root;
+}
+
+HttpRedirection Server::getRedirection(std::string *location) {
+	Route *route = location ? get_route(*location) : NULL;
+
+	if (route && route->redirection.code)
+		return (route->redirection);
+	else
+		return this->_redirection;
 }
 
 Route* Server::get_route(std::string location) {
@@ -252,6 +263,12 @@ void Server::setIndexFile(std::string index_file_name) {
 void Server::setRoot(std::string root)
 {
 	this->_root = root;
+}
+
+void Server::setRedirection(int code, std::string url)
+{
+	this->_redirection.code = code;
+	this->_redirection.url = url;
 }
 
 void Server::setGet(Method method)

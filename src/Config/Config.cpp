@@ -68,6 +68,18 @@ void parse_client_max_body_size(int size, Server &server, std::vector<std::strin
 		server.setClientMaxBodySize(atoll(value.c_str()) * unit);
 }
 
+void parse_redirection(Server &server, std::vector<std::string> key_with_values, int size) {
+	int			code;
+	std::string	url = "";
+
+	if (isNumeric(key_with_values[1])) {
+		code = atoi(key_with_values[1].c_str());
+		if (size == 3)
+			url = key_with_values[2];
+		server.setRedirection(code, url);
+	}
+}
+
 void parse_key_with_values(Server &server, std::string str, int i) {
 	std::vector<std::string> key_with_values = convert_server_line_2_vector(str, i);
 	int size = key_with_values.size();
@@ -87,6 +99,8 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 		server.setIndexFile(key_with_values[1]);
 	else if (key == "root" && size >= 2)
 		server.setRoot(key_with_values[1]);
+	else if (key == "return" && size >= 2)
+		parse_redirection(server, key_with_values, size);
 	else if (key == "deny" || key == "allow")
 		set_allowed_methods(server, key_with_values);
 	else if (key == "cgi_path" && size >= 2)

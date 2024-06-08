@@ -1,6 +1,7 @@
 #include <string>
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
+
 void ServerCluster::handle_request(Client &client)
 {
 	char buffer[4096];
@@ -35,20 +36,40 @@ void ServerCluster::handle_request(Client &client)
 		return;
 	}
 
-	if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
+	HttpRedirection redirection = server->getRedirection(&request_uri);
+
+	if (redirection.code) {
+		handle_redirection(client, server, redirection);
+	}
+	else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	}
 	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		handle_post_request(client, server);
 	}
-	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
+	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
+	}
 	else {
 		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
+}
+
+void ServerCluster::handle_redirection(Client &client, Server *server, HttpRedirection redirection) {
+	(void)server;
+	if (redirection.url == "")
+		client.sendErrorPage(redirection.code);
+	else {
+		std::string url = redirection.url[0] == '/' ? server->getRoot(NULL) + redirection.url : redirection.url;
+		// std::cout << "Test: " << url << std::endl;
+		client.setResponseStatusCode(redirection.code);
+		client.addResponseHeader("Content-Length", "10");
+		client.addResponseHeader("Location", redirection.url);
+		client.setResponseBody("something");
+	}
 }
 
 void update_response(Client &client, std::string body, std::string content_type)
