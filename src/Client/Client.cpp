@@ -11,22 +11,19 @@
 
 // clang-format off
 
+void epoll_add_fd(int epoll_fd, int fd) {
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        std::cerr << "epoll_ctl failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
-
-	struct epoll_event ev;
-
-	ev.events = EPOLLIN;
-	ev.data.fd = fd;
-
-	std::cout << "Client created with fd: " << fd << std::endl;
-	std::cout << "Server fd: " << server->getSocketFd() << std::endl;
-
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-		perror("epoll_ctl");
-		std::cerr << "epoll_ctl failed" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+    epoll_add_fd(epoll_fd, fd);
 }
 
 std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {

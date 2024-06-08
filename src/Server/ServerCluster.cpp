@@ -1,13 +1,13 @@
 #include "./ServerCluster.hpp"
 #include "../Utils/utils.hpp"
-
+#define error(x) std::cerr << RED << x << RESET << std::endl
 const int MAX_EVENTS = 1024;
 const int BUFFER_SIZE = 4096; // TODO check pipe max buff
 
 ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
-		perror("epoll_create1");
+		error("epoll_create1");
 
 	for (size_t i = 0; i < servers.size(); i++) {
 		int socket_fd = servers[i].getSocketFd();
@@ -19,7 +19,7 @@ ServerCluster::ServerCluster(std::vector<Server> &servers) {
 		ev.data.fd = socket_fd;
 
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
-			perror("epoll_ctl");
+			error("epoll_ctl");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -29,7 +29,7 @@ int ServerCluster::accept_new_connection(int server_fd) {
 	int client_fd = accept(server_fd, NULL, NULL);
 
 	if (client_fd == -1) {
-		perror("accept");
+		error("accept");
 		exit(EXIT_FAILURE);
 	}
 
@@ -57,7 +57,7 @@ void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	ev.data.fd = client_fd;
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
+		error("epoll_ctl");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -74,7 +74,7 @@ void ServerCluster::await_connections() {
 		for (int i = 0; i < num_events; i++) {
 			int event_fd = events[i].data.fd;
 			if (event_fd == -1) {
-				perror("events[i].data.fd");
+				error("events[i].data.fd");
 				continue;
 			}
 
@@ -107,7 +107,7 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
 
 	if (bytes_read == -1) {
-		perror("handle_pipe_event read");
+		error("handle_pipe_event read");
 		close(pipe_fd);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		return;
@@ -140,12 +140,12 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	ev.data.fd = client_fd;
 
 	if (client_fd == -1) {
-		perror("client_fd");
+		error("client_fd");
 		return;
 	}
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
+		error("epoll_ctl");
 		close(client_fd);
 	}
 }
@@ -157,7 +157,7 @@ void ServerCluster::handle_response(Client &client) {
 	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
 
 	if (bytes_sent == -1) {
-		perror("send");
+		error("send");
 		close_client(client.getFd());
 		return;
 	}
@@ -186,7 +186,7 @@ void handleSigchild(int sig) {
 
 void ServerCluster::start() {
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
-		perror("signal(SIGCHLD) error");
+		error("signal(SIGCHLD) error");
 
 	signal(SIGINT, stop);
 	ServerCluster::await_connections();

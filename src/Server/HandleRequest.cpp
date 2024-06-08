@@ -1,13 +1,14 @@
 #include <string>
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
+
 void ServerCluster::handle_request(Client &client) {
 	char buffer[4096];
 
 	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
 
 	if (bytes_read == -1) {
-		perror("recv");
+		std::cerr << "Error reading from socket" << std::endl;
 		close_client(client.getFd());
 		return;
 	}
@@ -28,7 +29,6 @@ void ServerCluster::handle_request(Client &client) {
 
 	Server *server = client.getServer();
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
-		log("Body size is too big");
 		client.sendErrorPage(413);
 		return;
 	}
@@ -39,10 +39,8 @@ void ServerCluster::handle_request(Client &client) {
 		handle_post_request(client);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
 		handle_delete_request(client);
-	else {
-		// TODO - check if 405 is in the server error pages
+	else
 		client.sendErrorPage(405);
-	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
 }
