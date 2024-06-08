@@ -6,6 +6,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
+#include <signal.h>
 #define EXIT_FAILURE 1
 
 // clang-format off
@@ -67,7 +68,7 @@ size_t stringToSizeT(std::string str) {
 
 bool checkFinishedBody(Request request) {
 	if (request.headers.find("Content-Length") != request.headers.end()) {
-		if (request.body.size() == stringToSizeT(request.headers["Content-Length"]))
+		if (request.body.size() - 1 >= stringToSizeT(request.headers["Content-Length"]))
 			return true;
 		return false;
 	}
@@ -131,6 +132,8 @@ Server *Client::getServer() const { return this->server; }
 Request Client::getRequest() const { return this->request; }
 Response Client::getResponse() const { return this->response; }
 size_t Client::getSentBytes() const { return this->sentBytes; }
+std::map<int, int> Client::getPidStartTimeMap() const { return this->pid_start_time_map; }
+std::map<int, int> Client::getPidPipefdMap() const { return this->pid_pipefd_map; }
 
 // client setters
 void Client::setFd(int fd) { this->fd = fd; }
@@ -138,6 +141,11 @@ void Client::setServer(Server *server) { this->server = server; }
 void Client::setRequest(Request &request) { this->request = request; }
 void Client::setResponse(Response &response) { this->response = response; }
 void Client::setSentBytes(size_t sentBytes) { this->sentBytes = sentBytes; }
+void Client::setPidStartTimeMap(std::map<int, int> pid_start_time_map) { this->pid_start_time_map = pid_start_time_map; }
+void Client::addPidStartTimeMap(int pid, int start_time) { this->pid_start_time_map[pid] = start_time; }
+void Client::removePidStartTimeMap(int pid) { this->pid_start_time_map.erase(pid); }
+void Client::addPidPipefdMap(int pid, int pipefd) { this->pid_pipefd_map[pid] = pipefd; }
+void Client::removePidPipefdMap(int pid) { this->pid_pipefd_map.erase(pid); }
 
 // request setters
 void Client::setRequestString(std::string request) { this->request.request = request; }

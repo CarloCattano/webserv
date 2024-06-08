@@ -1,7 +1,7 @@
 #include "./ServerCluster.hpp"
 #include "../Utils/utils.hpp"
 
-const int MAX_EVENTS = 42;
+const int MAX_EVENTS = 1024;
 const int BUFFER_SIZE = 4096; // TODO check pipe max buff
 
 ServerCluster::ServerCluster(std::vector<Server> &servers)
@@ -93,13 +93,14 @@ void ServerCluster::await_connections()
 			else {
 				Client &client = _client_map[event_fd];
 
+				check_timeout(client, 5);
+
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
 
 				if (events[i].events & EPOLLIN)
 					handle_request(client);
 
-				// TO-DO is it possible to send a response with empty body?
 				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
 					handle_response(client);
 			}
@@ -203,6 +204,29 @@ void ServerCluster::start()
 
 	signal(SIGINT, stop);
 	ServerCluster::await_connections();
+}
+
+void ServerCluster::check_timeout(Client &client, int timeout)
+{
+	std::map<int, int> pid_start_time_map = client.getPidStartTimeMap();
+	std::map<int, int>::iterator it = pid_start_time_map.begin();
+
+	while (it != pid_start_time_map.end()) {
+		if (time(NULL) - it->second > timeout) {
+			client.sendErrorPage(504);
+			close(client.getPidPipefdMap()[it->first]);
+			kill(it->first, SIGKILL);
+			client.removePidStartTimeMap(it->first);
+			_pipeFd_clientFd_map.erase(client.getPidPipefdMap()[it->first]);
+			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.getPidPipefdMap()[it->first], NULL);
+		}
+		it++;
+	}
+}
+
+int ServerCluster::get_pipefd_from_clientfd(int client_fd)
+{
+	return _pipeFd_clientFd_map[client_fd];
 }
 
 ServerCluster::~ServerCluster()

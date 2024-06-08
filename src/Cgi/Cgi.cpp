@@ -29,7 +29,10 @@ Cgi::Cgi(const Cgi &src)
 	*this = src;
 }
 
-void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path, std::map<int, int> &_pipeFd_clientFd_map, int epoll_fd)
+void Cgi::handle_cgi_request(Client &client,
+							 const std::string &cgi_script_path,
+							 std::map<int, int> &_pipeFd_clientFd_map,
+							 int epoll_fd)
 {
 	int pipe_fd[2];
 	int client_fd = client.getFd();
@@ -59,6 +62,8 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 	else {
 		close(pipe_fd[1]);
 
+		client.addPidStartTimeMap(pid, time(NULL));
+		client.addPidPipefdMap(pid, pipe_fd[0]);
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = pipe_fd[0];
@@ -69,16 +74,6 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 
 		_pipeFd_clientFd_map[pipe_fd[0]] = client_fd;
 
-		// TODO - REMOVE ?
-		int status;
-		if (waitpid(pid, &status, WNOHANG) > 0) {
-			log("Cgi child done!");
-			// clean up pipes and epoll
-			close(pipe_fd[0]);
-			_pipeFd_clientFd_map.erase(pipe_fd[0]);
-			epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pipe_fd[0], NULL);
-			Error("pipe Done");
-			return;
-		}
+		waitpid(pid, NULL, WNOHANG);
 	}
 }
