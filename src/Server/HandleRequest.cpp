@@ -125,27 +125,60 @@ void ServerCluster::handle_post_request(Client &client, Server *server)
 	client.sendErrorPage(501);
 }
 
+std::string extractFileName(const std::string &body, const std::string &boundary)
+{
+	std::string fileName;
+	std::string boundary_start = "--" + boundary + "\r\n";
+	std::string boundary_end = "--" + boundary + "--\r\n";
+	size_t start = body.find(boundary_start);
+	size_t end = body.find(boundary_end);
+
+	if (start == std::string::npos || end == std::string::npos)
+		return fileName;
+
+	size_t file_name_start = body.find("filename=\"", start);
+	size_t file_name_end = body.find("\"", file_name_start + 10);
+
+	if (file_name_start == std::string::npos || file_name_end == std::string::npos)
+		return fileName;
+
+	fileName = body.substr(file_name_start + 10, file_name_end - file_name_start - 10);
+	return fileName;
+}
+
+std::string extractFileContent(const std::string &body, const std::string &boundary)
+{
+	//remove first boundary
+	std::string boundary_start = "--" + boundary + "\r\n";
+	size_t start = body.find(boundary_start);
+	std::string fileContent = body.substr(start + boundary_start.size());
+	//remove headers
+	fileContent = fileContent.substr(fileContent.find("\r\n\r\n") + 4);
+	size_t end = fileContent.find("\r\n--" + boundary);
+	if (end != std::string::npos)
+		fileContent = fileContent.substr(0, end);
+	return fileContent;
+}
+
 // todo - keep track of written bytes amount and come back to me baby
 void ServerCluster::handle_file_upload(Client &client)
 {
-	/* std::string headers = client.getRequest().request.substr(0, client.getRequest().request.find("\r\n\r\n")); */
 	std::string body = client.getRequest().body;
+	std::string boundary = extract_boundary(client);
 
+	std::string fileName = extractFileName(body, boundary);
+	std::string fileContent = extractFileContent(body, boundary);
 
-	std::string boundary = extract_boundary(body);
-	FileUploader fileUploader;
-	MultipartFormData formData = fileUploader.parse_multipart_form_data(boundary, body);
+	std::cout << "fileContent: " << fileContent << std::endl;
 
-	std::string content_length = client.getRequest().headers["Content-Length"];
-
-	if (formData.fileName.empty()) {
+	if (fileName.empty()) {
 		Error("Upload formData.fileName is empty");
 		client.sendErrorPage(400);
 		return;
 	}
 
 	std::string request_uri = client.getRequest().uri;
-	std::string upload_path = "." + client.getServer()->getRoot(&request_uri) + "/upload/" + formData.fileName;
+	std::string upload_path = "." + client.getServer()->getRoot(&request_uri) + "/upload/" + fileName;
 	std::ofstream outFile(upload_path.c_str(), std::ios::binary);
 
 	if (!outFile.is_open()) {
@@ -153,50 +186,26 @@ void ServerCluster::handle_file_upload(Client &client)
 		return;
 	}
 
-	if (formData.fileContent.size() == 0) {
+	if (fileContent.size() == 0) {
 		Error("File content is empty");
 		return;
 	}
 
-	if (formData.fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+	if (fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);
 		return;
 	}
 
-	std::string content_length_numbers = content_length.substr(0, content_length.find("\r\n"));
-	std::istringstream iss(content_length_numbers);
-	int content_length_int;
-	iss >> content_length_int;
+	outFile.write(fileContent.c_str(), fileContent.size());
+	outFile.close();
 
-	log("Content length: " + content_length);
-	log("Full content length: " + intToString(client.getRequest().request.size()));
-	log("File content size: " + intToString(client.getRequest().body.size()));
-	/* log("File name: " + formData.fileName); */
+	client.setResponseStatusCode(200);
+	client.setResponseBody("File was uploaded successfully");
+	client.addResponseHeader("Content-Type", "text/html");
+	client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
 
-	if (content_length > intToString(client.getRequest().request.size())) {
-		client.setResponseStatusCode(303);
-		client.addResponseHeader("Location", "/uploaded.html");
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
-		client.setResponseBody(readFileToString(full_path));
-		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-	}
-	else if (content_length == intToString(formData.fileContent.size())) {
-		Error("Content-Length matches file size");
-		outFile.write(&formData.fileContent[0], formData.fileContent.size());
-		outFile.close();
-
-		client.setResponseStatusCode(303);
-		client.addResponseHeader("Location", "/uploaded.html");
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
-		std::string full_path = "." + client.getServer()->getRoot(&request_uri) + "/uploaded.html";
-		client.setResponseBody(readFileToString(full_path));
-		client.addResponseHeader("Content-Length", intToString(client.getSentBytes()));
-		switch_poll(client.getFd(), EPOLLOUT);
-	}
+	switch_poll(client.getFd(), EPOLLOUT);
 }
 
 void ServerCluster::handle_delete_request(Client &client, Server *server)
@@ -225,17 +234,10 @@ void ServerCluster::handle_delete_request(Client &client, Server *server)
 	}
 }
 
-std::string ServerCluster::extract_boundary(const std::string &headers)
+std::string ServerCluster::extract_boundary(Client &client)
 {
-	std::string boundary;
-	size_t boundaryPos = headers.find("boundary=");
-	if (boundaryPos != std::string::npos) {
-		boundary = headers.substr(boundaryPos + 9);
-		size_t endPos = boundary.find("\r\n");
-		if (endPos != std::string::npos) {
-			boundary = boundary.substr(0, endPos);
-		}
-	}
+	std::string content_type = client.getRequest().headers["Content-Type"];
+	std::string boundary = content_type.substr(content_type.find("boundary=") + 9);
 	return boundary;
 }
 

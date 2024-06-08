@@ -17,7 +17,6 @@
 #include <sys/wait.h>
 #include "../Cgi/Cgi.hpp"
 #include "../Client/Client.hpp"
-#include "../Utils/FileUpload.hpp"
 #include "../Utils/utils.hpp"
 #include "./Server.hpp"
 
@@ -53,7 +52,7 @@ public:
 
 	/* FileUploader uploader; */
 	void handle_file_upload(Client &client);
-	std::string extract_boundary(const std::string &headers);
+	std::string extract_boundary(Client &client);
 	void switch_poll(int client_fd, uint32_t events);
 
 
