@@ -26,6 +26,7 @@ struct Response {
 
 class Client {
   private:
+	int start_time;
 	int fd;
 	Server *server;
 	Request request;
@@ -50,6 +51,7 @@ class Client {
 	void checkTimeout(int timeout);
 
 	// general getters and setters
+	int getStartTime() const;
 	int getFd() const;
 	Server *getServer() const;
 	Request getRequest() const;
@@ -59,6 +61,7 @@ class Client {
 	std::map<int, int> getPidStartTimeMap() const;
 	std::map<int, int> getPidPipefdMap() const;
 
+	void setStartTime(int start_time);
 	void setFd(int fd);
 	void setServer(Server *server);
 	void setRequest(Request &request);

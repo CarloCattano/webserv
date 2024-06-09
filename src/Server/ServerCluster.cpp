@@ -49,6 +49,7 @@ void ServerCluster::handle_new_client_connection(int server_fd)
 
 void ServerCluster::close_client(int fd)
 {
+	delete &_client_map[fd];
 	_client_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
@@ -219,9 +220,15 @@ void ServerCluster::check_timeout(Client &client, int timeout)
 			client.removePidStartTimeMap(it->first);
 			_pipeFd_clientFd_map.erase(client.getPidPipefdMap()[it->first]);
 			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.getPidPipefdMap()[it->first], NULL);
+			close_client(client.getFd());
 		}
 		it++;
 	}
+	if (time(NULL) - client.getStartTime() > timeout) {
+		client.sendErrorPage(504);
+		close_client(client.getFd());
+	}
+	client.setStartTime(time(NULL));
 }
 
 int ServerCluster::get_pipefd_from_clientfd(int client_fd)

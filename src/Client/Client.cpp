@@ -11,10 +11,10 @@
 
 // clang-format off
 
-Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
+Client::Client(int fd, Server *server, int epoll_fd) : start_time(time(NULL)), fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
 	this->setRequestFinished(false);
-this->setRequestBody("");
+    this->setRequestBody("");
 
 	struct epoll_event ev;
 
@@ -68,8 +68,8 @@ size_t stringToSizeT(std::string str) {
 }
 
 bool checkFinishedBody(Request request) {
-	std::cout << "Content-Length: " << request.headers["Content-Length"] << std::endl;
-	std::cout << "Body size: " << request.body.size() << std::endl;
+	// std::cout << "Content-Length: " << request.headers["Content-Length"] << std::endl;
+	// std::cout << "Body size: " << request.body.size() << std::endl;
 
 	if (request.body.size() >= stringToSizeT(request.headers["Content-Length"]))
 		return true;
@@ -84,6 +84,7 @@ void Client::parseBody() {
 	this->setRequestBody(this->getRequest().request.substr(request.request.find("\r\n\r\n") + 4));
 	if (!checkFinishedBody(this->getRequest()))
 		return;
+	std::cout << "Time taken: "	<< time(NULL) - this->getStartTime() << " seconds\n";
 	this->setRequestFinished(true);
 }
 
@@ -131,6 +132,7 @@ std::string Client::responseToString() {
 }
 
 // client getters
+int Client::getStartTime() const { return this->start_time; }
 int Client::getFd() const { return this->fd; }
 Server *Client::getServer() const { return this->server; }
 Request Client::getRequest() const { return this->request; }
@@ -140,6 +142,7 @@ std::map<int, int> Client::getPidStartTimeMap() const { return this->pid_start_t
 std::map<int, int> Client::getPidPipefdMap() const { return this->pid_pipefd_map; }
 
 // client setters
+void Client::setStartTime(int start_time) { this->start_time = start_time; }
 void Client::setFd(int fd) { this->fd = fd; }
 void Client::setServer(Server *server) { this->server = server; }
 void Client::setRequest(Request &request) { this->request = request; }
@@ -187,6 +190,8 @@ Client::Client() : fd(-1), server(NULL), sentBytes(0) {}
 Client::~Client() {
 	this->request.headers.clear();
 	this->response.headers.clear();
+	this->pid_pipefd_map.clear();
+	this->pid_start_time_map.clear();
 }
 
 Client &Client::operator=(const Client &client) {

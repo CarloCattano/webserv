@@ -1,11 +1,14 @@
 #include <string>
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
+
+const int BUFFER_SIZE = 4096 * 4;
+
 void ServerCluster::handle_request(Client &client)
 {
-	char buffer[4096];
+	char buffer[BUFFER_SIZE];
 
-	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
+	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
 
 	if (bytes_read == -1) {
 		perror("recv");
@@ -42,10 +45,8 @@ void ServerCluster::handle_request(Client &client)
 	}
 	else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed)
 		handle_delete_request(client, server);
-	else {
-		// TODO - check if 405 is in the server error pages
+	else 
 		client.sendErrorPage(405);
-	}
 
 	switch_poll(client.getFd(), EPOLLOUT);
 }
@@ -169,7 +170,7 @@ void ServerCluster::handle_file_upload(Client &client)
 	std::string fileName = extractFileName(body, boundary);
 	std::string fileContent = extractFileContent(body, boundary);
 
-	std::cout << "fileContent: " << fileContent << std::endl;
+	// std::cout << "fileContent: " << fileContent << std::endl;
 
 	if (fileName.empty()) {
 		Error("Upload formData.fileName is empty");
