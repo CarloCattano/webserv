@@ -20,7 +20,7 @@ $(NAME): $(OBJS)
 
 run : all
 	@if pgrep $(NAME) ; then pkill $(NAME) ; fi
-	./$(NAME) server.conf
+	./$(NAME) conf/server.conf
 
 clean:
 	rm -rf $(OBJS)
