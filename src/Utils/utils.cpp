@@ -11,10 +11,8 @@
 std::map<std::string, std::string> content_types;
 
 HttpMethod get_http_method(const char *request) {
-	// Find the first space in the request line
 	const char *first_space = strchr(request, ' ');
 	if (first_space != NULL) {
-		// Extract the HTTP method from the request line
 		std::string method(request, first_space - request);
 		if (method == "GET") {
 			return GET;
@@ -24,7 +22,7 @@ HttpMethod get_http_method(const char *request) {
 			return DELETE;
 		}
 	}
-	return UNKNOWN; // Unable to determine HTTP method
+	return UNKNOWN;
 }
 
 std::map<std::string, std::string> getAllContentTypes() {
@@ -125,6 +123,15 @@ std::string get_current_dir() {
 		return "";
 }
 
+
+/** @brief generateDirectoryListing
+ *  This method is responsible for generating the directory listing. Files can be Downloaded and Directories
+ *  can be navigated. It generates the HTML format of the directory listing.
+ *  Uses the opendir() and readdir() functions to read the contents of the directory and generate the listing. The
+ *  *  @param path: path of the directory
+ *  @return std::string: directory listing in HTML format
+ */
+
 std::string generateDirectoryListing(const std::string &path) {
 	std::stringstream html;
 	html << "<html><head><title>Directory Listing</title></head><body><h1>Directory "
@@ -133,7 +140,6 @@ std::string generateDirectoryListing(const std::string &path) {
 	// Add "../" entry
 	html << "<li><a href=\"../\">../</a></li>";
 
-	// Open the directory
 	DIR *dir = opendir(path.c_str());
 	if (dir == NULL) {
 		html << "<p>Error opening directory " << path << "</p>";
@@ -141,17 +147,14 @@ std::string generateDirectoryListing(const std::string &path) {
 		return html.str();
 	}
 
-	// Read directory entries
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
-		// Exclude the current directory "." and any other directories starting with "."
 		if (entryName == "." || entryName[0] == '.')
 			continue;
 		std::string fullPath = path + "/" + entryName;
 		struct stat entry_stat;
 		if (stat(fullPath.c_str(), &entry_stat) == 0 && S_ISDIR(entry_stat.st_mode)) {
-			// It's a directory, create a hyperlink to navigate into the folder
 			html << "<li><a href=\"" << entryName << "/\">" << entryName << "/</a></li>";
 		} else {												// It's a file
 			if (entryName.find(".html") == std::string::npos) { // If it's not an HTML file, add a download link

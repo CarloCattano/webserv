@@ -179,7 +179,6 @@ void Client::setResponseSize(int size) { this->response.size = size; }
 Client::Client() : fd(-1), server(NULL), sentBytes(0) {}
 Client::~Client() {
 	this->request.headers.clear();
-    
 }
 
 Client &Client::operator=(const Client &client) {

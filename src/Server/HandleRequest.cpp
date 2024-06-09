@@ -50,7 +50,6 @@ void ServerCluster::handle_request(Client &client) {
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
 	} else {
-		// TODO - check if 405 is in the server error pages
 		client.sendErrorPage(405);
 	}
 	switch_poll(client.getFd(), EPOLLOUT);
@@ -86,8 +85,6 @@ void ServerCluster::handle_get_request(Client &client, Server *server) {
 	std::string body;
 	std::string content_type;
 
-	// compare config method allowed with request method
-
 	if (full_path.find(server->getCgiPath()) != std::string::npos && full_path.find(".py") != std::string::npos) {
 		Cgi cgi;
 
@@ -107,9 +104,10 @@ void ServerCluster::handle_get_request(Client &client, Server *server) {
 
 
 	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
+		log(full_path);
 		body = generateDirectoryListing(full_path);
 		content_type = "text/html";
-	} else if (isFile(full_path) && server->getAutoindex(&request_uri) == true) {
+	} else if (isFile(full_path) == true) {
 		body = readFileToString(full_path);
 		content_type = getContentType(full_path);
 	} else {
@@ -209,7 +207,6 @@ void ServerCluster::handle_file_upload(Client &client) {
 		Error("File content is empty");
 		return;
 	}
-
 
 	outFile.write(fileContent.c_str(), fileContent.size());
 	outFile.close();

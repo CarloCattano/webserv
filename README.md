@@ -4,10 +4,8 @@
 
 * Carlo :
 
-- [ ] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
-        -track fds flag on valgrind
-        - check where to clear and modify destructors
-- [ ] Fix the download of files in directory listing 
+- [X] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
+- [X] Fix the download of files in directory listing 
         - It doest work on file-upload server on /upload
 
 - [X] Search for the HTTP response status codes list on the internet. During this evaluation, if any status codes is wrong, don't give any related points.
