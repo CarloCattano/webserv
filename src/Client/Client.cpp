@@ -1,34 +1,29 @@
 #include "./Client.hpp"
 #include <algorithm>
 #include <iostream>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
-#include <signal.h>
 #define EXIT_FAILURE 1
 
 // clang-format off
 
+void epoll_add_fd(int epoll_fd, int fd) {
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        std::cerr << "epoll_ctl failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
-	this->setRequestFinished(false);
-this->setRequestBody("");
-
-	struct epoll_event ev;
-
-	ev.events = EPOLLIN;
-	ev.data.fd = fd;
-
-	std::cout << "Client created with fd: " << fd << std::endl;
-	std::cout << "Server fd: " << server->getSocketFd() << std::endl;
-
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-		perror("epoll_ctl");
-		std::cerr << "epoll_ctl failed" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+    epoll_add_fd(epoll_fd, fd);
 }
 
 std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
@@ -94,11 +89,9 @@ void Client::sendErrorPage(int statusCode) {
 
 	if (std::find(error_pages.begin(), error_pages.end(), intToString(statusCode)) !=
 		error_pages.end()) {
-		// To-Do Joseph, is getRoot NULL okay?
 		std::string errorPage = "./www/error_pages/" +
 								intToString(statusCode) + ".html";
 
-		std::cout << "Error page: " << errorPage << std::endl;
 		std::string errorPageContent = readFileToString(errorPage);
 		setResponseBody(errorPageContent);
 		this->addResponseHeader("Content-Type", "text/html");
@@ -186,7 +179,6 @@ void Client::setResponseSize(int size) { this->response.size = size; }
 Client::Client() : fd(-1), server(NULL), sentBytes(0) {}
 Client::~Client() {
 	this->request.headers.clear();
-	this->response.headers.clear();
 }
 
 Client &Client::operator=(const Client &client) {
@@ -209,8 +201,6 @@ std::string Client::getErrorString(int statusCode) {
 		return "Switching Protocols";
 	case 102:
 		return "Processing";
-	case 103:
-		return "Early Hints";
 	case 200:
 		return "OK";
 	case 201:
@@ -227,84 +217,38 @@ std::string Client::getErrorString(int statusCode) {
 		return "Partial Content";
 	case 207:
 		return "Multi-Status";
-	case 208:
-		return "Already Reported";
-	case 226:
-		return "IM Used";
-	case 300:
-		return "Multiple Choices";
 	case 301:
 		return "Moved Permanently";
 	case 302:
 		return "Found";
 	case 303:
 		return "See Other";
-	case 304:
-		return "Not Modified";
-	case 305:
-		return "Use Proxy";
 	case 307:
 		return "Temporary Redirect";
 	case 308:
-		return "Permanent Redirect"; // RFC 7538
-	case 400:
+		return "Permanent Redirect";	
+    case 400:
 		return "Bad Request";
 	case 401:
 		return "Unauthorized";
-	case 402:
-		return "Payment Required";
 	case 403:
 		return "Forbidden";
 	case 404:
 		return "Not Found";
 	case 405:
 		return "Method Not Allowed";
-	case 406:
-		return "Not Acceptable";
-	case 407:
-		return "Proxy Authentication Required";
 	case 408:
 		return "Request Timeout";
-	case 409:
-		return "Conflict";
-	case 410:
-		return "Gone";
 	case 411:
 		return "Length Required";
-	case 412:
-		return "Precondition Failed";
 	case 413:
 		return "Payload Too Large";
 	case 414:
 		return "URI Too Long";
 	case 415:
 		return "Unsupported Media Type";
-	case 416:
-		return "Range Not Satisfiable";
-	case 417:
-		return "Expectation Failed";
-	case 418:
-		return "I'm a teapot";
-	case 421:
-		return "Misdirected Request";
-	case 422:
-		return "Unprocessable Entity";
-	case 423:
-		return "Locked";
-	case 424:
-		return "Failed Dependency";
-	case 425:
-		return "Too Early";
-	case 426:
-		return "Upgrade Required";
-	case 428:
-		return "Precondition Required";
-	case 429:
-		return "Too Many Requests";
 	case 431:
 		return "Request Header Fields Too Large";
-	case 451:
-		return "Unavailable For Legal Reasons";
 	case 499:
 		return "Client Closed Request";
 	case 500:
@@ -327,8 +271,6 @@ std::string Client::getErrorString(int statusCode) {
 		return "Loop Detected";
 	case 510:
 		return "Not Extended";
-	case 511:
-		return "Network Authentication Required";
 	default: {
 		std::cerr << "Unassigned status code: " << statusCode << std::endl;
 		return "Unassigned Status Code";

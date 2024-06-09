@@ -10,28 +10,22 @@
 
 std::map<std::string, std::string> content_types;
 
-HttpMethod get_http_method(const char *request)
-{
-	// Find the first space in the request line
+HttpMethod get_http_method(const char *request) {
 	const char *first_space = strchr(request, ' ');
 	if (first_space != NULL) {
-		// Extract the HTTP method from the request line
 		std::string method(request, first_space - request);
 		if (method == "GET") {
 			return GET;
-		}
-		else if (method == "POST") {
+		} else if (method == "POST") {
 			return POST;
-		}
-		else if (method == "DELETE") {
+		} else if (method == "DELETE") {
 			return DELETE;
 		}
 	}
-	return UNKNOWN; // Unable to determine HTTP method
+	return UNKNOWN;
 }
 
-std::map<std::string, std::string> getAllContentTypes()
-{
+std::map<std::string, std::string> getAllContentTypes() {
 	std::map<std::string, std::string> content_types;
 
 	content_types[".html"] = "text/html";
@@ -46,8 +40,7 @@ std::map<std::string, std::string> getAllContentTypes()
 	return (content_types);
 }
 
-std::string getContentType(const std::string &filename)
-{
+std::string getContentType(const std::string &filename) {
 	std::map<std::string, std::string> content_types;
 	content_types = getAllContentTypes();
 
@@ -61,8 +54,7 @@ std::string getContentType(const std::string &filename)
 	return "text/plain";
 }
 
-std::string readFileToString(const std::string &filename)
-{
+std::string readFileToString(const std::string &filename) {
 	std::ifstream file(filename.c_str());
 
 	if (!file) {
@@ -74,25 +66,21 @@ std::string readFileToString(const std::string &filename)
 	return buffer.str();
 }
 
-std::string intToString(int value)
-{
+std::string intToString(int value) {
 	std::stringstream ss;
 	ss << value;
 	return ss.str();
 }
 
-std::string extract_requested_file_path(const char *buffer)
-{
+std::string extract_requested_file_path(const char *buffer) {
 	std::string request(buffer);
 	size_t start = 0;
 
 	if (request.find("GET") == 0) {
 		start = request.find("GET") + 4;
-	}
-	else if (request.find("POST") == 0) {
+	} else if (request.find("POST") == 0) {
 		start = request.find("POST") + 5;
-	}
-	else if (request.find("DELETE") == 0) {
+	} else if (request.find("DELETE") == 0) {
 		start = request.find("DELETE") + 7;
 	}
 
@@ -102,8 +90,7 @@ std::string extract_requested_file_path(const char *buffer)
 	return path;
 }
 
-std::string extract_filename_from_request(const char *request)
-{
+std::string extract_filename_from_request(const char *request) {
 	const char *filename_field = strstr(request, "filename=");
 	if (filename_field != NULL) {
 		const char *filename_start = filename_field + strlen("filename=");
@@ -116,8 +103,7 @@ std::string extract_filename_from_request(const char *request)
 	return "";
 }
 
-bool is_file_upload_request(const char *request)
-{
+bool is_file_upload_request(const char *request) {
 	const char *content_type_header = strstr(request, "Content-Type:");
 	if (content_type_header != NULL) {
 		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
@@ -129,8 +115,7 @@ bool is_file_upload_request(const char *request)
 }
 
 // get the path of the folder from where the server is run
-std::string get_current_dir()
-{
+std::string get_current_dir() {
 	char cwd[1024];
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		return std::string(cwd);
@@ -138,8 +123,16 @@ std::string get_current_dir()
 		return "";
 }
 
-std::string generateDirectoryListing(const std::string &path)
-{
+
+/** @brief generateDirectoryListing
+ *  This method is responsible for generating the directory listing. Files can be Downloaded and Directories
+ *  can be navigated. It generates the HTML format of the directory listing.
+ *  Uses the opendir() and readdir() functions to read the contents of the directory and generate the listing. The
+ *  *  @param path: path of the directory
+ *  @return std::string: directory listing in HTML format
+ */
+
+std::string generateDirectoryListing(const std::string &path) {
 	std::stringstream html;
 	html << "<html><head><title>Directory Listing</title></head><body><h1>Directory "
 			"Listing</h1><ul>";
@@ -147,7 +140,6 @@ std::string generateDirectoryListing(const std::string &path)
 	// Add "../" entry
 	html << "<li><a href=\"../\">../</a></li>";
 
-	// Open the directory
 	DIR *dir = opendir(path.c_str());
 	if (dir == NULL) {
 		html << "<p>Error opening directory " << path << "</p>";
@@ -155,38 +147,31 @@ std::string generateDirectoryListing(const std::string &path)
 		return html.str();
 	}
 
-	// Read directory entries
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		std::string entryName = entry->d_name;
-		// Exclude the current directory "." and any other directories starting with "."
 		if (entryName == "." || entryName[0] == '.')
 			continue;
 		std::string fullPath = path + "/" + entryName;
 		struct stat entry_stat;
 		if (stat(fullPath.c_str(), &entry_stat) == 0 && S_ISDIR(entry_stat.st_mode)) {
-			// It's a directory, create a hyperlink to navigate into the folder
 			html << "<li><a href=\"" << entryName << "/\">" << entryName << "/</a></li>";
-		}
-		else {
-			if (entryName.find(".html") == std::string::npos) {
+		} else {												// It's a file
+			if (entryName.find(".html") == std::string::npos) { // If it's not an HTML file, add a download link
 				html << "<li><a href=\"" << entryName << "\" download>" << entryName << "</a></li>";
-			}
-			else {
+			} else {
 				html << "<li><a href=\"" << entryName << "\">" << entryName << "</a></li>";
 			}
 		}
 	}
 
-	// Close the directory
 	closedir(dir);
 
 	html << "</ul></body></html>";
 	return html.str();
 }
 
-bool isFolder(const std::string &path)
-{
+bool isFolder(const std::string &path) {
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0) // file does not exist
 		return false;
@@ -195,19 +180,17 @@ bool isFolder(const std::string &path)
 	return false;
 }
 
-bool isFile(const std::string &path)
-{
+bool isFile(const std::string &path) {
 	struct stat buffer;
 	if (stat(path.c_str(), &buffer) != 0) // file does not exist
 		return false;
-	if (S_ISREG(buffer.st_mode)) // file is a regular file
-		return true;
-	return false;
+	if (isFolder(path))
+		return false;
+	return true;
 }
 
-void log_open_clients(std::map<int, Client> &clients)
-{
-	std::cout << "Open clients: " << clients.size() << std::endl;
+void log_open_clients(std::map<int, Client> &clients) {
+	std::cout << YELLOW << "Open clients: " << clients.size() << RESET << std::endl;
 	std::cout << "Client fds: ";
 	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); it++) {
 		std::cout << GREEN << it->first << " " << it->second.getRequest().request << " " << RESET;
@@ -215,22 +198,22 @@ void log_open_clients(std::map<int, Client> &clients)
 	std::cout << RESET << std::endl;
 }
 
-bool directory_contains_file(const std::string& directoryPath, std::string file_name) {
-    DIR *dir = opendir(directoryPath.c_str());
-    if (!dir) {
-        std::cerr << "Error opening directory: " << directoryPath << std::endl;
-        return false;
-    }
+bool directory_contains_file(const std::string &directoryPath, std::string file_name) {
+	DIR *dir = opendir(directoryPath.c_str());
+	if (!dir) {
+		std::cerr << "Error opening directory: " << directoryPath << std::endl;
+		return false;
+	}
 
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
-            if (strcmp(file_name.c_str(), entry->d_name) == 0) {
-                closedir(dir);
-                return true;
-            }
-        }
-    }
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL) {
+		if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
+			if (strcmp(file_name.c_str(), entry->d_name) == 0) {
+				closedir(dir);
+				return true;
+			}
+		}
+	}
 
 	closedir(dir);
 	return false;

@@ -1,14 +1,22 @@
 #include "./ServerCluster.hpp"
+#include <iostream>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "../Utils/utils.hpp"
 
-const int MAX_EVENTS = 1024;
-const int BUFFER_SIZE = 4096; // TODO check pipe max buff
+#define error(x) std::cerr << RED << x << RESET << std::endl
 
-ServerCluster::ServerCluster(std::vector<Server> &servers)
-{
+const int MAX_EVENTS = 1024;
+const int PIPE_BUFFER_SIZE = 65536;
+
+volatile static sig_atomic_t gSigStatus;
+
+ServerCluster::ServerCluster(std::vector<Server> &servers) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1)
-		perror("epoll_create1");
+		error("epoll_create1");
 
 	for (size_t i = 0; i < servers.size(); i++) {
 		int socket_fd = servers[i].getSocketFd();
@@ -20,89 +28,86 @@ ServerCluster::ServerCluster(std::vector<Server> &servers)
 		ev.data.fd = socket_fd;
 
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev) == -1) {
-			perror("epoll_ctl");
+			error("epoll_ctl");
 			exit(EXIT_FAILURE);
 		}
 	}
 }
 
-int ServerCluster::accept_new_connection(int server_fd)
-{
+int ServerCluster::accept_new_connection(int server_fd) {
 	int client_fd = accept(server_fd, NULL, NULL);
 
 	if (client_fd == -1) {
-		perror("accept");
+		error("accept");
 		exit(EXIT_FAILURE);
 	}
 
 	return (client_fd);
 }
 
-void ServerCluster::handle_new_client_connection(int server_fd)
-{
+void ServerCluster::handle_new_client_connection(int server_fd) {
 	int client_fd = accept_new_connection(server_fd);
 
 	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
 
-	_client_map[client_fd] = *client;
+	_client_map[client_fd] = client;
 }
 
-void ServerCluster::close_client(int fd)
-{
+void ServerCluster::close_client(int fd) {
+	delete _client_map[fd];
 	_client_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 }
 
-void ServerCluster::add_client_fd_to_epoll(int client_fd)
-{
+void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	struct epoll_event ev;
 
 	ev.events = EPOLLIN;
 	ev.data.fd = client_fd;
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
+		error("epoll_ctl");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void ServerCluster::await_connections()
-{
+void ServerCluster::await_connections() {
 	struct epoll_event events[MAX_EVENTS];
 	int num_events;
 
-	while (1) {
+	gSigStatus = 1;
+
+	while (gSigStatus) {
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
 
 		for (int i = 0; i < num_events; i++) {
 			int event_fd = events[i].data.fd;
+
 			if (event_fd == -1) {
-				perror("events[i].data.fd");
+				error("events[i].data.fd");
 				continue;
 			}
 
 			if (_pipeFd_clientFd_map.find(event_fd) != _pipeFd_clientFd_map.end()) {
 				handle_pipe_event(event_fd);
-			}
-			else if (_server_map.count(event_fd)) {
+			} else if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
-			}
-			else {
-				Client &client = _client_map[event_fd];
+			} else {
+				Client *client = _client_map[event_fd];
 
-				check_timeout(client, 5);
+				check_timeout(*client, 5);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
 
 				if (events[i].events & EPOLLIN)
-					handle_request(client);
+					handle_request(*client);
 
-				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
-					handle_response(client);
+				if (events[i].events & EPOLLOUT && client->getResponse().body.size() > 0)
+					handle_response(*client);
 			}
 		}
 	}
@@ -111,64 +116,60 @@ void ServerCluster::await_connections()
 void ServerCluster::handle_pipe_event(int pipe_fd)
 
 {
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
+	char buffer[PIPE_BUFFER_SIZE];
+	int bytes_read = read(pipe_fd, buffer, PIPE_BUFFER_SIZE);
 
 	if (bytes_read == -1) {
-		perror("handle_pipe_event read");
+		error("handle_pipe_event read");
 		close(pipe_fd);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		return;
 	}
 	if (bytes_read > 0) {
 		_cgi_response_map[pipe_fd] += std::string(buffer, bytes_read);
-	}
-	else if (bytes_read == 0) {
+	} else if (bytes_read == 0) {
 		std::string res = _cgi_response_map[pipe_fd];
 
-		Client &client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
+		Client *client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
 
 		_cgi_response_map.erase(pipe_fd);
 		_pipeFd_clientFd_map.erase(pipe_fd);
 
-		client.setResponseStatusCode(200);
-		client.setResponseBody(res.c_str());
-		client.addResponseHeader("Content-Length", intToString(res.size()));
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
+		client->setResponseStatusCode(200);
+		client->setResponseBody(res.c_str());
+		client->addResponseHeader("Content-Length", intToString(res.size()));
+		client->addResponseHeader("Content-Type", "text/html");
+		client->addResponseHeader("Connection", "close");
 
-		// TODO - get rind of pipe index
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
 	}
 }
 
-void ServerCluster::switch_poll(int client_fd, uint32_t events)
-{
+void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	struct epoll_event ev;
 	ev.events = events;
 	ev.data.fd = client_fd;
 
 	if (client_fd == -1) {
-		perror("client_fd");
+		error("client_fd");
 		return;
 	}
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) == -1) {
-		perror("epoll_ctl");
+		error("epoll_ctl");
 		close(client_fd);
 	}
 }
 
-void ServerCluster::handle_response(Client &client)
-{
+void ServerCluster::handle_response(Client &client) {
 	Response response = client.getResponse();
 
 	std::string response_string = client.responseToString();
 	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
 
 	if (bytes_sent == -1) {
-		perror("send");
+		error("send");
 		close_client(client.getFd());
 		return;
 	}
@@ -180,34 +181,34 @@ void ServerCluster::handle_response(Client &client)
 	}
 }
 
-void ServerCluster::stop(int signal)
-{
+void ServerCluster::stop(int signal) {
 	(void)signal;
-	log("\nServer stopped");
-	exit(0);
+	gSigStatus = 0;
 }
 
-/* takes care of the signal when a child process is terminated
-	and the parent process is not waiting for it
-	so it doesn't become a zombie process */
-void handleSigchild(int sig)
-{
+/**
+ * @brief A _"gream reaper"_ function that waits for child processes to terminate
+ *          and prevents them from becoming zombie processes.
+ *          by calling waitpid with WNOHANG flag, it will return immediately if no child
+ *          process has terminated. If a child process has terminated, it will be reaped
+ *          and the parent process will continue to run.
+ * @param sig the signal that is being handled
+ */
+void handleSigchild(int sig) {
 	(void)sig;
 	while (waitpid(-1, NULL, WNOHANG) > 0)
 		continue;
 }
 
-void ServerCluster::start()
-{
+void ServerCluster::start() {
 	if (signal(SIGCHLD, handleSigchild) == SIG_ERR)
-		perror("signal(SIGCHLD) error");
+		error("signal(SIGCHLD) error");
 
 	signal(SIGINT, stop);
 	ServerCluster::await_connections();
 }
 
-void ServerCluster::check_timeout(Client &client, int timeout)
-{
+void ServerCluster::check_timeout(Client &client, int timeout) {
 	std::map<int, int> pid_start_time_map = client.getPidStartTimeMap();
 	std::map<int, int>::iterator it = pid_start_time_map.begin();
 
@@ -224,14 +225,30 @@ void ServerCluster::check_timeout(Client &client, int timeout)
 	}
 }
 
-int ServerCluster::get_pipefd_from_clientfd(int client_fd)
-{
+int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 	return _pipeFd_clientFd_map[client_fd];
 }
 
-ServerCluster::~ServerCluster()
-{
-	// for (size_t i = 0; i < _servers.size(); i++) {
-	//     close(_servers[i].getSocketFd());
-	// }
+ServerCluster::~ServerCluster() {
+	for (std::map<int, int>::iterator it = _pipeFd_clientFd_map.begin(); it != _pipeFd_clientFd_map.end(); it++) {
+		close(it->first);
+	}
+	_pipeFd_clientFd_map.clear();
+
+	if (_cgi_response_map.size() > 0) {
+		for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
+			close(it->first);
+		}
+	}
+
+	for (std::map<int, Client *>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+		close(it->first);
+		delete it->second;
+	}
+
+	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
+		close(it->first);
+	}
+
+	close(_epoll_fd);
 }

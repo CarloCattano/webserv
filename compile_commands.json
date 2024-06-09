@@ -1,7 +1,7 @@
 [
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -15,13 +15,13 @@
       "src/main.o",
       "src/main.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/main.cpp",
-    "output": "/home/carlo/42/webserv/src/main.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/main.cpp",
+    "output": "/home/ccattano/webserv/src/main.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -35,13 +35,13 @@
       "src/Utils/utils.o",
       "src/Utils/utils.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Utils/utils.cpp",
-    "output": "/home/carlo/42/webserv/src/Utils/utils.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Utils/utils.cpp",
+    "output": "/home/ccattano/webserv/src/Utils/utils.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -55,13 +55,13 @@
       "src/Cgi/Cgi.o",
       "src/Cgi/Cgi.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Cgi/Cgi.cpp",
-    "output": "/home/carlo/42/webserv/src/Cgi/Cgi.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Cgi/Cgi.cpp",
+    "output": "/home/ccattano/webserv/src/Cgi/Cgi.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -75,13 +75,13 @@
       "src/Server/Server.o",
       "src/Server/Server.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Server/Server.cpp",
-    "output": "/home/carlo/42/webserv/src/Server/Server.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/Server.cpp",
+    "output": "/home/ccattano/webserv/src/Server/Server.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -95,13 +95,13 @@
       "src/Server/ServerCluster.o",
       "src/Server/ServerCluster.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Server/ServerCluster.cpp",
-    "output": "/home/carlo/42/webserv/src/Server/ServerCluster.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/ServerCluster.cpp",
+    "output": "/home/ccattano/webserv/src/Server/ServerCluster.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -115,13 +115,13 @@
       "src/Config/Config.o",
       "src/Config/Config.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Config/Config.cpp",
-    "output": "/home/carlo/42/webserv/src/Config/Config.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/Config.cpp",
+    "output": "/home/ccattano/webserv/src/Config/Config.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -135,13 +135,13 @@
       "src/Config/UtilsConfig.o",
       "src/Config/UtilsConfig.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Config/UtilsConfig.cpp",
-    "output": "/home/carlo/42/webserv/src/Config/UtilsConfig.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/UtilsConfig.cpp",
+    "output": "/home/ccattano/webserv/src/Config/UtilsConfig.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -155,13 +155,13 @@
       "src/Config/ParseRoute.o",
       "src/Config/ParseRoute.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Config/ParseRoute.cpp",
-    "output": "/home/carlo/42/webserv/src/Config/ParseRoute.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/ParseRoute.cpp",
+    "output": "/home/ccattano/webserv/src/Config/ParseRoute.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -172,16 +172,16 @@
       "-I./src/Config",
       "-I./src/Utils",
       "-o",
-      "src/Utils/FileUpload.o",
-      "src/Utils/FileUpload.cpp"
+      "src/Client/Client.o",
+      "src/Client/Client.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Utils/FileUpload.cpp",
-    "output": "/home/carlo/42/webserv/src/Utils/FileUpload.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Client/Client.cpp",
+    "output": "/home/ccattano/webserv/src/Client/Client.o"
   },
   {
     "arguments": [
-      "/sbin/c++",
+      "/usr/bin/c++",
       "-c",
       "-Wall",
       "-Werror",
@@ -192,11 +192,11 @@
       "-I./src/Config",
       "-I./src/Utils",
       "-o",
-      "src/Response/Response.o",
-      "src/Response/Response.cpp"
+      "src/Server/HandleRequest.o",
+      "src/Server/HandleRequest.cpp"
     ],
-    "directory": "/home/carlo/42/webserv",
-    "file": "/home/carlo/42/webserv/src/Response/Response.cpp",
-    "output": "/home/carlo/42/webserv/src/Response/Response.o"
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/HandleRequest.cpp",
+    "output": "/home/ccattano/webserv/src/Server/HandleRequest.o"
   }
 ]
