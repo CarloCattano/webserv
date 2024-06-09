@@ -8,9 +8,10 @@ public:
 	Cgi();
 	~Cgi();
 
-	/** @brief handle_cgi_request
-	 *  This method is responsible for handling the cgi request.
-	 *  It creates a pipe, forks the process, and executes the cgi script, while handling the request.
+	/** @brief
+	 *      This method is responsible for handling the cgi request.
+	 *      It creates a pipe, forks the process, and executes the cgi script, while handling the request.
+	 *
 	 *  @param client: client object
 	 *  @param cgi_script_path: path to the cgi script
 	 *  @param _pipeFd_clientFd_map: map of pipe file descriptors and client file descriptors

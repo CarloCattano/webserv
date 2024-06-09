@@ -124,7 +124,7 @@ std::string get_current_dir() {
 }
 
 
-/** @brief generateDirectoryListing
+/** @brief
  *  This method is responsible for generating the directory listing. Files can be Downloaded and Directories
  *  can be navigated. It generates the HTML format of the directory listing.
  *  Uses the opendir() and readdir() functions to read the contents of the directory and generate the listing. The
