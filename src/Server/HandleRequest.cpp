@@ -1,15 +1,16 @@
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include "../Cgi/Cgi.hpp"
 #include "../Utils/utils.hpp"
 #include "./ServerCluster.hpp"
 
-void ServerCluster::handle_request(Client &client) {
-	char buffer[4096];
+const int BUFFER_SIZE = 4096 * 4;
 
-	int bytes_read = recv(client.getFd(), buffer, 4096, 0);
+void ServerCluster::handle_request(Client &client) {
+	char buffer[BUFFER_SIZE];
+
+	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
 
 	if (bytes_read == -1) {
 		std::cerr << "Error reading from socket" << std::endl;
@@ -183,6 +184,12 @@ void ServerCluster::handle_file_upload(Client &client) {
 	std::string fileName = extractFileName(body, boundary);
 	std::string fileContent = extractFileContent(body, boundary);
 
+
+	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
+		log("Body size is too big");
+		client.sendErrorPage(413);
+		return;
+	}
 	if (fileName.empty()) {
 		Error("fileName is empty");
 		client.sendErrorPage(400);
@@ -203,11 +210,6 @@ void ServerCluster::handle_file_upload(Client &client) {
 		return;
 	}
 
-	if (fileContent.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
-		log("Body size is too big");
-		client.sendErrorPage(413);
-		return;
-	}
 
 	outFile.write(fileContent.c_str(), fileContent.size());
 	outFile.close();

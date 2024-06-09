@@ -24,7 +24,7 @@
 class ServerCluster {
 private:
 	std::map<int, Server> _server_map;
-	std::map<int, Client> _client_map;
+	std::map<int, Client *> _client_map;
 	std::map<int, int> _pipeFd_clientFd_map;
 	std::map<int, std::string> _cgi_response_map;
 	int _epoll_fd;

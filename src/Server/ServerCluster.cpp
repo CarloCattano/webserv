@@ -9,7 +9,7 @@
 #define error(x) std::cerr << RED << x << RESET << std::endl
 
 const int MAX_EVENTS = 1024;
-const int BUFFER_SIZE = 4096;
+const int PIPE_BUFFER_SIZE = 65536;
 
 volatile static sig_atomic_t gSigStatus;
 
@@ -50,10 +50,11 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 
 	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
 
-	_client_map[client_fd] = *client;
+	_client_map[client_fd] = client;
 }
 
 void ServerCluster::close_client(int fd) {
+	delete _client_map[fd];
 	_client_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
@@ -95,18 +96,18 @@ void ServerCluster::await_connections() {
 			} else if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
 			} else {
-				Client &client = _client_map[event_fd];
+				Client *client = _client_map[event_fd];
 
-				check_timeout(client, 5);
+				check_timeout(*client, 5);
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
 
 				if (events[i].events & EPOLLIN)
-					handle_request(client);
+					handle_request(*client);
 
-				if (events[i].events & EPOLLOUT && client.getResponse().body.size() > 0)
-					handle_response(client);
+				if (events[i].events & EPOLLOUT && client->getResponse().body.size() > 0)
+					handle_response(*client);
 			}
 		}
 	}
@@ -115,8 +116,8 @@ void ServerCluster::await_connections() {
 void ServerCluster::handle_pipe_event(int pipe_fd)
 
 {
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(pipe_fd, buffer, BUFFER_SIZE);
+	char buffer[PIPE_BUFFER_SIZE];
+	int bytes_read = read(pipe_fd, buffer, PIPE_BUFFER_SIZE);
 
 	if (bytes_read == -1) {
 		error("handle_pipe_event read");
@@ -129,16 +130,16 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 	} else if (bytes_read == 0) {
 		std::string res = _cgi_response_map[pipe_fd];
 
-		Client &client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
+		Client *client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
 
 		_cgi_response_map.erase(pipe_fd);
 		_pipeFd_clientFd_map.erase(pipe_fd);
 
-		client.setResponseStatusCode(200);
-		client.setResponseBody(res.c_str());
-		client.addResponseHeader("Content-Length", intToString(res.size()));
-		client.addResponseHeader("Content-Type", "text/html");
-		client.addResponseHeader("Connection", "close");
+		client->setResponseStatusCode(200);
+		client->setResponseBody(res.c_str());
+		client->addResponseHeader("Content-Length", intToString(res.size()));
+		client->addResponseHeader("Content-Type", "text/html");
+		client->addResponseHeader("Connection", "close");
 
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
@@ -229,26 +230,30 @@ int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 }
 
 ServerCluster::~ServerCluster() {
-	close(_epoll_fd);
-
 	for (std::map<int, int>::iterator it = _pipeFd_clientFd_map.begin(); it != _pipeFd_clientFd_map.end(); it++) {
 		close(it->first);
+		log("closing pipe fd: " + intToString(it->first));
 	}
-	for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
+	_pipeFd_clientFd_map.clear();
+
+	if (_cgi_response_map.size() > 0) {
+		log("Clearing cgi response map");
+		for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
+			close(it->first);
+			log("closing pipe fd: " + intToString(it->first));
+		}
+	}
+
+	for (std::map<int, Client *>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+		log("closing client socket: " + intToString(it->first));
 		close(it->first);
 	}
-	for (std::map<int, Client>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
-		close(it->first);
-		delete &it->second;
-	}
+
 	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
 		close(it->first);
+		log("closing server socket: " + intToString(it->first));
 	}
 
-	log_open_clients(_client_map);
-
-	_client_map.clear();
-	_server_map.clear();
-	_pipeFd_clientFd_map.clear();
-	_cgi_response_map.clear();
+	log("Closing epoll fd");
+	close(_epoll_fd);
 }

@@ -187,7 +187,7 @@ bool isFile(const std::string &path) {
 }
 
 void log_open_clients(std::map<int, Client> &clients) {
-	std::cout << "Open clients: " << clients.size() << std::endl;
+	std::cout << YELLOW << "Open clients: " << clients.size() << RESET << std::endl;
 	std::cout << "Client fds: ";
 	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); it++) {
 		std::cout << GREEN << it->first << " " << it->second.getRequest().request << " " << RESET;
