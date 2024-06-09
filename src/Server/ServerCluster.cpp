@@ -232,28 +232,23 @@ int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
 ServerCluster::~ServerCluster() {
 	for (std::map<int, int>::iterator it = _pipeFd_clientFd_map.begin(); it != _pipeFd_clientFd_map.end(); it++) {
 		close(it->first);
-		log("closing pipe fd: " + intToString(it->first));
 	}
 	_pipeFd_clientFd_map.clear();
 
 	if (_cgi_response_map.size() > 0) {
-		log("Clearing cgi response map");
 		for (std::map<int, std::string>::iterator it = _cgi_response_map.begin(); it != _cgi_response_map.end(); it++) {
 			close(it->first);
-			log("closing pipe fd: " + intToString(it->first));
 		}
 	}
 
 	for (std::map<int, Client *>::iterator it = _client_map.begin(); it != _client_map.end(); it++) {
-		log("closing client socket: " + intToString(it->first));
 		close(it->first);
+		delete it->second;
 	}
 
 	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
 		close(it->first);
-		log("closing server socket: " + intToString(it->first));
 	}
 
-	log("Closing epoll fd");
 	close(_epoll_fd);
 }

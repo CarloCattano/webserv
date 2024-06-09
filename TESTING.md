@@ -10,4 +10,7 @@ siege -b -t 4s -c 255 -f siege.conf
 curl -X DELETE http://127.0.0.2:4222/filename.extension
 ```
 
+```shell
+valgrind  --leak-check=full  --show-leak-kinds=all  --track-fds=yes ./webserv server.conf 
+```
 
