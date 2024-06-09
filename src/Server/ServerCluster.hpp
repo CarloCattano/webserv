@@ -74,11 +74,18 @@ public:
 	void handle_get_request(Client &client, Server *server);
 	void handle_post_request(Client &client, Server *server);
 	void handle_delete_request(Client &client, Server *server);
+	void handle_redirection(Client &client, Server *server, HttpRedirection redirection);
 	Client get_client_obj(epoll_event &event);
 
 	/* FileUploader uploader; */
 	void handle_file_upload(Client &client);
-	std::string extract_boundary(const std::string &headers);
+	std::string extract_boundary(Client &client);
+
+	/** @brief A switch to modify the poll events
+	 * to EPOLLIN or EPOLLOUT
+	 * @param client_fd: file descriptor of the client
+	 * @param events: events to be modified
+	 **/
 	void switch_poll(int client_fd, uint32_t events);
 
 	bool allowed_in_path(const std::string &file_path, Client &client);

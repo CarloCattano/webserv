@@ -52,7 +52,6 @@ void Client::parseHead() {
 		std::vector<std::string> header = splitString(headLines[i], ": ");
 		this->addRequestHeader(header[0], header[1]);
 	}
-
 	this->setRequestFinishedHead(true);
 }
 
@@ -64,18 +63,21 @@ size_t stringToSizeT(std::string str) {
 }
 
 bool checkFinishedBody(Request request) {
-	if (request.headers.find("Content-Length") != request.headers.end()) {
-		if (request.body.size() - 1 >= stringToSizeT(request.headers["Content-Length"]))
-			return true;
-		return false;
-	}
-	return true;
+	std::cout << "Content-Length: " << request.headers["Content-Length"] << std::endl;
+	std::cout << "Body size: " << request.body.size() << std::endl;
+
+	if (request.body.size() >= stringToSizeT(request.headers["Content-Length"]))
+		return true;
+	return false;
 }
 
 void Client::parseBody() {
-	Request request = this->getRequest();
-	this->setRequestBody(request.request.substr(request.request.find("\r\n\r\n") + 4));
-	if (!checkFinishedBody(request))
+	if (!this->getRequest().headers.count("Content-Length")) {
+		this->setRequestFinished(true);
+		return;
+	}
+	this->setRequestBody(this->getRequest().request.substr(request.request.find("\r\n\r\n") + 4));
+	if (!checkFinishedBody(this->getRequest()))
 		return;
 	this->setRequestFinished(true);
 }

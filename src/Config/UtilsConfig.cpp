@@ -45,18 +45,18 @@ void print_server_routes(std::vector<Route> routes) {
 			std::cout << "\t\tMatching: " << routes[i].matching_style << std::endl;
 		if (routes[i].root != "")
 			std::cout << "\t\tRoot: " << routes[i].root << std::endl;
-		for (size_t j = 0; j < routes[i].redirections.size(); ++j) {
-			std::cout << "\t\tRedirection No." << j + 1 << std::endl;
-			std::cout << "\t\t\tCode: " << routes[i].redirections[j].code << std::endl;
-			std::cout << "\t\t\tUrl: " << routes[i].redirections[j].url << std::endl;
-		}
+		if (routes[i].redirection.code)
+			std::cout << "\t\tRedirection: " << routes[i].redirection.code << " " << routes[i].redirection.url << std::endl;
 		std::cout << "\t\tAutoIndex: " << routes[i].autoindex << std::endl;
-		std::cout << "\t\tIndex File: " << routes[i].index_file << std::endl;
+		if (routes[i].index_file != "")
+			std::cout << "\t\tIndex File: " << routes[i].index_file << std::endl;
 		std::cout << "\t\tPOST: " << routes[i].POST.is_allowed << std::endl;
 		std::cout << "\t\tGET: " << routes[i].GET.is_allowed << std::endl;
 		std::cout << "\t\tDELETE: " << routes[i].DELETE.is_allowed << std::endl;
-		std::cout << "\t\tcgi_path: " << routes[i].cgi_path << std::endl;
-		std::cout << "\t\tcgi_extension: " << routes[i].cgi_extension << std::endl;
+		if (routes[i].cgi_path != "")
+			std::cout << "\t\tcgi_path: " << routes[i].cgi_path << std::endl;
+		if (routes[i].cgi_extension != "")
+			std::cout << "\t\tcgi_extension: " << routes[i].cgi_extension << std::endl;
 	}
 	std::cout << std::endl;
 }
@@ -74,6 +74,7 @@ void print_server_obj(Server &obj) {
         print_vector(obj.getErrorPages());
     }
 	std::cout << "\tRoot " << obj.getRoot(NULL) << std::endl;
+    std::cout << "\tIndexFile: " << obj.getIndexFile(NULL) << std::endl;
     std::cout << "\tAutoIndex: " << obj.getAutoindex(NULL) << std::endl;
 	std::cout << "\tClientMaxBodySize " << obj.getClientMaxBodySize() << std::endl;
 	std::cout << "\tPOST: " << obj.getPost(NULL).is_allowed << std::endl;
@@ -81,6 +82,8 @@ void print_server_obj(Server &obj) {
 	std::cout << "\tDELETE: " << obj.getDelete(NULL).is_allowed << std::endl;
 	std::cout << "\tcgi_path: " << obj.getCgiPath() << std::endl;
 	std::cout << "\tcgi_extension: " << obj.getCgiExtension() << std::endl;
+	if (obj.getRedirection(NULL).code)
+		std::cout << "\tRedirection: " << obj.getRedirection(NULL).code << " " << obj.getRedirection(NULL).url << std::endl;
     if (obj.getRoutes().size() > 0)
         print_server_routes(obj.getRoutes());
     std::cout << std::endl;
