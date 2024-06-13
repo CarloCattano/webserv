@@ -80,6 +80,9 @@ void update_response(Client &client, std::string body, std::string content_type)
 
 void ServerCluster::handle_get_request(Client &client, Server *server) {
 	Response response;
+
+	log(client.getRequest().headers["Host"]); // TODO does Host match server name?
+
 	std::string request_uri = client.getRequest().uri;
 	std::string full_path = server->get_full_path(client.getRequest().uri);
 	std::string body;

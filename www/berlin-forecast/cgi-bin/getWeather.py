@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 from bs4 import BeautifulSoup as bs
@@ -82,7 +81,7 @@ class WeatherScrap:
         </head>
         <body>
         <div class="weather-container">
-            <h1>Weather in {region} Now</h1>
+            <h1>Weather in Berlin Now</h1>
             <div class="current-weather">
                 <img src="../assets/current.png" alt="Current Weather" class="weather-icon">
                 <div class="weather-info">
