@@ -184,3 +184,36 @@ HTTP_METHOD find_method(const std::string &method) {
 		return PATCH;
 	return INVALID;
 }
+
+std::string extractFileName(const std::string &body, const std::string &boundary) {
+	std::string fileName;
+	std::string boundary_start = "--" + boundary + "\r\n";
+	std::string boundary_end = "--" + boundary + "--\r\n";
+	size_t start = body.find(boundary_start);
+	size_t end = body.find(boundary_end);
+
+	if (start == std::string::npos || end == std::string::npos)
+		return fileName;
+
+	size_t file_name_start = body.find("filename=\"", start);
+	size_t file_name_end = body.find("\"", file_name_start + 10);
+
+	if (file_name_start == std::string::npos || file_name_end == std::string::npos)
+		return fileName;
+
+	fileName = body.substr(file_name_start + 10, file_name_end - file_name_start - 10);
+	return fileName;
+}
+
+std::string extractFileContent(const std::string &body, const std::string &boundary) {
+	// remove first boundary
+	std::string boundary_start = "--" + boundary + "\r\n";
+	size_t start = body.find(boundary_start);
+	std::string fileContent = body.substr(start + boundary_start.size());
+	// remove headers
+	fileContent = fileContent.substr(fileContent.find("\r\n\r\n") + 4);
+	size_t end = fileContent.find("\r\n--" + boundary);
+	if (end != std::string::npos)
+		fileContent = fileContent.substr(0, end);
+	return fileContent;
+}

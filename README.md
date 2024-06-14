@@ -7,20 +7,6 @@
 
 * Carlo :
 
-- [X] Respond with method not allowed if the method is not allowed for a route, and respond not implemented 
-
-- [X] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
-- [X] Fix the download of files in directory listing 
-        - It doest work on file-upload server on /upload
-- [X] Search for the HTTP response status codes list on the internet. During this evaluation, if any status codes is wrong, don't give any related points.
-- [X] Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit")
-- [X] Execve error handling
-- [X] POST  request is hanging on a cgi to folder or non existent
-- [X] track all read/recv/write/send returns for errors
-- [X] Upload some file to the server and get it back.
-- [X] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
-
-
 * Joseph:
 
 

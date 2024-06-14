@@ -16,7 +16,7 @@
  *  the server cluster.
  *  @param _server_map: map of server objects where the servers instantiated are stored
  *  @param _client_map: map of clients with a file descriptor as the key and the client object as the value
- *  @param _pipeFd_clientFd_map: map of pipe file descriptors and client file descriptors
+ *  @param _pipe_client_map: map of pipe file descriptors and client file descriptors
  *  @param _cgi_response_map: map of cgi responses with the client file descriptor as the key and the response as the
  * value
  *  @param _epoll_fd: epoll file descriptor
@@ -26,7 +26,7 @@ class ServerCluster {
 private:
 	std::map<int, Server> _server_map;
 	std::map<int, Client *> _client_map;
-	std::map<int, int> _pipeFd_clientFd_map;
+	std::map<int, int> _pipe_client_map;
 	std::map<int, std::string> _cgi_response_map;
 	int _epoll_fd;
 
