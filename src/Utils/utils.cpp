@@ -137,8 +137,8 @@ void log_open_clients(std::map<int, Client *> &client_map) {
 	for (std::map<int, Client *>::iterator it = client_map.begin(); it != client_map.end(); ++it) {
 		std::cout << it->first << " ";
 		std::cout << it->second->getRequest().uri << std::endl;
+		std::cout << it->second;
 	}
-
 	std::cout << std::endl;
 }
 

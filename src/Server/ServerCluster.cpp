@@ -8,7 +8,7 @@
 
 #define error(x) std::cerr << RED << x << RESET << std::endl
 
-const int MAX_EVENTS = 1024 * 2;
+const int MAX_EVENTS = 1024;
 const int PIPE_BUFFER_SIZE = 65536;
 
 volatile static sig_atomic_t gSigStatus;
@@ -108,8 +108,8 @@ void ServerCluster::await_connections() {
 
 				if (events[i].events & EPOLLOUT && client->getResponse().body.size() > 0)
 					handle_response(*client);
+				log_open_clients(_client_map);
 			}
-			log_open_clients(_client_map);
 		}
 	}
 }
