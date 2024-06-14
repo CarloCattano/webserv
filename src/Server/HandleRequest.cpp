@@ -5,7 +5,7 @@
 #include "../Utils/utils.hpp"
 #include "./ServerCluster.hpp"
 
-const int BUFFER_SIZE = 4096 * 4;
+const int BUFFER_SIZE = 2048;
 
 void ServerCluster::handle_request(Client &client) {
 	char buffer[BUFFER_SIZE];

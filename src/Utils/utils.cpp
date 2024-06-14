@@ -55,48 +55,6 @@ std::string intToString(int value) {
 	return ss.str();
 }
 
-std::string extract_requested_file_path(const char *buffer) {
-	std::string request(buffer);
-	size_t start = 0;
-
-	if (request.find("GET") == 0) {
-		start = request.find("GET") + 4;
-	} else if (request.find("POST") == 0) {
-		start = request.find("POST") + 5;
-	} else if (request.find("DELETE") == 0) {
-		start = request.find("DELETE") + 7;
-	}
-
-	size_t end = request.find("HTTP/1.1") - 1;
-	std::string path = request.substr(start, end - start);
-
-	return path;
-}
-
-std::string extract_filename_from_request(const char *request) {
-	const char *filename_field = strstr(request, "filename=");
-	if (filename_field != NULL) {
-		const char *filename_start = filename_field + strlen("filename=");
-		const char *filename_end = strstr(filename_start, "\r\n");
-		if (filename_end != NULL) {
-			std::string filename(filename_start, filename_end - filename_start);
-			return filename;
-		}
-	}
-	return "";
-}
-
-bool is_file_upload_request(const char *request) {
-	const char *content_type_header = strstr(request, "Content-Type:");
-	if (content_type_header != NULL) {
-		const char *multipart_form_data = strstr(content_type_header, "multipart/form-data");
-		if (multipart_form_data != NULL) {
-			return true;
-		}
-	}
-	return false;
-}
-
 // get the path of the folder from where the server is run
 std::string get_current_dir() {
 	char cwd[1024];
@@ -172,24 +130,15 @@ bool isFile(const std::string &path) {
 	return true;
 }
 
-/* void log_open_clients(std::map<int, Client *> &clients) { */
-/* 	std::cout << YELLOW << "Open clients: " << clients.size() << RESET << std::endl; */
-/* 	std::cout << "Client fds: "; */
-/* 	for (std::map<int, Client *>::iterator it = clients.begin(); it != clients.end(); ++it) { */
-/* 		std::cout << it->first << " "; */
-/* 		std::cout << std::endl; */
-/* 	} */
-/* } */
-
-//  std::map<int, Client *> _client_map;
-
-// function to print all the open clients
 void log_open_clients(std::map<int, Client *> &client_map) {
 	std::cout << YELLOW << "Open clients: " << client_map.size() << RESET << std::endl;
 	std::cout << "Client fds: ";
+
 	for (std::map<int, Client *>::iterator it = client_map.begin(); it != client_map.end(); ++it) {
 		std::cout << it->first << " ";
+		std::cout << it->second->getRequest().uri << std::endl;
 	}
+
 	std::cout << std::endl;
 }
 
