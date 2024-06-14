@@ -104,7 +104,7 @@ void ServerCluster::await_connections()
 			else {
 				Client *client = &_client_map[event_fd];
 
-				if (!check_timeout(client, 5))
+				if (!check_timeout(client, 1))
 					continue;
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
@@ -251,7 +251,7 @@ bool ServerCluster::check_timeout(Client *client, std::time_t timeout)
 		close_client(client->getFd());
 		return false;
 	}
-	_client_start_time_map[client->getFd()] = std::time(NULL);
+	// _client_start_time_map[client->getFd()] = std::time(NULL);
 	return true;
 }
 
