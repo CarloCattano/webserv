@@ -54,16 +54,15 @@ void ServerCluster::handle_request(Client &client) {
 
 	if (redirection.code) {
 		handle_redirection(client, server, redirection);
+		close_client(client.getFd());
+		return;
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
-	} else {
-		client.sendErrorPage(405); // Method Not Allowed
 	}
-
 	switch_poll(client.getFd(), EPOLLOUT);
 }
 
