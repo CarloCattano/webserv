@@ -9,12 +9,24 @@ const int BUFFER_SIZE = 2048;
 
 bool permitted_origin(Client &client, Server *server) {
 	std::string request_uri = client.getRequest().uri;
-	std::string origin = client.getRequest().headers["Host"].substr(0, client.getRequest().headers["Host"].find(":"));
+
+
+	std::string origin = client.getRequest().headers["Host"];
+
 
 	std::string server_name = server->getServerNames()[0];
 	std::string server_name2 = server->getServerNames()[1];
 
+	// if origin is an IP and port , we need to remove the port
+
+	if (origin.find(":") != std::string::npos)
+		origin = origin.substr(0, origin.find(":"));
+
 	if (origin != server_name && origin != server_name2) {
+		log("Origin not permitted");
+		log("Origin: " + origin);
+		log("Server name: " + server_name);
+		log("Server name2: " + server_name2);
 		return false;
 	}
 	return true;
@@ -31,12 +43,6 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	}
 
-	if (!permitted_origin(client, client.getServer())) {
-		client.sendErrorPage(403);
-		client.setRequestFinishedHead(true);
-		close_client(client.getFd());
-		return;
-	}
 
 	client.appendRequestString(std::string(buffer, bytes_read));
 
@@ -56,6 +62,14 @@ void ServerCluster::handle_request(Client &client) {
 
 	if (client.getRequest().body.size() > static_cast<unsigned long>(server->getClientMaxBodySize())) {
 		client.sendErrorPage(413);
+		return;
+	}
+
+
+	if (!permitted_origin(client, client.getServer())) {
+		client.sendErrorPage(403);
+		client.setRequestFinishedHead(true);
+		close_client(client.getFd());
 		return;
 	}
 
