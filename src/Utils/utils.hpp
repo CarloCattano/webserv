@@ -1,7 +1,7 @@
 #pragma once
-#include "../Client/Client.hpp"
 #include <map>
 #include <string>
+#include "../Client/Client.hpp"
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -24,10 +24,11 @@ std::size_t extract_content_length(const char *request);
 
 void populateContentTypes(std::map<std::string, std::string> &content_types);
 
-enum HttpMethod { GET, POST, DELETE, UNKNOWN };
-HttpMethod get_http_method(const char *buffer);
+// list of HTTP methods
+enum HTTP_METHOD { GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE, CONNECT, PATCH, INVALID };
+HTTP_METHOD find_method(const std::string &method);
 
 bool isFolder(const std::string &path);
 bool isFile(const std::string &path);
-bool directory_contains_file(const std::string& directoryPath, std::string file_name);
+bool directory_contains_file(const std::string &directoryPath, std::string file_name);
 void log_open_clients(std::map<int, Client> &client_map);

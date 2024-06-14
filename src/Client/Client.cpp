@@ -1,13 +1,11 @@
 #include "./Client.hpp"
 #include <algorithm>
 #include <iostream>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
-#define EXIT_FAILURE 1
 
 // clang-format off
 

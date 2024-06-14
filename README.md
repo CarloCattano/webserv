@@ -7,6 +7,8 @@
 
 * Carlo :
 
+- [ ] Respond with method not allowed if the method is not allowed for a route, and respond not implemented 
+
 - [X] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
 - [X] Fix the download of files in directory listing 
         - It doest work on file-upload server on /upload

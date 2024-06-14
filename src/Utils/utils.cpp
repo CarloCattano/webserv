@@ -8,23 +8,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-std::map<std::string, std::string> content_types;
-
-HttpMethod get_http_method(const char *request) {
-	const char *first_space = strchr(request, ' ');
-	if (first_space != NULL) {
-		std::string method(request, first_space - request);
-		if (method == "GET") {
-			return GET;
-		} else if (method == "POST") {
-			return POST;
-		} else if (method == "DELETE") {
-			return DELETE;
-		}
-	}
-	return UNKNOWN;
-}
-
 std::map<std::string, std::string> getAllContentTypes() {
 	std::map<std::string, std::string> content_types;
 
@@ -217,4 +200,26 @@ bool directory_contains_file(const std::string &directoryPath, std::string file_
 
 	closedir(dir);
 	return false;
+}
+
+HTTP_METHOD find_method(const std::string &method) {
+	if (method == "GET")
+		return GET;
+	if (method == "POST")
+		return POST;
+	if (method == "DELETE")
+		return DELETE;
+	if (method == "PUT")
+		return PUT;
+	if (method == "HEAD")
+		return HEAD;
+	if (method == "OPTIONS")
+		return OPTIONS;
+	if (method == "TRACE")
+		return TRACE;
+	if (method == "CONNECT")
+		return CONNECT;
+	if (method == "PATCH")
+		return PATCH;
+	return INVALID;
 }
