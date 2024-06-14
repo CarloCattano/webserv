@@ -7,7 +7,7 @@
 
 * Carlo :
 
-- [ ] Respond with method not allowed if the method is not allowed for a route, and respond not implemented 
+- [X] Respond with method not allowed if the method is not allowed for a route, and respond not implemented 
 
 - [X] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
 - [X] Fix the download of files in directory listing 
@@ -20,11 +20,11 @@
 - [X] POST  request is hanging on a cgi to folder or non existent
 - [X] track all read/recv/write/send returns for errors
 - [X] Upload some file to the server and get it back.
+- [X] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
 
 
 * Joseph:
 
-- [j] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
 
 - [X] Setup routes in a server to different directories.
 - [X] Setup a default file to search for if you ask for a directory

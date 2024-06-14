@@ -7,6 +7,19 @@
 
 const int BUFFER_SIZE = 2048;
 
+bool permitted_origin(Client &client, Server *server) {
+	std::string request_uri = client.getRequest().uri;
+	std::string origin = client.getRequest().headers["Host"].substr(0, client.getRequest().headers["Host"].find(":"));
+
+	std::string server_name = server->getServerNames()[0];
+	std::string server_name2 = server->getServerNames()[1];
+
+	if (origin != server_name && origin != server_name2) {
+		return false;
+	}
+	return true;
+}
+
 void ServerCluster::handle_request(Client &client) {
 	char buffer[BUFFER_SIZE];
 
@@ -14,6 +27,13 @@ void ServerCluster::handle_request(Client &client) {
 
 	if (bytes_read == -1) {
 		std::cerr << "Error reading from socket" << std::endl;
+		close_client(client.getFd());
+		return;
+	}
+
+	if (!permitted_origin(client, client.getServer())) {
+		client.sendErrorPage(403);
+		client.setRequestFinishedHead(true);
 		close_client(client.getFd());
 		return;
 	}
@@ -88,11 +108,9 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-
 void ServerCluster::handle_get_request(Client &client, Server *server) {
 	Response response;
 
-	/* log(client.getRequest().headers["Host"]); // TODO does Host match server name? */
 
 	std::string request_uri = client.getRequest().uri;
 	std::string full_path = server->get_full_path(client.getRequest().uri);

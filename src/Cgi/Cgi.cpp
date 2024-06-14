@@ -1,7 +1,6 @@
 #include "Cgi.hpp"
 #include <cstdlib>
 #include <iostream>
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
