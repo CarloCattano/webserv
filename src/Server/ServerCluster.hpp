@@ -26,6 +26,7 @@ class ServerCluster {
 private:
 	std::map<int, Server> _server_map;
 	std::map<int, Client *> _client_map;
+	std::map<int, time_t> 		_client_start_time_map;
 	std::map<int, int> _pipe_client_map;
 	std::map<int, std::string> _cgi_response_map;
 	int _epoll_fd;
@@ -93,12 +94,7 @@ public:
 
 	void add_client_fd_to_epoll(int client_fd);
 
-	void check_timeout(Client &client, int timeout);
+	bool check_timeout(Client *client, std::time_t timeout);
+	int  get_pipefd_from_clientfd(int client_fd);
 
-	/** @brief
-	 * This method is responsible for getting the pipe file descriptor from the client file descriptor.
-	 * @param client_fd: file descriptor of the client
-	 * @return int: file descriptor of the pipe
-	 */
-	int get_pipefd_from_clientfd(int client_fd);
 };

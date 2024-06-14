@@ -27,6 +27,7 @@ void ServerCluster::handle_request(Client &client) {
 	char buffer[BUFFER_SIZE];
 
 	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
+	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
 
 	if (bytes_read == -1) {
 		std::cerr << "Error reading from socket" << std::endl;
@@ -81,7 +82,9 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
-	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
+	}
+	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
+		this->_client_start_time_map[client.getFd()] = std::time(NULL);
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);

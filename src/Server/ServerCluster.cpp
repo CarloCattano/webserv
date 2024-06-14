@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "../Utils/utils.hpp"
 
+#include <ctime>
+
 #define error(x) std::cerr << RED << x << RESET << std::endl
 
 const int MAX_EVENTS = 1024;
@@ -48,17 +50,24 @@ int ServerCluster::accept_new_connection(int server_fd) {
 void ServerCluster::handle_new_client_connection(int server_fd) {
 	int client_fd = accept_new_connection(server_fd);
 
-	if (client_fd != -1) {
-		Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
-		_client_map[client_fd] = client;
-	}
+	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
+
+	_client_map[client_fd] = *client;
+	//convert client start time to human readable format
+	_client_start_time_map[client_fd] = std::time(NULL);
+	std::time_t start_time = _client_start_time_map[client_fd];
+
+	std::string time = std::ctime(&start_time);
+	std::cout << "Client connected at: " << time << std::endl;
 }
 
 void ServerCluster::close_client(int fd) {
 	delete _client_map[fd];
 	_client_map.erase(fd);
+	_client_start_time_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
+	std::cout << "Client disconnected with fd: " << fd << std::endl;
 }
 
 void ServerCluster::add_client_fd_to_epoll(int client_fd) {
@@ -96,10 +105,12 @@ void ServerCluster::await_connections() {
 				handle_pipe_event(event_fd);
 			} else if (_server_map.count(event_fd)) {
 				handle_new_client_connection(event_fd);
-			} else {
-				Client *client = _client_map[event_fd];
+			}
+			else {
+				Client *client = &_client_map[event_fd];
 
-				check_timeout(*client, 5);
+				if (!check_timeout(client, 1))
+					continue;
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
@@ -107,9 +118,9 @@ void ServerCluster::await_connections() {
 				if (events[i].events & EPOLLIN)
 					handle_request(*client);
 
-				if (events[i].events & EPOLLOUT) //&& client->getResponse().body.size() > 0)
+				if (events[i].events & EPOLLOUT)
 					handle_response(*client);
-				log_open_clients(_client_map);
+
 			}
 		}
 	}
@@ -210,21 +221,40 @@ void ServerCluster::start() {
 	ServerCluster::await_connections();
 }
 
-void ServerCluster::check_timeout(Client &client, int timeout) {
-	std::map<int, int> pid_start_time_map = client.getPidStartTimeMap();
-	std::map<int, int>::iterator it = pid_start_time_map.begin();
+bool ServerCluster::check_timeout(Client *client, std::time_t timeout)
+{
+	std::map<int, std::time_t> temp = client->getPidStartTimeMap();
+	std::map<int, std::time_t>::iterator it = temp.begin();
 
-	while (it != pid_start_time_map.end()) {
-		if (time(NULL) - it->second > timeout) {
-			client.sendErrorPage(504);
-			close(client.getPidPipefdMap()[it->first]);
+	while (it != temp.end()) {
+		if (std::time(NULL) > it->second + timeout) {
+			std::cout << "cgi timeout" << std::endl;
+			client->sendErrorPage(504);
+			close(client->getPidPipefdMap()[it->first]);
 			kill(it->first, SIGKILL);
-			client.removePidStartTimeMap(it->first);
-			_pipe_client_map.erase(client.getPidPipefdMap()[it->first]);
-			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.getPidPipefdMap()[it->first], NULL);
+			client->removePidStartTimeMap(it->first);
+			_pipeFd_clientFd_map.erase(client->getPidPipefdMap()[it->first]);
+			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client->getPidPipefdMap()[it->first], NULL);
+			close_client(client->getFd());
+			return false;
 		}
 		it++;
 	}
+
+	std::time_t start_time = _client_start_time_map[client->getFd()];
+	std::time_t current_time;
+	std::time(&current_time);
+	if (start_time!= 0 && current_time > start_time + timeout) {
+		client->sendErrorPage(504);
+		std::cout << "timeout" << std::endl;
+		std::cout << "client.getStartTime() = " << start_time << std::endl;
+		std::cout << "std::time(NULL) = " << std::time(NULL) << std::endl;
+
+		close_client(client->getFd());
+		return false;
+	}
+	// _client_start_time_map[client->getFd()] = std::time(NULL);
+	return true;
 }
 
 int ServerCluster::get_pipefd_from_clientfd(int client_fd) {
