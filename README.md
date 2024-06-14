@@ -1,5 +1,6 @@
 # WEBSERV
- by ccattano bmacmaho jalbers
+
+by ccattano bmacmaho jalbers
 
 ## Current open fronts:
 
