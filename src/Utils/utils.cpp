@@ -172,13 +172,25 @@ bool isFile(const std::string &path) {
 	return true;
 }
 
-void log_open_clients(std::map<int, Client> &clients) {
-	std::cout << YELLOW << "Open clients: " << clients.size() << RESET << std::endl;
+/* void log_open_clients(std::map<int, Client *> &clients) { */
+/* 	std::cout << YELLOW << "Open clients: " << clients.size() << RESET << std::endl; */
+/* 	std::cout << "Client fds: "; */
+/* 	for (std::map<int, Client *>::iterator it = clients.begin(); it != clients.end(); ++it) { */
+/* 		std::cout << it->first << " "; */
+/* 		std::cout << std::endl; */
+/* 	} */
+/* } */
+
+//  std::map<int, Client *> _client_map;
+
+// function to print all the open clients
+void log_open_clients(std::map<int, Client *> &client_map) {
+	std::cout << YELLOW << "Open clients: " << client_map.size() << RESET << std::endl;
 	std::cout << "Client fds: ";
-	for (std::map<int, Client>::const_iterator it = clients.begin(); it != clients.end(); it++) {
-		std::cout << GREEN << it->first << " " << it->second.getRequest().request << " " << RESET;
+	for (std::map<int, Client *>::iterator it = client_map.begin(); it != client_map.end(); ++it) {
+		std::cout << it->first << " ";
 	}
-	std::cout << RESET << std::endl;
+	std::cout << std::endl;
 }
 
 bool directory_contains_file(const std::string &directoryPath, std::string file_name) {
