@@ -4,6 +4,7 @@
 #include <map>
 #include <sstream>
 #include <sys/epoll.h>
+#include <ctime>
 
 struct Request {
 	std::string request;
@@ -26,14 +27,13 @@ struct Response {
 
 class Client {
   private:
-	int start_time;
 	int fd;
 	Server *server;
 	Request request;
 	Response response;
 	size_t sentBytes;
 	std::stringstream responseStream;
-	std::map<int, int> pid_start_time_map;
+	std::map<int, std::time_t> pid_start_time_map;
 	std::map<int, int> pid_pipefd_map;
 
   public:
@@ -51,25 +51,23 @@ class Client {
 	void checkTimeout(int timeout);
 
 	// general getters and setters
-	int getStartTime() const;
 	int getFd() const;
 	Server *getServer() const;
 	Request getRequest() const;
 	Response getResponse() const;
 	epoll_event *getEvent() const;
 	size_t getSentBytes() const;
-	std::map<int, int> getPidStartTimeMap() const;
+	std::map<int, std::time_t> getPidStartTimeMap() const;
 	std::map<int, int> getPidPipefdMap() const;
 
-	void setStartTime(int start_time);
 	void setFd(int fd);
 	void setServer(Server *server);
 	void setRequest(Request &request);
 	void setResponse(Response &response);
 	void setEvent(epoll_event *event);
 	void setSentBytes(size_t sentBytes);
-	void setPidStartTimeMap(std::map<int, int> pid_start_time_map);
-	void addPidStartTimeMap(int pid, int start_time);
+	void setPidStartTimeMap(std::map<int, std::time_t> pid_start_time_map);
+	void addPidStartTimeMap(int pid, std::time_t start_time);
 	void removePidStartTimeMap(int pid);
 	void addPidPipefdMap(int pid, int pipefd);
 	void removePidPipefdMap(int pid);

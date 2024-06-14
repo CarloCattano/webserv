@@ -2,7 +2,7 @@
 #include "../Cgi/Cgi.hpp"
 #include "./ServerCluster.hpp"
 
-const int BUFFER_SIZE = 4096 * 4;
+const int BUFFER_SIZE = 1024;
 
 void ServerCluster::handle_request(Client &client)
 {
