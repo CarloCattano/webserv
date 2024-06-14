@@ -5,7 +5,23 @@
 #include "../Utils/utils.hpp"
 #include "./ServerCluster.hpp"
 
-const int BUFFER_SIZE = 4096 * 4;
+const int BUFFER_SIZE = 2048;
+
+bool permitted_origin(Client &client, Server *server) {
+	std::string request_uri = client.getRequest().uri;
+
+	std::string origin = client.getRequest().headers["Host"];
+	std::string server_name = server->getServerNames()[0];
+	std::string server_name2 = server->getServerNames()[1];
+
+	if (origin.find(":") != std::string::npos)
+		origin = origin.substr(0, origin.find(":"));
+
+	if (origin != server_name && origin != server_name2) {
+		return false;
+	}
+	return true;
+}
 
 void ServerCluster::handle_request(Client &client) {
 	char buffer[BUFFER_SIZE];
@@ -39,6 +55,14 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	}
 
+
+	if (!permitted_origin(client, client.getServer())) {
+		client.sendErrorPage(403);
+		client.setRequestFinishedHead(true);
+		close_client(client.getFd());
+		return;
+	}
+
 	HttpRedirection redirection = server->getRedirection(&request_uri);
 
 	if (client.getRequest().method != "GET" && client.getRequest().method != "POST" &&
@@ -51,7 +75,6 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	}
 
-
 	if (redirection.code) {
 		handle_redirection(client, server, redirection);
 		close_client(client.getFd());
@@ -59,10 +82,12 @@ void ServerCluster::handle_request(Client &client) {
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
+		this->_client_start_time_map[client.getFd()] = std::time(NULL);
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
 	}
+
 	switch_poll(client.getFd(), EPOLLOUT);
 }
 
@@ -72,7 +97,6 @@ void ServerCluster::handle_redirection(Client &client, Server *server, HttpRedir
 		client.sendErrorPage(redirection.code);
 	else {
 		std::string url = redirection.url[0] == '/' ? server->getRoot(NULL) + redirection.url : redirection.url;
-		// std::cout << "Test: " << url << std::endl;
 		client.setResponseStatusCode(redirection.code);
 		client.addResponseHeader("Content-Length", "10");
 		client.addResponseHeader("Location", redirection.url);
@@ -88,11 +112,9 @@ void update_response(Client &client, std::string body, std::string content_type)
 	client.addResponseHeader("Connection", "keep-alive");
 }
 
-
 void ServerCluster::handle_get_request(Client &client, Server *server) {
 	Response response;
 
-	/* log(client.getRequest().headers["Host"]); // TODO does Host match server name? */
 
 	std::string request_uri = client.getRequest().uri;
 	std::string full_path = server->get_full_path(client.getRequest().uri);
@@ -104,7 +126,7 @@ void ServerCluster::handle_get_request(Client &client, Server *server) {
 
 		if (full_path[full_path.size() - 1] == '?')
 			full_path = full_path.substr(0, full_path.size() - 1);
-		cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
+		cgi.handle_cgi_request(client, full_path, _pipe_client_map, _epoll_fd);
 		update_response(client, _cgi_response_map[client.getFd()], "text/html");
 		return;
 	}
@@ -144,7 +166,7 @@ void ServerCluster::handle_post_request(Client &client, Server *server) {
 	if (full_path.find(client.getServer()->getCgiPath()) != std::string::npos &&
 		full_path.find(".py") != std::string::npos) {
 		Cgi cgi;
-		cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
+		cgi.handle_cgi_request(client, full_path, _pipe_client_map, _epoll_fd);
 
 		client.setResponseStatusCode(200);
 		client.addResponseHeader("Content-Type", "text/html");
@@ -154,38 +176,6 @@ void ServerCluster::handle_post_request(Client &client, Server *server) {
 	client.sendErrorPage(401);
 }
 
-std::string extractFileName(const std::string &body, const std::string &boundary) {
-	std::string fileName;
-	std::string boundary_start = "--" + boundary + "\r\n";
-	std::string boundary_end = "--" + boundary + "--\r\n";
-	size_t start = body.find(boundary_start);
-	size_t end = body.find(boundary_end);
-
-	if (start == std::string::npos || end == std::string::npos)
-		return fileName;
-
-	size_t file_name_start = body.find("filename=\"", start);
-	size_t file_name_end = body.find("\"", file_name_start + 10);
-
-	if (file_name_start == std::string::npos || file_name_end == std::string::npos)
-		return fileName;
-
-	fileName = body.substr(file_name_start + 10, file_name_end - file_name_start - 10);
-	return fileName;
-}
-
-std::string extractFileContent(const std::string &body, const std::string &boundary) {
-	// remove first boundary
-	std::string boundary_start = "--" + boundary + "\r\n";
-	size_t start = body.find(boundary_start);
-	std::string fileContent = body.substr(start + boundary_start.size());
-	// remove headers
-	fileContent = fileContent.substr(fileContent.find("\r\n\r\n") + 4);
-	size_t end = fileContent.find("\r\n--" + boundary);
-	if (end != std::string::npos)
-		fileContent = fileContent.substr(0, end);
-	return fileContent;
-}
 
 // todo - keep track of written bytes amount and come back to me baby
 void ServerCluster::handle_file_upload(Client &client) {

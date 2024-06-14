@@ -4,11 +4,9 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
-// include for exit function
-#include <stdlib.h>
 
 Server::Server()
 	: _port(8000), _default_server(false), _server_names(1, "0.0.0.0"), _client_max_body_size(1073741824),
@@ -22,7 +20,6 @@ Server::Server(const Server &server) {
 	*this = server;
 }
 
-// operator overload
 Server &Server::operator=(const Server &server) {
 	if (this == &server)
 		return *this;
@@ -51,6 +48,7 @@ Server::~Server() {
 void Server::setup() {
 	if ((_socket_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1)
 		std::cerr << "Error: socket creation failed" << std::endl;
+
 	int option_value = 1;
 
 	setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));

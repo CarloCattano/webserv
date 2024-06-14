@@ -1,12 +1,13 @@
 #include "Cgi.hpp"
 #include <cstdlib>
 #include <iostream>
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <time.h>
+#include <ctime>
 
 Cgi::Cgi() {
 }
@@ -25,8 +26,8 @@ Cgi::Cgi(const Cgi &src) {
 	*this = src;
 }
 
-void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
-							 std::map<int, int> &_pipeFd_clientFd_map, int epoll_fd) {
+void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path, std::map<int, int> &_pipe_client_map,
+							 int epoll_fd) {
 	int pipe_fd[2];
 	int client_fd = client.getFd();
 
@@ -56,7 +57,7 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 	} else {
 		close(pipe_fd[1]);
 
-		client.addPidStartTimeMap(pid, time(NULL));
+		client.addPidStartTimeMap(pid, std::time(NULL));
 		client.addPidPipefdMap(pid, pipe_fd[0]);
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
@@ -66,7 +67,7 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 			return;
 		}
 
-		_pipeFd_clientFd_map[pipe_fd[0]] = client_fd;
+		_pipe_client_map[pipe_fd[0]] = client_fd;
 
 		waitpid(pid, NULL, WNOHANG);
 	}
