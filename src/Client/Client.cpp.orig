@@ -1,20 +1,36 @@
 #include "./Client.hpp"
 #include <algorithm>
-#include <ctime>
-#include <iomanip>
 #include <iostream>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
+<<<<<<< HEAD
+=======
+#include <signal.h>
+#include <ctime>
+#include <iomanip>
 #define EXIT_FAILURE 1
+>>>>>>> barra
 
 // clang-format off
 
+void epoll_add_fd(int epoll_fd, int fd) {
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        std::cerr << "epoll_ctl failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
+<<<<<<< HEAD
+    epoll_add_fd(epoll_fd, fd);
+=======
 	this->setRequestFinished(false);
     this->setRequestBody("");
 
@@ -31,6 +47,7 @@ Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), s
 		std::cerr << "epoll_ctl failed" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+>>>>>>> barra
 }
 
 std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
@@ -70,6 +87,11 @@ size_t stringToSizeT(std::string str) {
 }
 
 bool checkFinishedBody(Request request) {
+<<<<<<< HEAD
+=======
+	// std::cout << "Content-Length: " << request.headers["Content-Length"] << std::endl;
+	// std::cout << "Body size: " << request.body.size() << std::endl;
+>>>>>>> barra
 
 	if (request.body.size() >= stringToSizeT(request.headers["Content-Length"]))
 		return true;
@@ -189,9 +211,12 @@ void Client::setResponseSize(int size) { this->response.size = size; }
 Client::Client() : fd(-1), server(NULL), sentBytes(0) {}
 Client::~Client() {
 	this->request.headers.clear();
+<<<<<<< HEAD
+=======
 	this->response.headers.clear();
 	this->pid_pipefd_map.clear();
 	this->pid_start_time_map.clear();
+>>>>>>> barra
 }
 
 Client &Client::operator=(const Client &client) {

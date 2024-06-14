@@ -4,6 +4,7 @@
 #include "../Cgi/Cgi.hpp"
 #include "../Utils/utils.hpp"
 #include "./ServerCluster.hpp"
+<<<<<<< HEAD
 
 const int BUFFER_SIZE = 2048;
 
@@ -26,6 +27,15 @@ bool permitted_origin(Client &client, Server *server) {
 void ServerCluster::handle_request(Client &client) {
 	char buffer[BUFFER_SIZE];
 
+=======
+
+const int BUFFER_SIZE = 1024;
+
+void ServerCluster::handle_request(Client &client)
+{
+	char buffer[BUFFER_SIZE];
+
+>>>>>>> barra
 	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
 
 	if (bytes_read == -1) {
@@ -81,12 +91,22 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
+<<<<<<< HEAD
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
+=======
+	}
+	else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		this->_client_start_time_map[client.getFd()] = std::time(NULL);
+>>>>>>> barra
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
+<<<<<<< HEAD
 	}
+=======
+	else 
+		client.sendErrorPage(405);
+>>>>>>> barra
 
 	switch_poll(client.getFd(), EPOLLOUT);
 }
@@ -185,6 +205,10 @@ void ServerCluster::handle_file_upload(Client &client) {
 	std::string fileName = extractFileName(body, boundary);
 	std::string fileContent = extractFileContent(body, boundary);
 
+<<<<<<< HEAD
+=======
+	// std::cout << "fileContent: " << fileContent << std::endl;
+>>>>>>> barra
 
 	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
 		log("Body size is too big");

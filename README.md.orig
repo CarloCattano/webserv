@@ -1,0 +1,43 @@
+# WEBSERV
+ by ccattano bmacmaho jalbers
+
+## Current open fronts:
+
+./webserv conf/server.conf
+
+* Carlo :
+	Setup the server_names or not.
+
+* Joseph:
+<<<<<<< HEAD
+
+- [X] Setup routes in a server to different directories.
+- [X] Setup a default file to search for if you ask for a directory
+- [X] Setup a list of methods accepted for a certain route (e.g., try to delete something with and without permission).
+- [j] The CGI should be run in the correct directory for relative path file access.
+
+* Barra
+=======
+- [ ] Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0.1 http://example.com/)
+
+- [ ] Setup routes in a server to different directories.
+- [ ] Setup a default file to search for if you ask for a directory
+- [ ] Setup a list of methods accepted for a certain route (e.g., try to delete something with and without permission).
+- [ ] redirected URL.
+- [ ] The CGI should be run in the correct directory for relative path file access.
+
+* Barra:
+- [X] File Upload 
+    - [ ] Bug with uploaded/downloaded images
+- [X] Timeout for requests/connections/~cgiscipts~ - timer
+- [ ] Check if there is no hanging connection.
+>>>>>>> barra
+
+
+## hostnames check 
+```shell
+curl --resolve my42webserver.com:4222:127.0.0.1 http://my42webserver.com:4222/index.html
+```
+
+# bugs
+- excess found with some requests with ``curl localhost:4222/index.html -v``
