@@ -41,16 +41,27 @@ void ServerCluster::handle_request(Client &client) {
 
 	HttpRedirection redirection = server->getRedirection(&request_uri);
 
+	if (client.getRequest().method != "GET" && client.getRequest().method != "POST" &&
+		client.getRequest().method != "DELETE") {
+		if (find_method(client.getRequest().method) == INVALID) {
+			client.sendErrorPage(501); // Not Implemented
+		} else
+			client.sendErrorPage(405); // Method Not Allowed
+		switch_poll(client.getFd(), EPOLLOUT);
+		return;
+	}
+
+
 	if (redirection.code) {
 		handle_redirection(client, server, redirection);
+		close_client(client.getFd());
+		return;
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
-	} else {
-		client.sendErrorPage(405);
 	}
 	switch_poll(client.getFd(), EPOLLOUT);
 }
@@ -81,7 +92,7 @@ void update_response(Client &client, std::string body, std::string content_type)
 void ServerCluster::handle_get_request(Client &client, Server *server) {
 	Response response;
 
-	log(client.getRequest().headers["Host"]); // TODO does Host match server name?
+	/* log(client.getRequest().headers["Host"]); // TODO does Host match server name? */
 
 	std::string request_uri = client.getRequest().uri;
 	std::string full_path = server->get_full_path(client.getRequest().uri);
@@ -107,7 +118,6 @@ void ServerCluster::handle_get_request(Client &client, Server *server) {
 
 
 	if (isFolder(full_path) == true && server->getAutoindex(&request_uri) == true) {
-		log(full_path);
 		body = generateDirectoryListing(full_path);
 		content_type = "text/html";
 	} else if (isFile(full_path) == true) {

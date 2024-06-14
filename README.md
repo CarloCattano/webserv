@@ -7,6 +7,8 @@
 
 * Carlo :
 
+- [ ] Respond with method not allowed if the method is not allowed for a route, and respond not implemented 
+
 - [X] Verify there is no memory leak (Monitor the process memory usage. It should not go up indefinitely).
 - [X] Fix the download of files in directory listing 
         - It doest work on file-upload server on /upload
@@ -44,5 +46,6 @@ curl --resolve my42webserver.com:4222:127.0.0.1 http://my42webserver.com:4222/in
 ```
 
 # bugs
-- excess found with some requests with ```curl localhost:4222/index.html -v```
-
+- excess found with some requests with ``curl localhost:4222/index.html -v``
+- run siege ( see docs/TESTING.md ) , sometimes there is one client left that hangs
+    and the server CPU stays HIGH forever 
