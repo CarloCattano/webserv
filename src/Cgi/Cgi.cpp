@@ -6,6 +6,9 @@
 #include <sys/epoll.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "../Utils/utils.hpp"
+#include <time.h>
+#include <ctime>
 
 Cgi::Cgi() {
 }
@@ -55,7 +58,7 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 	} else {
 		close(pipe_fd[1]);
 
-		client.addPidStartTimeMap(pid, time(NULL));
+		client.addPidStartTimeMap(pid, std::time(NULL));
 		client.addPidPipefdMap(pid, pipe_fd[0]);
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
