@@ -6,7 +6,7 @@
 #include "./ServerCluster.hpp"
 #include <stdlib.h>
 
-const int BUFFER_SIZE = 2048;
+const int BUFFER_SIZE = 2048 * 8;
 
 bool permitted_origin(Client *client, Server *server) {
 	std::string request_uri = client->getRequest().uri;
@@ -259,10 +259,10 @@ void ServerCluster::handle_file_upload(Client *client) {
 	outFile.write(fileContent.c_str(), fileContent.size());
 	outFile.close();
 
-	client->setResponseStatusCode(200);
-	client->setResponseBody("File was uploaded successfully");
-	client->addResponseHeader("Content-Type", "text/html");
-	client->addResponseHeader("Content-Length", intToString(client->getSentBytes()));
+	//redirect to /uploaded.html
+	client->setResponseStatusCode(303);
+	client->addResponseHeader("Location", "/uploaded.html");
+	client->addResponseHeader("Content-Length", "0");
 
 	switch_poll(client->getFd(), EPOLLOUT);
 }
