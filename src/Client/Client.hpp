@@ -28,6 +28,7 @@ struct Response {
 class Client {
   private:
 	int fd;
+	bool is_pipe_open;
 	Server *server;
 	Request request;
 	Response response;
@@ -51,6 +52,8 @@ class Client {
 	void checkTimeout(int timeout);
 
 	// general getters and setters
+	bool getIsPipeOpen() const;
+	int getPipeFd() const;
 	int getFd() const;
 	Server *getServer() const;
 	Request getRequest() const;
@@ -61,6 +64,7 @@ class Client {
 	std::map<int, int> getPidPipefdMap() const;
 
 	void setFd(int fd);
+	void setIsPipeOpen(bool is_pipe_open);
 	void setServer(Server *server);
 	void setRequest(Request &request);
 	void setResponse(Response &response);

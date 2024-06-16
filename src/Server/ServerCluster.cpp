@@ -62,6 +62,9 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 
 void ServerCluster::close_client(int fd) {
 	// delete &_client_map[fd];
+	Client *client = _client_map[fd];
+	if (client->getIsPipeOpen())
+		return;
 	_client_map.erase(fd);
 	_client_start_time_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
@@ -114,10 +117,10 @@ void ServerCluster::await_connections() {
 					close_client(event_fd);
 
 				if (events[i].events & EPOLLIN)
-					handle_request(*client);
+					handle_request(client);
 
 				if (events[i].events & EPOLLOUT)
-					handle_response(*client);
+					handle_response(client);
 				log_open_clients(_client_map);
 			}
 		}
@@ -125,8 +128,8 @@ void ServerCluster::await_connections() {
 }
 
 void ServerCluster::handle_pipe_event(int pipe_fd)
-
 {
+
 	char buffer[PIPE_BUFFER_SIZE];
 	int bytes_read = read(pipe_fd, buffer, PIPE_BUFFER_SIZE);
 
@@ -143,18 +146,22 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 
 		Client *client = _client_map[_pipeFd_clientFd_map[pipe_fd]];
 
+		client->setIsPipeOpen(false);
 		_cgi_response_map.erase(pipe_fd);
 		_pipeFd_clientFd_map.erase(pipe_fd);
 
+		
 		client->setResponseStatusCode(200);
 		client->setResponseBody(res.c_str());
 		client->addResponseHeader("Content-Length", intToString(res.size()));
 		client->addResponseHeader("Content-Type", "text/html");
 		client->addResponseHeader("Connection", "close");
 
+		switch_poll(client->getFd(), EPOLLOUT);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
 	}
+
 }
 
 void ServerCluster::switch_poll(int client_fd, uint32_t events) {
@@ -173,22 +180,22 @@ void ServerCluster::switch_poll(int client_fd, uint32_t events) {
 	}
 }
 
-void ServerCluster::handle_response(Client &client) {
-	Response response = client.getResponse();
+void ServerCluster::handle_response(Client *client) {
+	Response response = client->getResponse();
 
-	std::string response_string = client.responseToString();
-	int bytes_sent = send(client.getFd(), response_string.c_str(), response_string.size(), 0);
+	std::string response_string = client->responseToString();
+	int bytes_sent = send(client->getFd(), response_string.c_str(), response_string.size(), 0);
 
 	if (bytes_sent == -1) {
 		error("send");
-		close_client(client.getFd());
+		close_client(client->getFd());
 		return;
 	}
 
-	client.setSentBytes(client.getSentBytes() + bytes_sent);
+	client->setSentBytes(client->getSentBytes() + bytes_sent);
 
-	if (client.getSentBytes() == response_string.size()) {
-		close_client(client.getFd());
+	if (client->getSentBytes() == response_string.size()) {
+		close_client(client->getFd());
 	}
 }
 

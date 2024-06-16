@@ -27,10 +27,10 @@ Cgi::Cgi(const Cgi &src) {
 	*this = src;
 }
 
-void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
+void Cgi::handle_cgi_request(Client *client, const std::string &cgi_script_path,
 							 std::map<int, int> &_pipeFd_clientFd_map, int epoll_fd) {
 	int pipe_fd[2];
-	int client_fd = client.getFd();
+	int client_fd = client->getFd();
 
 	if (pipe(pipe_fd) == -1) {
 		return;
@@ -58,8 +58,9 @@ void Cgi::handle_cgi_request(Client &client, const std::string &cgi_script_path,
 	} else {
 		close(pipe_fd[1]);
 
-		client.addPidStartTimeMap(pid, std::time(NULL));
-		client.addPidPipefdMap(pid, pipe_fd[0]);
+		client->addPidStartTimeMap(pid, std::time(NULL));
+		client->setIsPipeOpen(true);
+		client->addPidPipefdMap(pid, pipe_fd[0]);
 		struct epoll_event ev;
 		ev.events = EPOLLIN;
 		ev.data.fd = pipe_fd[0];

@@ -17,7 +17,7 @@ public:
 	 *  @param _pipeFd_clientFd_map: map of pipe file descriptors and client file descriptors
 	 *  @param epoll_fd: epoll file descriptor
 	 */
-	void handle_cgi_request(Client &client, const std::string &cgi_script_path,
+	void handle_cgi_request(Client *client, const std::string &cgi_script_path,
 							std::map<int, int> &_pipeFd_clientFd_map, int epoll_fd);
 
 private:

@@ -65,23 +65,23 @@ public:
 	 *  This method is responsible for handling the request from the client.
 	 *  @param client: reference to the client object
 	 */
-	void handle_request(Client &client);
+	void handle_request(Client *client);
 
 	/** @brief
 	 *  This method is responsible for handling the response to the client.
 	 *  @param client: reference to the client object
 	 */
-	void handle_response(Client &client);
+	void handle_response(Client *client);
 
-	void handle_get_request(Client &client, Server *server);
-	void handle_post_request(Client &client, Server *server);
-	void handle_delete_request(Client &client, Server *server);
-	void handle_redirection(Client &client, Server *server, HttpRedirection redirection);
+	void handle_get_request(Client *client, Server *server);
+	void handle_post_request(Client *client, Server *server);
+	void handle_delete_request(Client *client, Server *server);
+	void handle_redirection(Client *client, Server *server, HttpRedirection redirection);
 	Client get_client_obj(epoll_event &event);
 
 	/* FileUploader uploader; */
-	void handle_file_upload(Client &client);
-	std::string extract_boundary(Client &client);
+	void handle_file_upload(Client *client);
+	std::string extract_boundary(Client *client);
 
 	/** @brief A switch to modify the poll events
 	 * to EPOLLIN or EPOLLOUT
@@ -90,7 +90,7 @@ public:
 	 **/
 	void switch_poll(int client_fd, uint32_t events);
 
-	bool allowed_in_path(const std::string &file_path, Client &client);
+	bool allowed_in_path(const std::string &file_path, Client *client);
 
 	void add_client_fd_to_epoll(int client_fd);
 

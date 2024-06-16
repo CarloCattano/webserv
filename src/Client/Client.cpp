@@ -12,7 +12,7 @@
 
 // clang-format off
 
-Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
+Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), is_pipe_open(false), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
 	this->setRequestFinished(false);
     this->setRequestBody("");
@@ -128,6 +128,7 @@ std::string Client::responseToString() {
 }
 
 // client getters
+bool Client::getIsPipeOpen() const { return this->is_pipe_open; }
 int Client::getFd() const { return this->fd; }
 Server *Client::getServer() const { return this->server; }
 Request Client::getRequest() const { return this->request; }
@@ -137,6 +138,7 @@ std::map<int, std::time_t> Client::getPidStartTimeMap() const { return this->pid
 std::map<int, int> Client::getPidPipefdMap() const { return this->pid_pipefd_map; }
 
 // client setters
+void Client::setIsPipeOpen(bool is_pipe_open) { this->is_pipe_open = is_pipe_open; }
 void Client::setFd(int fd) { this->fd = fd; }
 void Client::setServer(Server *server) { this->server = server; }
 void Client::setRequest(Request &request) { this->request = request; }
