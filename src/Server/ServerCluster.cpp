@@ -61,10 +61,10 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 }
 
 void ServerCluster::close_client(int fd) {
-	// delete &_client_map[fd];
 	Client *client = _client_map[fd];
 	if (client->getIsPipeOpen())
 		return;
+	delete client;
 	_client_map.erase(fd);
 	_client_start_time_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
