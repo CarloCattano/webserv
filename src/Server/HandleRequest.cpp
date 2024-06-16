@@ -85,7 +85,6 @@ void ServerCluster::handle_request(Client &client) {
 		return;
 	}
 
-
 	if (redirection.code) {
 		handle_redirection(client, server, redirection);
 		close_client(client.getFd());
@@ -93,6 +92,7 @@ void ServerCluster::handle_request(Client &client) {
 	} else if (client.getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
 	} else if (client.getRequest().method == "POST" && server->getPost(&request_uri).is_allowed) {
+		this->_client_start_time_map[client.getFd()] = std::time(NULL);
 		handle_post_request(client, server);
 	} else if (client.getRequest().method == "DELETE" && server->getDelete(&request_uri).is_allowed) {
 		handle_delete_request(client, server);
@@ -226,8 +226,7 @@ void ServerCluster::handle_file_upload(Client &client) {
 
 	std::string fileName = extractFileName(body, boundary);
 	std::string fileContent = extractFileContent(body, boundary);
-
-
+	
 	if (client.getRequest().body.size() > static_cast<unsigned long>(client.getServer()->getClientMaxBodySize())) {
 		log("Body size is too big");
 		client.sendErrorPage(413);

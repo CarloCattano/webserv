@@ -6,22 +6,30 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
+#include <signal.h>
+#include <ctime>
+#include <iomanip>
 
 // clang-format off
 
-void epoll_add_fd(int epoll_fd, int fd) {
-    struct epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.fd = fd;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        std::cerr << "epoll_ctl failed" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
 Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), server(server), sentBytes(0) {
 	this->setRequestFinishedHead(false);
-    epoll_add_fd(epoll_fd, fd);
+	this->setRequestFinished(false);
+    this->setRequestBody("");
+
+	struct epoll_event ev;
+
+	ev.events = EPOLLIN;
+	ev.data.fd = fd;
+
+	std::cout << "Client created with fd: " << fd << std::endl;
+	std::cout << "Server fd: " << server->getSocketFd() << std::endl;
+
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+		perror("epoll_ctl");
+		std::cerr << "epoll_ctl failed" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 }
 
 std::vector<std::string> splitString(const std::string &str, const std::string &delimiter) {
@@ -61,7 +69,6 @@ size_t stringToSizeT(std::string str) {
 }
 
 bool checkFinishedBody(Request request) {
-
 	if (request.body.size() >= stringToSizeT(request.headers["Content-Length"]))
 		return true;
 	return false;
@@ -75,6 +82,7 @@ void Client::parseBody() {
 	this->setRequestBody(this->getRequest().request.substr(request.request.find("\r\n\r\n") + 4));
 	if (!checkFinishedBody(this->getRequest()))
 		return;
+
 	this->setRequestFinished(true);
 }
 
@@ -125,7 +133,7 @@ Server *Client::getServer() const { return this->server; }
 Request Client::getRequest() const { return this->request; }
 Response Client::getResponse() const { return this->response; }
 size_t Client::getSentBytes() const { return this->sentBytes; }
-std::map<int, int> Client::getPidStartTimeMap() const { return this->pid_start_time_map; }
+std::map<int, std::time_t> Client::getPidStartTimeMap() const { return this->pid_start_time_map; }
 std::map<int, int> Client::getPidPipefdMap() const { return this->pid_pipefd_map; }
 
 // client setters
@@ -134,8 +142,8 @@ void Client::setServer(Server *server) { this->server = server; }
 void Client::setRequest(Request &request) { this->request = request; }
 void Client::setResponse(Response &response) { this->response = response; }
 void Client::setSentBytes(size_t sentBytes) { this->sentBytes = sentBytes; }
-void Client::setPidStartTimeMap(std::map<int, int> pid_start_time_map) { this->pid_start_time_map = pid_start_time_map; }
-void Client::addPidStartTimeMap(int pid, int start_time) { this->pid_start_time_map[pid] = start_time; }
+void Client::setPidStartTimeMap(std::map<int, std::time_t> pid_start_time_map) { this->pid_start_time_map = pid_start_time_map; }
+void Client::addPidStartTimeMap(int pid, std::time_t start_time) { this->pid_start_time_map[pid] = start_time; }
 void Client::removePidStartTimeMap(int pid) { this->pid_start_time_map.erase(pid); }
 void Client::addPidPipefdMap(int pid, int pipefd) { this->pid_pipefd_map[pid] = pipefd; }
 void Client::removePidPipefdMap(int pid) { this->pid_pipefd_map.erase(pid); }
@@ -175,6 +183,9 @@ void Client::setResponseSize(int size) { this->response.size = size; }
 Client::Client() : fd(-1), server(NULL), sentBytes(0) {}
 Client::~Client() {
 	this->request.headers.clear();
+	this->response.headers.clear();
+	this->pid_pipefd_map.clear();
+	this->pid_start_time_map.clear();
 }
 
 Client &Client::operator=(const Client &client) {
