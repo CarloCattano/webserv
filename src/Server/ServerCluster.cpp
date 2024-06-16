@@ -284,6 +284,9 @@ ServerCluster::~ServerCluster() {
 		delete it->second;
 	}
 
+	_client_map.clear();
+	_client_start_time_map.clear();
+
 	for (std::map<int, Server>::iterator it = _server_map.begin(); it != _server_map.end(); it++) {
 		close(it->first);
 	}
