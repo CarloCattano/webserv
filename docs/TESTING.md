@@ -3,7 +3,7 @@ tests/test_cgi.py 80 sysmonitor.py
 ```
 
 ```shell
-siege -b -t 4s -c 255 -f siege.conf
+siege -b -t 4s -c 255 -f conf/siege.conf
 ```
 
 ```shell

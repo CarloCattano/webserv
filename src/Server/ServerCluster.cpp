@@ -238,6 +238,9 @@ bool ServerCluster::check_timeout(Client *client, std::time_t timeout) {
 		it++;
 	}
 
+	if (client->getRequest().method == "POST" && !client->getRequest().finished)
+		return true;
+
 	std::time_t start_time = _client_start_time_map[client->getFd()];
 	std::time_t current_time;
 	std::time(&current_time);
@@ -250,7 +253,6 @@ bool ServerCluster::check_timeout(Client *client, std::time_t timeout) {
 		close_client(client->getFd());
 		return false;
 	}
-	// _client_start_time_map[client->getFd()] = std::time(NULL);
 	return true;
 }
 

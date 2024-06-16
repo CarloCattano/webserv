@@ -37,12 +37,10 @@ void ServerCluster::handle_request(Client &client) {
 
 	int bytes_read = recv(client.getFd(), buffer, BUFFER_SIZE, 0);
 
-	if (bytes_read == -1) {
-		std::cerr << "Error reading from socket" << std::endl;
+	if (bytes_read == -1 || bytes_read == 0) {
 		close_client(client.getFd());
 		return;
 	}
-
 
 	client.appendRequestString(std::string(buffer, bytes_read));
 
