@@ -33,6 +33,31 @@ bool permitted_origin(Client *client, Server *server) {
 	return true;
 }
 
+bool ServerCluster::isPayloadTooLarge(Client *client) {
+	if (client->getRequest().headers.count("Content-Length")) {
+		if (stringToSizeT(client->getRequest().headers["Content-Length"]) > static_cast<unsigned long>(client->getServer()->getClientMaxBodySize())) {
+			client->sendErrorPage(413);
+			close_client(client->getFd());
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ServerCluster::check_method_is_allowed(Client *client) {
+	std::string request_uri = client->getRequest().uri;
+	Server *server = client->getServer();
+	std::string method = client->getRequest().method;
+
+	if (method == "GET" && server->getGet(&request_uri).is_allowed)
+		return true;
+	if (method == "POST" && server->getPost(&request_uri).is_allowed)
+		return true;
+	if (method == "DELETE" && server->getDelete(&request_uri).is_allowed)
+		return true;
+	return false;
+}
+
 void ServerCluster::handle_request(Client *client) {
 	char buffer[BUFFER_SIZE];
 
@@ -51,6 +76,8 @@ void ServerCluster::handle_request(Client *client) {
 		return;
 	if (!client->getRequest().finishedHead)
 		client->parseHead();
+	if (isPayloadTooLarge(client))
+		return;
 	client->parseBody();
 	if (!client->getRequest().finished)
 		return;
@@ -81,6 +108,12 @@ void ServerCluster::handle_request(Client *client) {
 		} else
 			client->sendErrorPage(405); // Method Not Allowed
 		switch_poll(client->getFd(), EPOLLOUT);
+		return;
+	}
+
+	if (!check_method_is_allowed(client)) {
+		client->sendErrorPage(405);
+		switch_poll(client->getFd(), EPOLLHUP);
 		return;
 	}
 

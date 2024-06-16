@@ -24,3 +24,5 @@ bool isFolder(const std::string &path);
 bool isFile(const std::string &path);
 bool directory_contains_file(const std::string &directoryPath, std::string file_name);
 void log_open_clients(std::map<int, Client *> &client_map);
+
+size_t stringToSizeT(std::string str);

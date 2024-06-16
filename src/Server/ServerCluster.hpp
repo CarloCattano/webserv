@@ -78,6 +78,8 @@ public:
 	void handle_delete_request(Client *client, Server *server);
 	void handle_redirection(Client *client, Server *server, HttpRedirection redirection);
 	Client get_client_obj(epoll_event &event);
+	bool isPayloadTooLarge(Client *client);
+	bool check_method_is_allowed(Client *client);
 
 	/* FileUploader uploader; */
 	void handle_file_upload(Client *client);

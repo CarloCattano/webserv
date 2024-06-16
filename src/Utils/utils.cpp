@@ -49,6 +49,13 @@ std::string readFileToString(const std::string &filename) {
 	return buffer.str();
 }
 
+size_t stringToSizeT(std::string str) {
+	std::stringstream ss(str);
+	size_t size;
+	ss >> size;
+	return size;
+}
+
 std::string intToString(int value) {
 	std::stringstream ss;
 	ss << value;

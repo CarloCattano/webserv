@@ -151,7 +151,7 @@ Method Server::getPost(std::string *location) {
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
-		return (route->GET);
+		return (route->POST);
 	else
 		return this->_POST;
 }
@@ -160,7 +160,7 @@ Method Server::getDelete(std::string *location) {
 	Route *route = location ? get_route(*location) : NULL;
 
 	if (route)
-		return (route->GET);
+		return (route->DELETE);
 	else
 		return this->_DELETE;
 }

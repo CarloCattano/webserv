@@ -61,13 +61,6 @@ void Client::parseHead() {
 	this->setRequestFinishedHead(true);
 }
 
-size_t stringToSizeT(std::string str) {
-	std::stringstream ss(str);
-	size_t size;
-	ss >> size;
-	return size;
-}
-
 bool checkFinishedBody(Request request) {
 	if (request.body.size() >= stringToSizeT(request.headers["Content-Length"]))
 		return true;
