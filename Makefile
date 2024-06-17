@@ -22,6 +22,9 @@ run : all
 	@if pgrep $(NAME) ; then pkill $(NAME) ; fi
 	./$(NAME) conf/server.conf
 
+debug:
+	$(CXX) $(OBJS) $(CXXFLAGS) $(INC) -o $(NAME) -ggdb3
+
 clean:
 	rm -rf $(OBJS)
 
