@@ -12,7 +12,6 @@
 const int MAX_EVENTS = 1024;
 const int PIPE_BUFFER_SIZE = 6553;
 const int CGI_TIMEOUT = 4;
-const int SOCKET_TIMEOUT = 6;
 
 volatile static sig_atomic_t gSigStatus;
 
@@ -100,16 +99,20 @@ void ServerCluster::check_clients_timeout(std::map<int, Client *> &client_map,
 		if (start_time != 0 && current_time > start_time + CGI_TIMEOUT) {
 			Client *client = client_map[it->first];
 			client->sendErrorPage(504);
-			client_map.erase(it->first);
-			client_start_time_map.erase(it++);
 			client->setIsPipeOpen(false);
-			close(client->getFd());
+
 			// dont wait for child processes and kill them
 			std::map<int, int> pid_pipefd_map = client->getPidPipefdMap();
 			for (std::map<int, int>::iterator it = pid_pipefd_map.begin(); it != pid_pipefd_map.end(); it++) {
 				close(it->second);
 				kill(it->first, SIGKILL);
 			}
+			client_map.erase(it->first);
+			client_start_time_map.erase(it++);
+			close(client->getFd());
+			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client->getFd(), NULL);
+			delete client;
+			std::cout << "Client Timeout" << std::endl;
 		} else {
 			it++;
 		}
