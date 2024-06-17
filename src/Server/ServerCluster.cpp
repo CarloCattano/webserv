@@ -97,6 +97,7 @@ void ServerCluster::check_clients_timeout(std::map<int, Client *> &client_map,
 		std::time_t current_time;
 		std::time(&current_time);
 		if (start_time != 0 && current_time > start_time + CGI_TIMEOUT) {
+			std::cout << "Client Timeout" << std::endl;
 			Client *client = client_map[it->first];
 			client->sendErrorPage(504);
 			client->setIsPipeOpen(false);
@@ -112,7 +113,7 @@ void ServerCluster::check_clients_timeout(std::map<int, Client *> &client_map,
 			close(client->getFd());
 			epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client->getFd(), NULL);
 			delete client;
-			std::cout << "Client Timeout" << std::endl;
+
 		} else {
 			it++;
 		}
@@ -127,6 +128,7 @@ void ServerCluster::await_connections() {
 
 	while (gSigStatus) {
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
+
 		if (num_events == -1)
 			continue;
 
@@ -146,6 +148,9 @@ void ServerCluster::await_connections() {
 				handle_new_client_connection(event_fd);
 			} else {
 				Client *client = _client_map[event_fd];
+
+				if (!check_timeout(client, CGI_TIMEOUT))
+					continue;
 
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);

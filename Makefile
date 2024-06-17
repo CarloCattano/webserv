@@ -1,6 +1,6 @@
 SRCS = src/main.cpp src/Utils/utils.cpp src/Cgi/Cgi.cpp src/Server/Server.cpp src/Server/ServerCluster.cpp src/Config/Config.cpp src/Config/UtilsConfig.cpp src/Config/ParseRoute.cpp src/Client/Client.cpp src/Server/HandleRequest.cpp
 CXX = c++
-CXXFLAGS = -Wall -Werror -Wextra -std=c++98
+CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -O3
 OBJS = $(SRCS:.cpp=.o)
 NAME = webserv
 INC = -I./src/Cgi -I./src/Server -I./src/Config -I./src/Utils
