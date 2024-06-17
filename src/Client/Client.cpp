@@ -1,14 +1,14 @@
 #include "./Client.hpp"
 #include <algorithm>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include "../Utils/utils.hpp"
-#include <signal.h>
-#include <ctime>
-#include <iomanip>
 
 // clang-format off
 
@@ -22,8 +22,8 @@ Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), is_pipe_open(fals
 	ev.events = EPOLLIN;
 	ev.data.fd = fd;
 
-	std::cout << "Client created with fd: " << fd << std::endl;
-	std::cout << "Server fd: " << server->getSocketFd() << std::endl;
+	/*std::cout << "Client created with fd: " << fd << std::endl;*/
+	/*std::cout << "Server fd: " << server->getSocketFd() << std::endl;*/
 
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
 		perror("epoll_ctl");

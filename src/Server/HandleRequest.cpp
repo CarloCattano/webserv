@@ -120,7 +120,7 @@ void ServerCluster::handle_request(Client *client) {
 
 	if (redirection.code) {
 		handle_redirection(client, server, redirection);
-		close_client(client->getFd());
+		switch_poll(client->getFd(), EPOLLOUT);
 		return;
 	} else if (client->getRequest().method == "GET" && server->getGet(&request_uri).is_allowed) {
 		handle_get_request(client, server);
@@ -143,11 +143,11 @@ void ServerCluster::handle_redirection(Client *client, Server *server, HttpRedir
 		client->sendErrorPage(redirection.code);
 	else {
 		std::string url = redirection.url[0] == '/' ? server->getRoot(NULL) + redirection.url : redirection.url;
-		// std::cout << "Test: " << url << std::endl;
 		client->setResponseStatusCode(redirection.code);
 		client->addResponseHeader("Content-Length", "10");
 		client->addResponseHeader("Location", redirection.url);
-		client->setResponseBody("something");
+		client->setResponseBody("");
+		client->setRequestFinished(true);
 	}
 }
 

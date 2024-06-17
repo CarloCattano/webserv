@@ -57,7 +57,7 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 	std::time_t start_time = _client_start_time_map[client_fd];
 
 	std::string time = std::ctime(&start_time);
-	std::cout << "Client connected at: " << time << std::endl;
+	/*std::cout << "Client connected at: " << time << std::endl;*/
 }
 
 void ServerCluster::close_client(int fd) {
@@ -70,7 +70,7 @@ void ServerCluster::close_client(int fd) {
 	_client_start_time_map.erase(fd);
 	epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
-	std::cout << "Client disconnected with fd: " << fd << std::endl;
+	/*std::cout << "Client disconnected with fd: " << fd << std::endl;*/
 }
 
 void ServerCluster::add_client_fd_to_epoll(int client_fd) {
@@ -97,7 +97,7 @@ void ServerCluster::check_clients_timeout(std::map<int, Client *> &client_map,
 		std::time_t current_time;
 		std::time(&current_time);
 		if (start_time != 0 && current_time > start_time + CGI_TIMEOUT) {
-			std::cout << "Client Timeout" << std::endl;
+			/*std::cout << "Client Timeout" << std::endl;*/
 			Client *client = client_map[it->first];
 			client->sendErrorPage(504);
 			client->setIsPipeOpen(false);
@@ -265,7 +265,7 @@ bool ServerCluster::check_timeout(Client *client, std::time_t timeout) {
 
 	while (it != temp.end()) {
 		if (std::time(NULL) > it->second + timeout) {
-			std::cout << "cgi timeout" << std::endl;
+			/*std::cout << "cgi timeout" << std::endl;*/
 			client->sendErrorPage(504);
 			close(client->getPidPipefdMap()[it->first]);
 			kill(it->first, SIGKILL);
