@@ -10,7 +10,9 @@
 #define error(x) std::cerr << RED << x << RESET << std::endl
 
 const int MAX_EVENTS = 1024;
-const int PIPE_BUFFER_SIZE = 65536;
+const int PIPE_BUFFER_SIZE = 6553;
+const int CGI_TIMEOUT = 4;
+const int SOCKET_TIMEOUT = 6;
 
 volatile static sig_atomic_t gSigStatus;
 
@@ -52,7 +54,6 @@ void ServerCluster::handle_new_client_connection(int server_fd) {
 	Client *client = new Client(client_fd, &_server_map[server_fd], _epoll_fd);
 
 	_client_map[client_fd] = client;
-	// convert client start time to human readable format
 	_client_start_time_map[client_fd] = std::time(NULL);
 	std::time_t start_time = _client_start_time_map[client_fd];
 
@@ -64,6 +65,7 @@ void ServerCluster::close_client(int fd) {
 	Client *client = _client_map[fd];
 	if (client->getIsPipeOpen())
 		return;
+
 	delete client;
 	_client_map.erase(fd);
 	_client_start_time_map.erase(fd);
@@ -84,6 +86,36 @@ void ServerCluster::add_client_fd_to_epoll(int client_fd) {
 	}
 }
 
+// Carlo version - listen on every pass of the loop
+void ServerCluster::check_clients_timeout(std::map<int, Client *> &client_map,
+										  std::map<int, std::time_t> &client_start_time_map) {
+	if (client_map.size() == 0)
+		return;
+
+	std::map<int, std::time_t>::iterator it = client_start_time_map.begin();
+	while (it != client_start_time_map.end()) {
+		std::time_t start_time = it->second;
+		std::time_t current_time;
+		std::time(&current_time);
+		if (start_time != 0 && current_time > start_time + CGI_TIMEOUT) {
+			Client *client = client_map[it->first];
+			client->sendErrorPage(504);
+			client_map.erase(it->first);
+			client_start_time_map.erase(it++);
+			client->setIsPipeOpen(false);
+			close(client->getFd());
+			// dont wait for child processes and kill them
+			std::map<int, int> pid_pipefd_map = client->getPidPipefdMap();
+			for (std::map<int, int>::iterator it = pid_pipefd_map.begin(); it != pid_pipefd_map.end(); it++) {
+				close(it->second);
+				kill(it->first, SIGKILL);
+			}
+		} else {
+			it++;
+		}
+	}
+}
+
 void ServerCluster::await_connections() {
 	struct epoll_event events[MAX_EVENTS];
 	int num_events;
@@ -94,6 +126,8 @@ void ServerCluster::await_connections() {
 		num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);
 		if (num_events == -1)
 			continue;
+
+		check_clients_timeout(_client_map, _client_start_time_map);
 
 		for (int i = 0; i < num_events; i++) {
 			int event_fd = events[i].data.fd;
@@ -110,9 +144,6 @@ void ServerCluster::await_connections() {
 			} else {
 				Client *client = _client_map[event_fd];
 
-				if (!check_timeout(client, 1))
-					continue;
-
 				if (events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
 					close_client(event_fd);
 
@@ -121,20 +152,16 @@ void ServerCluster::await_connections() {
 
 				if (events[i].events & EPOLLOUT)
 					handle_response(client);
-				log_open_clients(_client_map);
 			}
 		}
 	}
 }
 
-void ServerCluster::handle_pipe_event(int pipe_fd)
-{
-
+void ServerCluster::handle_pipe_event(int pipe_fd) {
 	char buffer[PIPE_BUFFER_SIZE];
 	int bytes_read = read(pipe_fd, buffer, PIPE_BUFFER_SIZE);
 
 	if (bytes_read == -1) {
-		error("handle_pipe_event read");
 		close(pipe_fd);
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		return;
@@ -150,7 +177,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 		_cgi_response_map.erase(pipe_fd);
 		_pipeFd_clientFd_map.erase(pipe_fd);
 
-		
 		client->setResponseStatusCode(200);
 		client->setResponseBody(res.c_str());
 		client->addResponseHeader("Content-Length", intToString(res.size()));
@@ -161,7 +187,6 @@ void ServerCluster::handle_pipe_event(int pipe_fd)
 		epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, pipe_fd, NULL);
 		close(pipe_fd);
 	}
-
 }
 
 void ServerCluster::switch_poll(int client_fd, uint32_t events) {
@@ -184,12 +209,12 @@ void ServerCluster::handle_response(Client *client) {
 	Response response = client->getResponse();
 
 	std::string response_string = client->responseToString();
+
 	int bytes_sent = send(client->getFd(), response_string.c_str(), response_string.size(), 0);
 
 	if (bytes_sent == -1) {
 		error("send");
 		close_client(client->getFd());
-		return;
 	}
 
 	client->setSentBytes(client->getSentBytes() + bytes_sent);
@@ -253,10 +278,6 @@ bool ServerCluster::check_timeout(Client *client, std::time_t timeout) {
 	std::time(&current_time);
 	if (start_time != 0 && current_time > start_time + timeout) {
 		client->sendErrorPage(504);
-		std::cout << "timeout" << std::endl;
-		std::cout << "client.getStartTime() = " << start_time << std::endl;
-		std::cout << "std::time(NULL) = " << std::time(NULL) << std::endl;
-
 		close_client(client->getFd());
 		return false;
 	}
