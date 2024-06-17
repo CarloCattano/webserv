@@ -1,0 +1,7 @@
+<map id="permitted_origin" name="permitted_origin">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,32,135,60"/>
+<area shape="rect" id="Node000002" href="$classClient.html#a7b9884c9bce54932b5b39b37ec04c3e0" title=" " alt="" coords="202,5,344,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,35,186,28,187,33,136,40"/>
+<area shape="rect" id="Node000003" href="$classServer.html#a29cec8a063275948280096e84fb05a99" title=" " alt="" coords="183,57,363,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="136,51,168,55,167,61,135,57"/>
+</map>

@@ -1,0 +1,25 @@
+<map id="Server::getPost" name="Server::getPost">
+<area shape="rect" id="Node000001" title=" " alt="" coords="977,99,1097,127"/>
+<area shape="rect" id="Node000002" href="$classServerCluster.html#aaa2da214db49a25c75396a61ea14825b" title=" " alt="" coords="770,5,925,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="989,95,898,53,900,48,992,90"/>
+<area shape="rect" id="Node000003" href="$classServerCluster.html#a646514fa306ca9e8ea356bdd70783414" title="This method is responsible for handling the request from the client." alt="" coords="551,55,712,99"/>
+<area shape="poly" id="edge6_Node000001_Node000003" title=" " alt="" coords="961,109,712,87,713,81,962,104"/>
+<area shape="rect" id="Node000007" href="$UtilsConfig_8cpp.html#a67c6564314472df9f9190800dae069e0" title=" " alt="" coords="568,123,695,151"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="961,120,695,136,695,131,961,115"/>
+<area shape="rect" id="Node000009" href="$Config_8cpp.html#ac890d3b184f4bd83cabb76bc960380c8" title=" " alt="" coords="766,175,929,203"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="988,136,930,159,886,177,884,172,928,155,986,131"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="755,52,713,61,712,56,754,46"/>
+<area shape="rect" id="Node000004" href="$classServerCluster.html#a9ee89b4af237abda4979082e62685b0c" title="This method is responsible for awaiting connections from the clients. Using epoll to handle multiple ..." alt="" coords="324,55,477,99"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="535,80,477,80,477,74,535,74"/>
+<area shape="rect" id="Node000005" href="$classServerCluster.html#a8769f04c2fcc5feaec1e67b09361500b" title=" " alt="" coords="108,63,255,91"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="308,80,255,80,255,74,308,74"/>
+<area shape="rect" id="Node000006" href="$main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,63,60,91"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="92,80,60,80,60,74,92,74"/>
+<area shape="rect" id="Node000008" href="$classConfig.html#aad65625e287f74e7618e54af59bce58f" title=" " alt="" coords="126,149,237,176"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="553,144,237,162,237,157,553,139"/>
+<area shape="rect" id="Node000010" href="$Config_8cpp.html#aaea53b2c8508806e11c674f12a59825f" title=" " alt="" coords="545,175,718,203"/>
+<area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="750,192,718,192,718,186,750,186"/>
+<area shape="rect" id="Node000011" href="$Config_8cpp.html#af792ba9e6f9003e4f49c3b230d7aaddc" title=" " alt="" coords="303,174,497,202"/>
+<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="530,191,498,191,498,186,530,186"/>
+<area shape="poly" id="edge12_Node000011_Node000008" title=" " alt="" coords="287,177,237,171,238,166,288,172"/>
+</map>

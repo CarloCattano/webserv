@@ -1,4 +1,7 @@
 www/upload-site/upload/*.*
+Doxyfile*
+html
+latex
 .cache
 .vscode
 .idea

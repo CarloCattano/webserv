@@ -1,0 +1,5 @@
+<map id="ServerCluster::handle_new_client_connection" name="ServerCluster::handle_new_client_connection">
+<area shape="rect" id="Node000001" title="This method is responsible for handling the new client connection." alt="" coords="5,5,182,50"/>
+<area shape="rect" id="Node000002" href="$classServerCluster.html#ab935ba0b9d1dd04e799b4fe1715972c2" title="This method is responsible for accepting the new connection." alt="" coords="230,5,390,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,25,214,25,214,30,182,30"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="ServerCluster::allowed_in_path" name="ServerCluster::allowed_in_path">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,49,174,94"/>
+<area shape="rect" id="Node000002" href="$classClient.html#a7b9884c9bce54932b5b39b37ec04c3e0" title=" " alt="" coords="222,5,363,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,47,220,35,222,40,175,52"/>
+<area shape="rect" id="Node000003" href="$classServer.html#a6ebeed2777192b3283051069ecb6eebe" title=" " alt="" coords="231,57,354,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="174,69,216,69,216,74,174,74"/>
+<area shape="rect" id="Node000005" href="$classClient.html#a8ac3cf33e1e6da1689de55c14ae87c1a" title=" " alt="" coords="227,109,358,137"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="175,90,222,102,220,108,173,95"/>
+<area shape="rect" id="Node000004" href="$classServer.html#a566d5b4bffbafd325dad13e467b00685" title=" " alt="" coords="411,57,544,85"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="354,69,395,69,395,74,354,74"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="Client::setRequestBody" name="Client::setRequestBody">
+<area shape="rect" id="Node000001" title=" " alt="" coords="898,32,1071,60"/>
+<area shape="rect" id="Node000002" href="$classClient.html#a983d695880434aa41b78e7af2bbd2814" title=" " alt="" coords="729,5,835,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="882,35,834,29,835,23,883,30"/>
+<area shape="rect" id="Node000003" href="$classClient.html#ada0ce6003f53bf9a9d312cd9787766ee" title=" " alt="" coords="714,57,850,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="883,61,851,65,850,60,882,56"/>
+<area shape="rect" id="Node000004" href="$classServerCluster.html#a646514fa306ca9e8ea356bdd70783414" title="This method is responsible for handling the request from the client." alt="" coords="504,49,666,94"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="698,74,666,74,666,69,698,69"/>
+<area shape="rect" id="Node000005" href="$classServerCluster.html#a9ee89b4af237abda4979082e62685b0c" title="This method is responsible for awaiting connections from the clients. Using epoll to handle multiple ..." alt="" coords="303,49,456,94"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="489,74,457,74,457,69,489,69"/>
+<area shape="rect" id="Node000006" href="$classServerCluster.html#a8769f04c2fcc5feaec1e67b09361500b" title=" " alt="" coords="108,57,255,85"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="288,74,256,74,256,69,288,69"/>
+<area shape="rect" id="Node000007" href="$main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,57,60,85"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="92,74,60,74,60,69,92,69"/>
+</map>

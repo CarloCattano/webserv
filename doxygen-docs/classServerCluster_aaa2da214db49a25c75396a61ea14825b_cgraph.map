@@ -1,0 +1,17 @@
+<map id="ServerCluster::check_method_is_allowed" name="ServerCluster::check_method_is_allowed">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,101,161,146"/>
+<area shape="rect" id="Node000002" href="$classServer.html#a7d59dcb6e0e154c1e6ec225ed738654c" title=" " alt="" coords="212,5,347,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="116,98,159,71,207,43,222,37,224,42,210,48,161,75,119,103"/>
+<area shape="rect" id="Node000004" href="$classServer.html#ae6c393e980823686d94eb372b629d994" title=" " alt="" coords="222,57,337,85"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="160,100,209,87,210,92,162,105"/>
+<area shape="rect" id="Node000005" href="$classServer.html#ab69c43b1e4d85d63e94648c2363ec7c9" title=" " alt="" coords="219,109,340,137"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="161,121,204,121,204,126,161,126"/>
+<area shape="rect" id="Node000006" href="$classClient.html#a7b9884c9bce54932b5b39b37ec04c3e0" title=" " alt="" coords="209,161,350,189"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="162,141,210,154,209,159,160,146"/>
+<area shape="rect" id="Node000007" href="$classClient.html#a8ac3cf33e1e6da1689de55c14ae87c1a" title=" " alt="" coords="214,213,345,241"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="119,144,161,171,210,198,224,205,222,210,207,203,159,176,116,148"/>
+<area shape="rect" id="Node000003" href="$classServer.html#a566d5b4bffbafd325dad13e467b00685" title=" " alt="" coords="398,57,531,85"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="332,31,399,50,397,55,331,36"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="337,69,383,69,383,74,337,74"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="331,106,397,87,399,92,332,111"/>
+</map>

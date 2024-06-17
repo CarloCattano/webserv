@@ -1,0 +1,11 @@
+<map id="Cgi::handle_cgi_request" name="Cgi::handle_cgi_request">
+<area shape="rect" id="Node000001" title="This method is responsible for handling the cgi request. It creates a pipe, forks the process,..." alt="" coords="5,84,182,112"/>
+<area shape="rect" id="Node000002" href="$classClient.html#afef8d65727dfac7f9d7aca3d064f29cc" title=" " alt="" coords="241,5,422,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,81,229,43,256,35,258,40,231,48,130,86"/>
+<area shape="rect" id="Node000003" href="$classClient.html#af20bd6d800b22700449b0df2e165e851" title=" " alt="" coords="230,57,433,85"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="182,85,214,82,214,87,182,91"/>
+<area shape="rect" id="Node000004" href="$classClient.html#af49b65f16ec709c6421a67107aadbd6e" title=" " alt="" coords="279,109,384,137"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="182,105,264,113,263,119,182,110"/>
+<area shape="rect" id="Node000005" href="$classClient.html#aeed7009a476a6543119b6009a9b1de7f" title=" " alt="" coords="251,161,412,189"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="131,110,231,146,258,154,257,159,229,151,129,115"/>
+</map>

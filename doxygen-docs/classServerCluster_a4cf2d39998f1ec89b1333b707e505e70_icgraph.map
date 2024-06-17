@@ -1,0 +1,9 @@
+<map id="ServerCluster::handle_pipe_event" name="ServerCluster::handle_pipe_event">
+<area shape="rect" id="Node000001" title=" " alt="" coords="504,5,666,50"/>
+<area shape="rect" id="Node000002" href="$classServerCluster.html#a9ee89b4af237abda4979082e62685b0c" title="This method is responsible for awaiting connections from the clients. Using epoll to handle multiple ..." alt="" coords="303,5,456,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="489,30,457,30,457,25,489,25"/>
+<area shape="rect" id="Node000003" href="$classServerCluster.html#a8769f04c2fcc5feaec1e67b09361500b" title=" " alt="" coords="108,14,255,42"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="288,30,256,30,256,25,288,25"/>
+<area shape="rect" id="Node000004" href="$main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,14,60,42"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="92,30,60,30,60,25,92,25"/>
+</map>

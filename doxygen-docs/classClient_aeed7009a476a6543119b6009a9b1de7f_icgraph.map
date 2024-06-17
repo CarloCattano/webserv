@@ -1,0 +1,24 @@
+<map id="Client::setIsPipeOpen" name="Client::setIsPipeOpen">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1147,93,1308,120"/>
+<area shape="rect" id="Node000002" href="$classServerCluster.html#a4c0a477243749c0427e5fc178603ab98" title=" " alt="" coords="507,5,663,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1139,92,1099,84,987,59,938,49,875,40,764,32,663,29,663,24,764,26,875,34,939,43,988,53,1100,78,1140,86"/>
+<area shape="rect" id="Node000006" href="$classCgi.html#ac7be3e9a2a8b154afeb2d9d1b71839fc" title="This method is responsible for handling the cgi request. It creates a pipe, forks the process,..." alt="" coords="923,93,1099,120"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1132,109,1100,109,1100,104,1132,104"/>
+<area shape="rect" id="Node000010" href="$classServerCluster.html#a4cf2d39998f1ec89b1333b707e505e70" title=" " alt="" coords="931,144,1092,189"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="1161,127,1093,146,1092,141,1160,122"/>
+<area shape="rect" id="Node000003" href="$classServerCluster.html#a9ee89b4af237abda4979082e62685b0c" title="This method is responsible for awaiting connections from the clients. Using epoll to handle multiple ..." alt="" coords="303,89,456,134"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="515,59,437,91,435,86,513,54"/>
+<area shape="rect" id="Node000004" href="$classServerCluster.html#a8769f04c2fcc5feaec1e67b09361500b" title=" " alt="" coords="108,98,255,126"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="288,114,256,114,256,109,288,109"/>
+<area shape="rect" id="Node000005" href="$main_8cpp.html#a0ddf1224851353fc92bfbff6f499fa97" title=" " alt="" coords="5,98,60,126"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="92,114,60,114,60,109,92,109"/>
+<area shape="rect" id="Node000007" href="$classServerCluster.html#af785c22114684435c6652fc1cc96bdd2" title=" " alt="" coords="714,49,875,94"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="908,92,875,87,876,82,908,87"/>
+<area shape="rect" id="Node000009" href="$classServerCluster.html#a919066a4e6ec09391bc67f3d235f445d" title=" " alt="" coords="714,119,875,163"/>
+<area shape="poly" id="edge9_Node000006_Node000009" title=" " alt="" coords="908,125,876,131,875,125,908,120"/>
+<area shape="rect" id="Node000008" href="$classServerCluster.html#a646514fa306ca9e8ea356bdd70783414" title="This method is responsible for handling the request from the client." alt="" coords="504,89,666,134"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="699,93,667,99,666,94,698,87"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="489,114,457,114,457,109,489,109"/>
+<area shape="poly" id="edge10_Node000009_Node000008" title=" " alt="" coords="698,130,666,126,666,120,698,125"/>
+<area shape="poly" id="edge12_Node000010_Node000003" title=" " alt="" coords="915,176,875,178,770,181,688,179,607,169,504,149,456,137,457,132,505,144,608,163,689,173,770,176,875,173,915,171"/>
+</map>
