@@ -168,11 +168,15 @@ void ServerCluster::handle_get_request(Client *client, Server *server) {
 	std::string body;
 	std::string content_type;
 
+
 	if (full_path.find(server->getCgiPath()) != std::string::npos && full_path.find(".py") != std::string::npos) {
 		Cgi cgi;
 
 		if (full_path.find("?") != std::string::npos)
 			full_path = full_path.substr(0, full_path.find("?"));
+
+		if (!isFile(full_path))
+			return client->sendErrorPage(404);
 
 		cgi.handle_cgi_request(client, full_path, _pipeFd_clientFd_map, _epoll_fd);
 		update_response(client, _cgi_response_map[client->getFd()], "text/html");
