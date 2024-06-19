@@ -14,7 +14,6 @@
 std::string getContentType(const std::string &filename);
 std::string readFileToString(const std::string &filename);
 std::string intToString(int value);
-std::string get_current_dir();
 std::string generateDirectoryListing(const std::string &path);
 
 enum HTTP_METHOD { GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE, CONNECT, PATCH, INVALID };

@@ -22,11 +22,7 @@ Client::Client(int fd, Server *server, int epoll_fd) : fd(fd), is_pipe_open(fals
 	ev.events = EPOLLIN;
 	ev.data.fd = fd;
 
-	/*std::cout << "Client created with fd: " << fd << std::endl;*/
-	/*std::cout << "Server fd: " << server->getSocketFd() << std::endl;*/
-
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-		perror("epoll_ctl");
 		std::cerr << "epoll_ctl failed" << std::endl;
 		exit(EXIT_FAILURE);
 	}
