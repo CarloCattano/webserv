@@ -49,16 +49,13 @@ class Client {
 	std::string getErrorString(int code);
 	std::string responseToString();
 	void sendErrorPage(int code);
-	void checkTimeout(int timeout);
 
 	// general getters and setters
 	bool getIsPipeOpen() const;
-	int getPipeFd() const;
 	int getFd() const;
 	Server *getServer() const;
 	Request getRequest() const;
 	Response getResponse() const;
-	epoll_event *getEvent() const;
 	size_t getSentBytes() const;
 	std::map<int, std::time_t> getPidStartTimeMap() const;
 	std::map<int, int> getPidPipefdMap() const;
@@ -68,7 +65,6 @@ class Client {
 	void setServer(Server *server);
 	void setRequest(Request &request);
 	void setResponse(Response &response);
-	void setEvent(epoll_event *event);
 	void setSentBytes(size_t sentBytes);
 	void setPidStartTimeMap(std::map<int, std::time_t> pid_start_time_map);
 	void addPidStartTimeMap(int pid, std::time_t start_time);
@@ -94,5 +90,4 @@ class Client {
 	void setResponseHeaders(std::map<std::string, std::string> headers);
 	void addResponseHeader(std::string key, std::string value);
 	void setResponseBody(std::string body);
-	void setFinishedSending(bool finishedSending);
 };

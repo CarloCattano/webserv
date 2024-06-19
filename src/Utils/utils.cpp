@@ -62,16 +62,6 @@ std::string intToString(int value) {
 	return ss.str();
 }
 
-// get the path of the folder from where the server is run
-std::string get_current_dir() {
-	char cwd[1024];
-	if (getcwd(cwd, sizeof(cwd)) != NULL)
-		return std::string(cwd);
-	else
-		return "";
-}
-
-
 /** @brief
  *  This method is responsible for generating the directory listing. Files can be Downloaded and Directories
  *  can be navigated. It generates the HTML format of the directory listing.
