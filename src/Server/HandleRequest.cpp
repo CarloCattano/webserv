@@ -14,11 +14,8 @@ bool permitted_origin(Client *client, Server *server) {
 
 	std::string origin = client->getRequest().headers["Host"];
 
-
 	std::string server_name = server->getServerNames()[0];
 	std::string server_name2 = server->getServerNames()[1];
-
-	// if origin is an IP and port , we need to remove the port
 
 	if (origin.find(":") != std::string::npos)
 		origin = origin.substr(0, origin.find(":"));
