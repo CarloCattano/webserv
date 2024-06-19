@@ -11,7 +11,6 @@ const int BUFFER_SIZE = 2048 * 8;
 bool permitted_origin(Client *client, Server *server) {
 	std::string request_uri = client->getRequest().uri;
 
-
 	std::string origin = client->getRequest().headers["Host"];
 
 	std::string server_name = server->getServerNames()[0];
@@ -21,10 +20,7 @@ bool permitted_origin(Client *client, Server *server) {
 		origin = origin.substr(0, origin.find(":"));
 
 	if (origin != server_name && origin != server_name2) {
-		log("Origin not permitted");
-		log("Origin: " + origin);
-		log("Server name: " + server_name);
-		log("Server name2: " + server_name2);
+		log("Request from Forbidden Origin");
 		return false;
 	}
 	return true;
