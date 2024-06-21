@@ -20,7 +20,7 @@ bool permitted_origin(Client *client, Server *server) {
 		origin = origin.substr(0, origin.find(":"));
 
 	if (origin != server_name && origin != server_name2) {
-		log("Request from Forbidden Origin");
+		log("Request from Forbidden Origin " + origin);
 		return false;
 	}
 	return true;
