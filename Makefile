@@ -12,6 +12,7 @@ all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(OBJS) $(CXXFLAGS) $(INC) -o $(NAME)
+	@cat docs/banner
 
 %.o: %.cpp
 	$(CXX) -c $< $(CXXFLAGS) $(INC) -o $@
@@ -32,3 +33,4 @@ fclean: clean
 re: fclean all
 
 .PHONY: all clean fclean re
+

@@ -10,48 +10,48 @@
       "-O3",
       "-I./src",
       "-o",
-      "src/main.o",
-      "src/main.cpp"
-    ],
-    "directory": "/home/ccattano/webserv",
-    "file": "/home/ccattano/webserv/src/main.cpp",
-    "output": "/home/ccattano/webserv/src/main.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/c++",
-      "-c",
-      "-Wall",
-      "-Werror",
-      "-Wextra",
-      "-std=c++98",
-      "-O3",
-      "-I./src",
-      "-o",
-      "src/Utils/utils.o",
-      "src/Utils/utils.cpp"
-    ],
-    "directory": "/home/ccattano/webserv",
-    "file": "/home/ccattano/webserv/src/Utils/utils.cpp",
-    "output": "/home/ccattano/webserv/src/Utils/utils.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/c++",
-      "-c",
-      "-Wall",
-      "-Werror",
-      "-Wextra",
-      "-std=c++98",
-      "-O3",
-      "-I./src",
-      "-o",
       "src/Cgi/Cgi.o",
       "src/Cgi/Cgi.cpp"
     ],
     "directory": "/home/ccattano/webserv",
     "file": "/home/ccattano/webserv/src/Cgi/Cgi.cpp",
     "output": "/home/ccattano/webserv/src/Cgi/Cgi.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Config/ParseRoute.o",
+      "src/Config/ParseRoute.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/ParseRoute.cpp",
+    "output": "/home/ccattano/webserv/src/Config/ParseRoute.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Config/Config.o",
+      "src/Config/Config.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/Config.cpp",
+    "output": "/home/ccattano/webserv/src/Config/Config.o"
   },
   {
     "arguments": [
@@ -100,24 +100,6 @@
       "-O3",
       "-I./src",
       "-o",
-      "src/Config/Config.o",
-      "src/Config/Config.cpp"
-    ],
-    "directory": "/home/ccattano/webserv",
-    "file": "/home/ccattano/webserv/src/Config/Config.cpp",
-    "output": "/home/ccattano/webserv/src/Config/Config.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/c++",
-      "-c",
-      "-Wall",
-      "-Werror",
-      "-Wextra",
-      "-std=c++98",
-      "-O3",
-      "-I./src",
-      "-o",
       "src/Config/UtilsConfig.o",
       "src/Config/UtilsConfig.cpp"
     ],
@@ -136,12 +118,30 @@
       "-O3",
       "-I./src",
       "-o",
-      "src/Config/ParseRoute.o",
-      "src/Config/ParseRoute.cpp"
+      "src/Utils/utils.o",
+      "src/Utils/utils.cpp"
     ],
     "directory": "/home/ccattano/webserv",
-    "file": "/home/ccattano/webserv/src/Config/ParseRoute.cpp",
-    "output": "/home/ccattano/webserv/src/Config/ParseRoute.o"
+    "file": "/home/ccattano/webserv/src/Utils/utils.cpp",
+    "output": "/home/ccattano/webserv/src/Utils/utils.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/main.cpp",
+    "output": "/home/ccattano/webserv/src/main.o"
   },
   {
     "arguments": [
