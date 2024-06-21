@@ -5,11 +5,10 @@
 #include <sys/socket.h>
 
 struct HttpRedirection {
-	int			code;
+	int code;
 	std::string url;
 
-	HttpRedirection() : code(0), url("")
-	{
+	HttpRedirection() : code(0), url("") {
 	}
 };
 
@@ -17,11 +16,9 @@ struct Method {
 	bool is_allowed;
 	bool can_be_edited;
 
-	Method() : is_allowed(true), can_be_edited(true)
-	{
+	Method() : is_allowed(true), can_be_edited(true) {
 	}
-	Method(bool is_allowed, bool can_be_edited) : is_allowed(is_allowed), can_be_edited(can_be_edited)
-	{
+	Method(bool is_allowed, bool can_be_edited) : is_allowed(is_allowed), can_be_edited(can_be_edited) {
 	}
 };
 
@@ -29,8 +26,7 @@ struct Fastcgi_Param {
 	std::string key;
 	std::string value;
 
-	Fastcgi_Param(std::string key, std::string value) : key(key), value(value)
-	{
+	Fastcgi_Param(std::string key, std::string value) : key(key), value(value) {
 	}
 };
 
@@ -46,7 +42,10 @@ struct Route {
 	Method DELETE;
 	std::string cgi_path;
 	std::string cgi_extension;
-	Route() : location(""), matching_style(""), root(""), redirection(HttpRedirection()), autoindex(false), index_file(""), cgi_path(""), cgi_extension("") {}
+	Route()
+		: location(""), matching_style(""), root(""), redirection(HttpRedirection()), autoindex(false), index_file(""),
+		  cgi_path(""), cgi_extension("") {
+	}
 };
 
 // to-do server only uses first server name
@@ -93,7 +92,7 @@ public:
 	Method getDelete(std::string *location);
 	std::string getCgiPath();
 	std::string getCgiExtension();
-	Route* get_route(std::string location);
+	Route *get_route(std::string location);
 
 	// setters
 	void setPort(unsigned int port);

@@ -2,9 +2,9 @@
 #include <iostream>
 #include <string>
 #include <stdlib.h>
-#include "../Cgi/Cgi.hpp"
-#include "../Utils/utils.hpp"
-#include "./ServerCluster.hpp"
+#include "Cgi/Cgi.hpp"
+#include "ServerCluster.hpp"
+#include "Utils/utils.hpp"
 
 const int BUFFER_SIZE = 2048 * 8;
 

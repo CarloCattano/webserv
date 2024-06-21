@@ -6,12 +6,13 @@ CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -O3
 OBJS = $(SRCS:.cpp=.o)
 NAME = webserv
-INC = -I./src/Cgi -I./src/Server -I./src/Config -I./src/Utils
+INC = -I./src 
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(OBJS) $(CXXFLAGS) $(INC) -o $(NAME)
+	@cat docs/banner
 
 %.o: %.cpp
 	$(CXX) -c $< $(CXXFLAGS) $(INC) -o $@
@@ -32,3 +33,4 @@ fclean: clean
 re: fclean all
 
 .PHONY: all clean fclean re
+

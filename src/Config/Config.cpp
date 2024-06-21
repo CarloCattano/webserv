@@ -1,44 +1,44 @@
 #include "Config.hpp"
+#include <stdexcept>
 #include <stdlib.h>
-#include <iostream>
+Config::Config() {
+}
 
-Config::Config() {}
+Config::~Config() {
+}
 
-Config::~Config() {}
-
-void    set_allowed_methods(Server &server, std::vector<std::string> key_with_values) {
+void set_allowed_methods(Server &server, std::vector<std::string> key_with_values) {
 	Method POST = server.getPost(NULL);
 	Method GET = server.getGet(NULL);
 	Method DELETE = server.getDelete(NULL);
-    bool new_state;
+	bool new_state;
 
-    if (key_with_values[0] == "allow")
-        new_state = true;
-    else if (key_with_values[0] == "deny")
-        new_state = false;
-    else
-        return;
+	if (key_with_values[0] == "allow")
+		new_state = true;
+	else if (key_with_values[0] == "deny")
+		new_state = false;
+	else
+		return;
 
-    size_t  i = 1;
-    while (i < key_with_values.size()) {
-        std::string key = key_with_values[i];
-        if (key == "all") {
-            if (POST.can_be_edited)
-                server.setPost(Method(new_state, true));
-            if (GET.can_be_edited)
-                server.setGet(Method(new_state, true));
-            if (DELETE.can_be_edited)
-                server.setDelete(Method(new_state, true));
-        }
-        else if (key == "POST" && POST.can_be_edited)
+	size_t i = 1;
+	while (i < key_with_values.size()) {
+		std::string key = key_with_values[i];
+		if (key == "all") {
+			if (POST.can_be_edited)
+				server.setPost(Method(new_state, true));
+			if (GET.can_be_edited)
+				server.setGet(Method(new_state, true));
+			if (DELETE.can_be_edited)
+				server.setDelete(Method(new_state, true));
+		} else if (key == "POST" && POST.can_be_edited)
 			server.setPost(Method(new_state, false));
-        else if (key == "GET" && GET.can_be_edited)
+		else if (key == "GET" && GET.can_be_edited)
 			server.setGet(Method(new_state, false));
-        else if (key == "DELETE" && DELETE.can_be_edited)
+		else if (key == "DELETE" && DELETE.can_be_edited)
 			server.setDelete(Method(new_state, false));
 
-        i++;
-    }
+		i++;
+	}
 }
 
 void parse_listen(int size, Server &server, std::vector<std::string> &key_with_values) {
@@ -48,20 +48,20 @@ void parse_listen(int size, Server &server, std::vector<std::string> &key_with_v
 }
 
 void parse_client_max_body_size(int size, Server &server, std::vector<std::string> &key_with_values) {
-	std::string	value;
-	int			length;
-	int 		unit = 1;
+	std::string value;
+	int length;
+	int unit = 1;
 
 	if (size < 2)
 		return;
 	value = key_with_values[1];
 	length = value.size();
 	if (value[length - 1] == 'k' || value[length - 1] == 'K')
-		unit =  1024;
+		unit = 1024;
 	else if (value[length - 1] == 'm' || value[length - 1] == 'M')
-		unit =  1048576;
+		unit = 1048576;
 	else if (value[length - 1] == 'g' || value[length - 1] == 'G')
-		unit =  1073741824;
+		unit = 1073741824;
 	if (unit > 1)
 		value.erase(value.size() - 1);
 	if (isNumeric(value))
@@ -69,8 +69,8 @@ void parse_client_max_body_size(int size, Server &server, std::vector<std::strin
 }
 
 void parse_redirection(Server &server, std::vector<std::string> key_with_values, int size) {
-	int			code;
-	std::string	url = "";
+	int code;
+	std::string url = "";
 
 	if (isNumeric(key_with_values[1])) {
 		code = atoi(key_with_values[1].c_str());
@@ -110,7 +110,6 @@ void parse_key_with_values(Server &server, std::string str, int i) {
 }
 
 void set_server_config_settings(Server &server, std::string str, int i) {
-
 	i = iterate_to_first_server_line(str, i);
 	while (str[i] && str[i] != '}') {
 		if (str.substr(i, 8) == "location")
@@ -143,4 +142,6 @@ Config::Config(const std::string filename) {
 	}
 }
 
-std::vector<Server>& Config::get_servers() { return (this->_servers); }
+std::vector<Server> &Config::get_servers() {
+	return (this->_servers);
+}

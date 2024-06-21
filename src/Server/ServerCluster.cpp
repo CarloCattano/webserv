@@ -1,11 +1,11 @@
-#include "./ServerCluster.hpp"
+#include "ServerCluster.hpp"
 #include <ctime>
 #include <iostream>
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include "../Utils/utils.hpp"
+#include "Utils/utils.hpp"
 
 #define error(x) std::cerr << RED << x << RESET << std::endl
 

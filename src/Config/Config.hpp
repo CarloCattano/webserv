@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../Server/Server.hpp"
-#include <stdlib.h>
+// clang-format off
+
+#include "Server/Server.hpp"
 
 class Config {
   private:
 	std::string 		_filename;
 	std::vector<Server> _servers;
-	// Server				default_server;
 
   public:
 	Config();
@@ -25,8 +25,10 @@ int 									parse_route(Server &server, std::string str, int i);
 int 									iterate_to_next_server_line(std::string str, int i);
 std::vector<std::string>				convert_server_line_2_vector(std::string str, int i);
 int 									iterate_to_first_server_line(std::string str, int i);
+
 template <typename T> std::vector<T>	extract_values(std::vector<T> key_with_values) {
 	std::vector<T> values(key_with_values.begin() + 1, key_with_values.end());
 	return (values);
 }
+
 bool 									isNumeric(const std::string& str);

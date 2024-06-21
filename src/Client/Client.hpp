@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Server/Server.hpp"
+#include <ctime>
 #include <map>
 #include <sstream>
 #include <sys/epoll.h>
-#include <ctime>
+#include "Server/Server.hpp"
 
 struct Request {
 	std::string request;
@@ -26,7 +26,7 @@ struct Response {
 };
 
 class Client {
-  private:
+private:
 	int fd;
 	bool is_pipe_open;
 	Server *server;
@@ -37,7 +37,7 @@ class Client {
 	std::map<int, std::time_t> pid_start_time_map;
 	std::map<int, int> pid_pipefd_map;
 
-  public:
+public:
 	Client();
 	Client(int fd, Server *server, int epoll_fd);
 	Client(const Client &client);

@@ -1,8 +1,9 @@
 #include <stdexcept>
+#include <stdlib.h>
 #include "Config.hpp"
 
-void set_allowed_methods(Route &route, std::vector<std::string> key_with_values)
-{
+
+void set_allowed_methods(Route &route, std::vector<std::string> key_with_values) {
 	bool new_state;
 
 	if (key_with_values[0] == "allow")
@@ -22,16 +23,13 @@ void set_allowed_methods(Route &route, std::vector<std::string> key_with_values)
 				route.GET.is_allowed = new_state;
 			if (route.DELETE.can_be_edited)
 				route.DELETE.is_allowed = new_state;
-		}
-		else if (key == "POST" && route.POST.can_be_edited) {
+		} else if (key == "POST" && route.POST.can_be_edited) {
 			route.POST.is_allowed = new_state;
 			route.POST.can_be_edited = false;
-		}
-		else if (key == "GET" && route.GET.can_be_edited) {
+		} else if (key == "GET" && route.GET.can_be_edited) {
 			route.GET.is_allowed = new_state;
 			route.GET.can_be_edited = false;
-		}
-		else if (key == "DELETE" && route.DELETE.can_be_edited) {
+		} else if (key == "DELETE" && route.DELETE.can_be_edited) {
 			route.DELETE.is_allowed = new_state;
 			route.DELETE.can_be_edited = false;
 		}
@@ -39,8 +37,7 @@ void set_allowed_methods(Route &route, std::vector<std::string> key_with_values)
 	}
 }
 
-void parse_location(int value_count, std::vector<std::string> &values, Route &route)
-{
+void parse_location(int value_count, std::vector<std::string> &values, Route &route) {
 	if (value_count < 2 || value_count > 3 || values[value_count - 1] != "{")
 		throw std::runtime_error("Bad route format on first line.");
 	if (value_count == 3)
@@ -50,8 +47,7 @@ void parse_location(int value_count, std::vector<std::string> &values, Route &ro
 		route.location += '/';
 }
 
-void parse_redirection(std::vector<std::string> &values, int value_count, Route &route)
-{
+void parse_redirection(std::vector<std::string> &values, int value_count, Route &route) {
 	if (isNumeric(values[0])) {
 		route.redirection.code = atoi(values[0].c_str());
 		if (value_count == 2)
@@ -59,8 +55,7 @@ void parse_redirection(std::vector<std::string> &values, int value_count, Route 
 	}
 }
 
-int parse_route(Server &virtual_server, std::string str, int i)
-{
+int parse_route(Server &virtual_server, std::string str, int i) {
 	Route route;
 	std::vector<std::string> key_with_values;
 	std::string key;
@@ -85,11 +80,11 @@ int parse_route(Server &virtual_server, std::string str, int i)
 		else if (key == "index" && value_count >= 1)
 			route.index_file = values[0];
 		else if (key == "deny" || key == "allow")
-            set_allowed_methods(route, key_with_values);
-        else if (key == "cgi_path" && value_count >= 1)
-            route.cgi_path = key_with_values[1];
-        else if (key == "cgi_extension" && value_count >= 1)
-            route.cgi_extension = key_with_values[1];
+			set_allowed_methods(route, key_with_values);
+		else if (key == "cgi_path" && value_count >= 1)
+			route.cgi_path = key_with_values[1];
+		else if (key == "cgi_extension" && value_count >= 1)
+			route.cgi_extension = key_with_values[1];
 		i = iterate_to_next_server_line(str, i);
 	}
 	if (str[i] == '}')

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../Client/Client.hpp"
+#include "Client/Client.hpp"
 
 class Cgi {
 public:

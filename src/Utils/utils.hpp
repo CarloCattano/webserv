@@ -1,7 +1,7 @@
 #pragma once
 #include <map>
 #include <string>
-#include "../Client/Client.hpp"
+#include "Client/Client.hpp"
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
