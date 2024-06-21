@@ -3,6 +3,8 @@ Doxyfile*
 html
 latex
 .cache
+tags
+compile_commands.json
 .vscode
 .idea
 webserv
