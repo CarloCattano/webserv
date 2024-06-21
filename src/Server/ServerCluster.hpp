@@ -7,8 +7,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "../Client/Client.hpp"
-#include "./Server.hpp"
+#include "Client/Client.hpp"
+#include "Server.hpp"
 
 /** @brief
  *  This class is responsible for handling the server cluster.

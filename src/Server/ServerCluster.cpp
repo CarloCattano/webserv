@@ -1,4 +1,4 @@
-#include "./ServerCluster.hpp"
+#include "ServerCluster.hpp"
 #include <ctime>
 #include <iostream>
 #include <signal.h>

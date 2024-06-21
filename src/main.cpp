@@ -1,6 +1,6 @@
 #include <iostream>
-#include "./Config/Config.hpp"
-#include "./Server/ServerCluster.hpp"
+#include "Config/Config.hpp"
+#include "Server/ServerCluster.hpp"
 
 int main(int argc, char *argv[]) {
 	std::string config_file;

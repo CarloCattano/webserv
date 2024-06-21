@@ -1,4 +1,4 @@
-#include "./Server.hpp"
+#include "Server.hpp"
 #include <iostream>
 #include <ostream>
 #include <arpa/inet.h>

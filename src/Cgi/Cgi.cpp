@@ -1,14 +1,13 @@
 #include "Cgi.hpp"
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/wait.h>
-#include <unistd.h>
-#include "../Utils/utils.hpp"
 #include <time.h>
-#include <ctime>
+#include <unistd.h>
 
 Cgi::Cgi() {
 }

@@ -1,0 +1,182 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/main.cpp",
+    "output": "/home/ccattano/webserv/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Utils/utils.o",
+      "src/Utils/utils.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Utils/utils.cpp",
+    "output": "/home/ccattano/webserv/src/Utils/utils.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Cgi/Cgi.o",
+      "src/Cgi/Cgi.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Cgi/Cgi.cpp",
+    "output": "/home/ccattano/webserv/src/Cgi/Cgi.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Server/Server.o",
+      "src/Server/Server.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/Server.cpp",
+    "output": "/home/ccattano/webserv/src/Server/Server.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Server/ServerCluster.o",
+      "src/Server/ServerCluster.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/ServerCluster.cpp",
+    "output": "/home/ccattano/webserv/src/Server/ServerCluster.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Config/Config.o",
+      "src/Config/Config.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/Config.cpp",
+    "output": "/home/ccattano/webserv/src/Config/Config.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Config/UtilsConfig.o",
+      "src/Config/UtilsConfig.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/UtilsConfig.cpp",
+    "output": "/home/ccattano/webserv/src/Config/UtilsConfig.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Config/ParseRoute.o",
+      "src/Config/ParseRoute.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Config/ParseRoute.cpp",
+    "output": "/home/ccattano/webserv/src/Config/ParseRoute.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Client/Client.o",
+      "src/Client/Client.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Client/Client.cpp",
+    "output": "/home/ccattano/webserv/src/Client/Client.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-c",
+      "-Wall",
+      "-Werror",
+      "-Wextra",
+      "-std=c++98",
+      "-O3",
+      "-I./src",
+      "-o",
+      "src/Server/HandleRequest.o",
+      "src/Server/HandleRequest.cpp"
+    ],
+    "directory": "/home/ccattano/webserv",
+    "file": "/home/ccattano/webserv/src/Server/HandleRequest.cpp",
+    "output": "/home/ccattano/webserv/src/Server/HandleRequest.o"
+  }
+]
